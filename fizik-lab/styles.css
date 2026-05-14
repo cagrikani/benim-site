@@ -20,6 +20,7 @@
 
 html {
   scroll-behavior: smooth;
+  background: #09111f;
 }
 
 body {
@@ -777,6 +778,332 @@ h1 {
   color: var(--text);
 }
 
+.illumination-lesson {
+  display: grid;
+  gap: 16px;
+  margin-top: 2px;
+}
+
+.illumination-lesson h3,
+.illumination-lesson h4,
+.illumination-lesson p {
+  margin: 0;
+}
+
+.illumination-lesson p,
+.illumination-lesson li {
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.illumination-hero-card,
+.lesson-live-card,
+.lesson-section,
+.diagram-card,
+.lamp-card,
+.concept-card,
+.model-card,
+.formula-card,
+.qa-grid details,
+.lab-grid article {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.025)),
+    rgba(12, 22, 42, 0.72);
+}
+
+.illumination-hero-card,
+.lesson-live-card,
+.lesson-section {
+  border-radius: 22px;
+  padding: 18px;
+}
+
+.illumination-hero-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr);
+  align-items: center;
+  gap: 18px;
+  background:
+    linear-gradient(135deg, rgba(255, 209, 102, 0.14), rgba(79, 209, 197, 0.09)),
+    rgba(12, 22, 42, 0.86);
+}
+
+.illumination-hero-copy,
+.lesson-section-head {
+  display: grid;
+  gap: 10px;
+}
+
+.illumination-hero-copy h3,
+.lesson-section-head h3,
+.lesson-live-card h3,
+.diagram-card h3,
+.lamp-card h3 {
+  font-size: clamp(1.25rem, 2.4vw, 1.8rem);
+  line-height: 1.15;
+}
+
+.lesson-kicker {
+  width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.1);
+  color: #ffd977;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lesson-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.lesson-visual {
+  min-width: 0;
+}
+
+.lesson-svg,
+.model-svg,
+.diagram-svg,
+.lamp-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.hero-visual {
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(5, 11, 21, 0.36);
+  overflow: hidden;
+}
+
+.lesson-live-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(280px, 1.15fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.live-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.live-metrics span {
+  min-width: 0;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.live-metrics strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1rem;
+}
+
+.concept-grid,
+.model-grid,
+.formula-grid,
+.diagram-section,
+.lab-grid,
+.qa-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.concept-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.concept-card,
+.model-card,
+.formula-card,
+.lab-grid article {
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.concept-card {
+  display: grid;
+  gap: 9px;
+}
+
+.concept-symbol {
+  width: 46px;
+  height: 46px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 14px;
+  background: rgba(255, 209, 102, 0.14);
+  color: #ffd977;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.45rem;
+  font-weight: 800;
+}
+
+.concept-card h4,
+.model-card h4,
+.lab-grid h4 {
+  font-size: 1rem;
+}
+
+.concept-card strong,
+.formula-card small {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.model-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.model-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.model-svg {
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.timeline-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.timeline-strip span {
+  padding: 9px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(159, 231, 255, 0.18);
+  background: rgba(159, 231, 255, 0.065);
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.formula-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.formula-card {
+  display: grid;
+  gap: 10px;
+  background:
+    linear-gradient(180deg, rgba(159, 231, 255, 0.08), rgba(255, 209, 102, 0.04)),
+    rgba(12, 22, 42, 0.72);
+}
+
+.formula {
+  display: block;
+  color: #ffd977;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: clamp(1.25rem, 2.4vw, 1.7rem);
+  font-weight: 800;
+}
+
+.diagram-section {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.diagram-card,
+.lamp-card {
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+  align-items: center;
+}
+
+.diagram-card {
+  grid-template-rows: auto 1fr;
+}
+
+.diagram-card > div:first-child,
+.lamp-card > div:first-child {
+  display: grid;
+  gap: 9px;
+}
+
+.diagram-svg {
+  border-radius: 18px;
+  background: rgba(5, 11, 21, 0.32);
+}
+
+.lab-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.lab-grid article {
+  display: grid;
+  gap: 9px;
+  align-content: start;
+}
+
+.lab-grid ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.qa-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.qa-grid details {
+  border-radius: 16px;
+  padding: 14px 15px;
+}
+
+.qa-grid summary {
+  cursor: pointer;
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.qa-grid details p {
+  margin-top: 10px;
+}
+
+.lamp-section {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.lamp-card {
+  grid-template-columns: minmax(0, 1fr) 210px;
+  background:
+    linear-gradient(135deg, rgba(255, 209, 102, 0.11), rgba(159, 231, 255, 0.07)),
+    rgba(12, 22, 42, 0.76);
+}
+
 .tool-card,
 .object-item {
   border: 1px solid var(--border);
@@ -840,6 +1167,22 @@ h1 {
   height: 34px;
   border-radius: 50%;
   border: 2px dashed rgba(255, 217, 119, 0.48);
+}
+
+.tool-glyph.flux-surface::before {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(159, 231, 255, 0.78);
+  background: rgba(159, 231, 255, 0.1);
+}
+
+.tool-glyph.flux-surface::after {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff8cf 0%, #ffd977 60%, #ff9f43 100%);
+  box-shadow: 0 0 14px rgba(255, 217, 119, 0.42);
 }
 
 .tool-glyph.light-surface::before {
@@ -1535,6 +1878,25 @@ h1 {
     grid-column: 1 / -1;
   }
 
+  .illumination-hero-card,
+  .lesson-live-card,
+  .diagram-section,
+  .lamp-card {
+    grid-template-columns: 1fr;
+  }
+
+  .concept-grid,
+  .model-grid,
+  .formula-grid,
+  .lab-grid,
+  .qa-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .live-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .home-module-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1565,7 +1927,13 @@ h1 {
   .vector-builder,
   .inspector-grid,
   .object-list,
-  .stage-side {
+  .stage-side,
+  .concept-grid,
+  .model-grid,
+  .formula-grid,
+  .lab-grid,
+  .qa-grid,
+  .live-metrics {
     grid-template-columns: 1fr;
   }
 
@@ -1602,6 +1970,15 @@ h1 {
   .panel,
   .stage-panel {
     padding: 16px;
+  }
+
+  .illumination-hero-card,
+  .lesson-live-card,
+  .lesson-section,
+  .diagram-card,
+  .lamp-card {
+    border-radius: 18px;
+    padding: 15px;
   }
 
   #lab-canvas {

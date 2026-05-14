@@ -7,8 +7,8 @@ const OPTICS_OUTCOMES = [
     title: "Işık şiddeti, ışık akısı ve aydınlanma",
     shortTitle: "Işık şiddeti ve aydınlanma",
     description:
-      "Noktasal ışık kaynağı ile ışık akısı ve yüzey üzerindeki aydınlanma şiddetini uzaklığa göre incele.",
-    tools: ["point-light", "light-surface"]
+      "Noktasal ışık kaynağı ile ışık şiddeti, toplam ışık akısı ve yüzeydeki aydınlanma şiddetini uzaklık, alan ve açıya göre incele.",
+    tools: ["point-light", "flux-surface", "light-surface"]
   },
   {
     id: "FIZ.11.4.2",
@@ -107,6 +107,7 @@ const VECTOR_OUTCOMES = [
 const toolCatalog = {
   optics: [
     { type: "point-light", label: "Noktasal Işık Kaynağı", description: "Işık şiddeti ve ışık akısı gösteren kaynak ekler." },
+    { type: "flux-surface", label: "Akı Yüzeyi", description: "Kaynağı saran küre, yarım küre, çeyrek küre veya kapalı prizma ekler." },
     { type: "light-surface", label: "Aydınlanan Yüzey", description: "Kaynağa göre aydınlanma şiddetini ölçen yüzey ekler." },
     { type: "laser", label: "Lazer", description: "Tek bir ışık kaynağı ekler." },
     { type: "optical-object", label: "Cisim", description: "Görüntüsü oluşan ok şeklinde cisim ekler." },
@@ -200,7 +201,7 @@ const HEAT_MATERIAL_LIBRARY = {
 const defaultState = {
   view: "home",
   scene: "optics",
-  opticsOutcome: null,
+  opticsOutcome: "FIZ.11.4.1",
   vectorsOutcome: null,
   opticsVisible: true,
   running: false,
@@ -1019,6 +1020,10 @@ function isPointLight(item) {
 
 function isLightSurface(item) {
   return item.type === "light-surface";
+}
+
+function isFluxSurface(item) {
+  return item.type === "flux-surface";
 }
 
 function isRefractionBlock(item) {
@@ -1882,6 +1887,70 @@ function pointLightFlux(item) {
   return 4 * Math.PI * item.intensity;
 }
 
+function fluxSurfaceShapeData(shape) {
+  const data = {
+    sphere: { label: "Tam küre", ratio: 1, note: "Kapalı küre kaynağı sardığında toplam akı yüzeyden geçer." },
+    hemisphere: { label: "Yarım küre", ratio: 0.5, note: "Kaynak kürenin merkezindeyse toplam akının yarısını alır." },
+    quarter: { label: "Çeyrek küre", ratio: 0.25, note: "Kaynak kürenin merkezindeyse toplam akının dörtte birini alır." },
+    prism: { label: "Kapalı prizma/kutu", ratio: 1, note: "Kapalı yüzey kaynağı içeriyorsa toplam akı değişmez." }
+  };
+
+  return data[shape] || data.sphere;
+}
+
+function fluxSurfaceSourceInside(source, surface) {
+  if (!source) {
+    return false;
+  }
+
+  if ((surface.surfaceShape || "sphere") === "prism") {
+    const half = surface.radius;
+    return Math.abs(source.x - surface.x) <= half && Math.abs(source.y - surface.y) <= half;
+  }
+
+  return Math.hypot(source.x - surface.x, source.y - surface.y) <= surface.radius;
+}
+
+function activePointLightForFluxSurface(surface) {
+  const sources = currentItems().filter((item) => isPointLight(item));
+  if (!sources.length) {
+    return null;
+  }
+
+  return [...sources]
+    .map((source) => ({
+      source,
+      distancePx: Math.hypot(source.x - surface.x, source.y - surface.y),
+      inside: fluxSurfaceSourceInside(source, surface)
+    }))
+    .sort((a, b) => {
+      if (a.inside !== b.inside) return a.inside ? -1 : 1;
+      return a.distancePx - b.distancePx;
+    })[0];
+}
+
+function fluxSurfaceMeasurement(source, surface) {
+  const shape = surface.surfaceShape || "sphere";
+  const shapeData = fluxSurfaceShapeData(shape);
+  const inside = fluxSurfaceSourceInside(source, surface);
+  const centered = source ? Math.hypot(source.x - surface.x, source.y - surface.y) <= 18 : false;
+  const needsCenter = shape === "hemisphere" || shape === "quarter";
+  const ratio = shape === "prism" && !inside ? 0 : shapeData.ratio;
+  const sourceFlux = source ? pointLightFlux(source) : 0;
+
+  return {
+    shape,
+    label: shapeData.label,
+    ratio,
+    sourceFlux,
+    capturedFlux: sourceFlux * ratio,
+    inside,
+    centered,
+    needsCenter,
+    note: shapeData.note
+  };
+}
+
 function illuminanceMeasurement(source, surface) {
   const sourceToSurface = { x: surface.x - source.x, y: surface.y - source.y };
   const distancePx = Math.max(Math.hypot(sourceToSurface.x, sourceToSurface.y), 12);
@@ -2286,6 +2355,19 @@ function makeItem(type) {
     };
   }
 
+  if (type === "flux-surface") {
+    const source = currentItems().find((item) => isPointLight(item));
+    return {
+      id: uid("flux-surface"),
+      type,
+      x: source ? source.x : 300 + offset,
+      y: source ? source.y : 260,
+      radius: 110,
+      angle: 0,
+      surfaceShape: "sphere"
+    };
+  }
+
   if (type === "light-surface") {
     return {
       id: uid("light-surface"),
@@ -2478,6 +2560,16 @@ function constrainItem(item) {
     item.length = clamp(Number(item.length) || 150, 60, 260);
   }
 
+  if (isFluxSurface(item)) {
+    item.radius = clamp(Number(item.radius) || 110, 45, 220);
+    item.x = clamp(Number(item.x) || 0, item.radius + 12, width - item.radius - 12);
+    item.y = clamp(Number(item.y) || 0, item.radius + 12, height - item.radius - 12);
+    item.angle = clamp(Number(item.angle) || 0, -180, 180);
+    item.surfaceShape = ["sphere", "hemisphere", "quarter", "prism"].includes(item.surfaceShape)
+      ? item.surfaceShape
+      : "sphere";
+  }
+
   if (item.type === "optical-object") {
     item.x = clamp(Number(item.x) || 0, 40, width - 40);
     item.y = clamp(Number(item.y) || 0, 60, height - 40);
@@ -2613,6 +2705,7 @@ function constrainItem(item) {
 function itemTitle(item) {
   if (item.type === "laser") return "Lazer kaynagi";
   if (item.type === "point-light") return "Noktasal ışık kaynağı";
+  if (item.type === "flux-surface") return "Akı yüzeyi";
   if (item.type === "light-surface") return "Aydınlanan yüzey";
   if (item.type === "optical-object") return "Optik cisim";
   if (item.type === "round-object") return "Yuvarlak cisim";
@@ -2648,6 +2741,13 @@ function itemMeta(item) {
   }
   if (item.type === "point-light") {
     return `${item.intensity.toFixed(0)} cd • Φ ${pointLightFlux(item).toFixed(0)} lm`;
+  }
+  if (item.type === "flux-surface") {
+    const active = activePointLightForFluxSurface(item);
+    const measurement = active ? fluxSurfaceMeasurement(active.source, item) : null;
+    return measurement
+      ? `${measurement.label} • Φ ${measurement.capturedFlux.toFixed(0)} lm • ${Math.round(measurement.ratio * 100)}%`
+      : `${fluxSurfaceShapeData(item.surfaceShape).label} • ışık kaynağı bekleniyor`;
   }
   if (item.type === "light-surface") {
     const active = activePointLightForSurface(item);
@@ -2719,6 +2819,7 @@ function toolGlyph(type) {
   const glyphs = {
     laser: '<span class="tool-glyph laser"><span></span></span>',
     "point-light": '<span class="tool-glyph point-light"><span></span></span>',
+    "flux-surface": '<span class="tool-glyph flux-surface"><span></span></span>',
     "light-surface": '<span class="tool-glyph light-surface"><span></span></span>',
     "optical-object": '<span class="tool-glyph optical-object"><span></span></span>',
     "round-object": '<span class="tool-glyph round-object"><span></span></span>',
@@ -2875,6 +2976,7 @@ function renderModuleControls() {
               .join(" • ")}</div>`
           : ""
       }
+      ${outcome?.id === "FIZ.11.4.1" ? renderIlluminationLesson() : ""}
     `;
     return;
   }
@@ -3059,6 +3161,448 @@ function renderModuleControls() {
   `;
 }
 
+function renderIlluminationLesson() {
+  return `
+    <section class="illumination-lesson" aria-labelledby="illumination-title">
+      <div class="illumination-hero-card">
+        <div class="illumination-hero-copy">
+          <span class="lesson-kicker">FİZ.11.4.1</span>
+          <h3 id="illumination-title">Işık şiddeti, ışık akısı ve aydınlanma</h3>
+          <p>
+            Işık; görmeyi, renkleri, fotosentezi ve optik araçların çalışmasını açıklayan bir enerji aktarımıdır.
+            Bu bölümde aynı kaynağın <strong>belirli doğrultudaki parlaklığı</strong>, <strong>toplam yaydığı ışık</strong>
+            ve <strong>bir yüzeyde oluşturduğu aydınlanma</strong> ayrı ayrı incelenir.
+          </p>
+          <div class="lesson-actions">
+            <button class="primary-button compact-action" type="button" data-illumination-action="load-sample">
+              Örnek düzeneği kur
+            </button>
+            <button class="secondary-button compact-action" type="button" data-illumination-action="focus-tools">
+              Araçları vurgula
+            </button>
+          </div>
+        </div>
+        <div class="lesson-visual hero-visual" aria-label="Işık kaynağından yayılan ışınlar">
+          ${renderIlluminationHeroSvg()}
+        </div>
+      </div>
+
+      <div class="lesson-live-card">
+        ${renderIlluminationLiveReadout()}
+      </div>
+
+      <div class="lesson-section">
+        <div class="lesson-section-head">
+          <span class="lesson-kicker">Kavram haritası</span>
+          <h3>I, Φ ve E birbirinin yerine kullanılmaz</h3>
+        </div>
+        <div class="concept-grid">
+          <article class="concept-card">
+            <span class="concept-symbol">I</span>
+            <h4>Işık şiddeti</h4>
+            <p>Noktasal kaynağın belirli bir doğrultuda ne kadar güçlü ışık yaydığını anlatır.</p>
+            <strong>Birimi: candela (cd)</strong>
+          </article>
+          <article class="concept-card">
+            <span class="concept-symbol">Φ</span>
+            <h4>Işık akısı</h4>
+            <p>Kaynaktan birim zamanda yayılan toplam ışık miktarıdır. İzotropik kaynakta her yöne dağılır.</p>
+            <strong>Birimi: lümen (lm)</strong>
+          </article>
+          <article class="concept-card">
+            <span class="concept-symbol">E</span>
+            <h4>Aydınlanma şiddeti</h4>
+            <p>Bir yüzeyin birim alanına düşen ışık akısıdır; yüzeyin ne kadar aydınlandığını gösterir.</p>
+            <strong>Birimi: lüks (lx)</strong>
+          </article>
+        </div>
+      </div>
+
+      <div class="lesson-section model-section">
+        <div class="lesson-section-head">
+          <span class="lesson-kicker">Işığın davranış modelleri</span>
+          <h3>Tek model her olayı tek başına açıklamaz</h3>
+        </div>
+        <div class="model-grid">
+          <article class="model-card">
+            ${renderParticleModelSvg()}
+            <h4>Tanecik modeli</h4>
+            <p>Newton'a göre ışık kaynaktan çıkıp doğrusal yolla yayılan tanecikler gibi düşünülebilir. Yansıma ve kırılmanın birçok yönünü açıklar.</p>
+          </article>
+          <article class="model-card">
+            ${renderWaveModelSvg()}
+            <h4>Dalga modeli</h4>
+            <p>Huygens ışığı her yöne yayılan dalgalarla modelledi. Maxwell ve Hertz çalışmaları ışığın elektromanyetik dalga olduğunu güçlendirdi.</p>
+          </article>
+          <article class="model-card">
+            ${renderRayModelSvg()}
+            <h4>Işın modeli</h4>
+            <p>Modern yaklaşımda ışık hem dalga hem tanecik davranışı gösterebilir. Geometrik optikte ışık doğrusal ışınlarla gösterilir.</p>
+          </article>
+        </div>
+        <div class="timeline-strip">
+          <span>Newton: tanecik</span>
+          <span>Huygens: dalga</span>
+          <span>Maxwell-Hertz: elektromanyetik dalga</span>
+          <span>Planck-Einstein-Compton: tanecik yönü</span>
+          <span>Günümüz: ikili doğa</span>
+        </div>
+      </div>
+
+      <div class="lesson-section formula-section">
+        <div class="lesson-section-head">
+          <span class="lesson-kicker">Matematiksel model</span>
+          <h3>Akı, alan, uzaklık ve açı birlikte düşünülür</h3>
+        </div>
+        <div class="formula-grid">
+          <article class="formula-card">
+            <span class="formula">Φ = 4πI</span>
+            <p>Her yöne eşit ışık yayan noktasal kaynak için toplam ışık akısı, ışık şiddetine bağlıdır.</p>
+            <small>I: cd, Φ: lm</small>
+          </article>
+          <article class="formula-card">
+            <span class="formula">E = Φ / A</span>
+            <p>Aynı ışık akısı daha büyük alana yayılırsa birim alana düşen akı azalır.</p>
+            <small>A: m<sup>2</sup>, E: lx</small>
+          </article>
+          <article class="formula-card">
+            <span class="formula">E = I cosα / d<sup>2</sup></span>
+            <p>d, kaynak ile ölçüm noktası arası uzaklık; α, gelen ışın ile yüzey normali arasındaki açıdır.</p>
+            <small>Dik gelişte α = 0 ve cosα = 1</small>
+          </article>
+        </div>
+      </div>
+
+      <div class="lesson-section diagram-section">
+      <div class="diagram-card">
+        <div>
+          <span class="lesson-kicker">Işık akısı</span>
+          <h3>Kapalı yüzey toplam akıyı yakalar</h3>
+          <p>
+            Kaynak kapalı bir yüzey tarafından tamamen çevrilirse yüzeye düşen ışık akısı kaynağın toplam akısına eşittir.
+            Yarım küre toplam akının yarısını, çeyrek küre dörtte birini alır. Yarıçap değişse bile kapalı kürede toplam akı değişmez.
+            Simülasyonda <strong>Akı Yüzeyi</strong> aracını ekleyip yüzey tipini değiştirerek bu değerleri doğrudan okuyabilirsin.
+          </p>
+        </div>
+          ${renderFluxSurfacesSvg()}
+        </div>
+        <div class="diagram-card">
+          <div>
+            <span class="lesson-kicker">Aydınlanma</span>
+            <h3>Dik gelen ışın en büyük E değerini verir</h3>
+            <p>
+              Işın yüzeye dik geldikçe cosα büyür ve aydınlanma artar. Kaynak uzaklaşırsa ışık aynı toplam enerjiyle daha geniş alana dağıldığı için E, uzaklığın karesiyle azalır.
+            </p>
+          </div>
+          ${renderIlluminanceGeometrySvg()}
+        </div>
+      </div>
+
+      <div class="lesson-section lab-section">
+        <div class="lesson-section-head">
+          <span class="lesson-kicker">Etkinlik deney</span>
+          <h3>Işık akısı ile aydınlanma şiddeti arasındaki ilişki</h3>
+        </div>
+        <div class="lab-grid">
+          <article>
+            <h4>Kurulum</h4>
+            <p>25 W, 60 W ve 120 W lambaları; optik ekranı; cetveli ve bağlantı elemanlarını kullan. Ekranı kaynağa önce dik tut, sonra uzaklığı ve açıyı değiştir.</p>
+          </article>
+          <article>
+            <h4>Gözlem sırası</h4>
+            <ol>
+              <li>Önce düşük ışık akılı kaynakla ekranın merkezindeki aydınlanmayı gözle.</li>
+              <li>Kaynağı ekrana yaklaştır: E değerinin arttığını fark et.</li>
+              <li>Ekranı döndür: ışın normale yaklaştıkça aydınlanma artar.</li>
+              <li>Kaynak daha büyük ışık akısına sahipse aynı konumda daha fazla aydınlatır.</li>
+            </ol>
+          </article>
+          <article>
+            <h4>Simülasyonda uygula</h4>
+            <p>Noktasal kaynağın I değerini, yüzeyin uzaklığını ve açısını değiştir. Canlı ölçümde Φ ve E değerlerinin nasıl değiştiğini karşılaştır.</p>
+          </article>
+        </div>
+      </div>
+
+      <div class="lesson-section examples-section">
+        <div class="lesson-section-head">
+          <span class="lesson-kicker">Örnekler ve sıra sizde</span>
+          <h3>Sonucu veren fiziksel gerekçeyi oku</h3>
+        </div>
+        <div class="qa-grid">
+          <details open>
+            <summary>Kürelerin yarıçapı 3r, 2r ve r ise yüzey akıları nasıl sıralanır?</summary>
+            <p>Kaynak her kürenin merkezindedir ve küreler kaynağı tamamen çevreler. Toplam akı yarıçapa bağlı değildir: <strong>Φ<sub>X</sub> = Φ<sub>Y</sub> = Φ<sub>Z</sub> = 4πI</strong>.</p>
+          </details>
+          <details>
+            <summary>Yarım küre K, çeyrek küre L ve çeyrek küre M için akı ilişkisi nedir?</summary>
+            <p>Akı, yüzeyin kaynağı gördüğü uzay açısına bağlıdır. Yarım küre daha çok ışın yakalar: <strong>Φ<sub>K</sub> &gt; Φ<sub>L</sub> = Φ<sub>M</sub></strong>.</p>
+          </details>
+          <details>
+            <summary>A alanlı ekran yerine aynı konumda 2A alanlı ekran konursa ne olur?</summary>
+            <p><strong>Φ<sub>kaynak</sub></strong> değişmez. Daha büyük ekran daha çok ışın yakalayabileceği için <strong>Φ<sub>ekran</sub></strong> artar; aynı merkez çevresindeki yerel <strong>E</strong> ise kaynak, uzaklık ve açı değişmediği için değişmez.</p>
+          </details>
+          <details>
+            <summary>K, L, M özdeş kaynakları O noktasını aydınlatıyorsa sıralama nasıl olur?</summary>
+            <p>Uzaklıklar eşit olduğunda belirleyici etken açıdır. Normal doğrultusundaki K en büyük, eğik gelen L daha küçük, yüzeye paralel gelen M en küçüktür: <strong>E<sub>K</sub> &gt; E<sub>L</sub> &gt; E<sub>M</sub></strong>.</p>
+          </details>
+        </div>
+      </div>
+
+      <div class="lesson-section lamp-section">
+        <div class="lamp-card">
+          <div>
+            <span class="lesson-kicker">Yorumlayınız</span>
+            <h3>Ampul seçerken yalnız watt değerine bakılmaz</h3>
+            <p>
+              Watt, ampulün elektriksel güç tüketimini gösterir. Odayı ne kadar aydınlatacağını anlamak için asıl bakılması gereken değer
+              <strong>lümen</strong> cinsinden toplam ışık akısıdır. 13 W LED, 100 W akkor ampule eş değer ışık verebilir; 1521 lm değeri ise ampulün yaydığı ışık akısını belirtir.
+            </p>
+          </div>
+          ${renderLampPackageSvg()}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderIlluminationLiveReadout() {
+  const items = state.optics.items;
+  const source = items.find((item) => isPointLight(item));
+  const surfaces = items.filter((item) => isLightSurface(item));
+  const fluxSurfaces = items.filter((item) => isFluxSurface(item));
+  const selected = selectedItem();
+  const surface = selected && isLightSurface(selected) ? selected : surfaces[0];
+  const fluxSurface = selected && isFluxSurface(selected) ? selected : fluxSurfaces[0];
+
+  if (!source || (!surface && !fluxSurface)) {
+    return `
+      <div>
+        <span class="lesson-kicker">Canlı ölçüm</span>
+        <h3>Düzeneği kurunca değerler burada görünür</h3>
+        <p>Noktasal ışık kaynağı, akı yüzeyi ve aydınlanan yüzeyi ekle; kaynak şiddetini, uzaklığı, yüzey tipini ve yüzey açısını değiştir.</p>
+      </div>
+      <button class="secondary-button compact-action" type="button" data-illumination-action="load-sample">
+        Hazır örneği yükle
+      </button>
+    `;
+  }
+
+  const flux = pointLightFlux(source);
+  const measurement = surface ? illuminanceMeasurement(source, surface) : null;
+  const angle = measurement ? Math.acos(clamp(measurement.cosine, 0, 1)) * (180 / Math.PI) : 0;
+  const fluxMeasurement = fluxSurface ? fluxSurfaceMeasurement(source, fluxSurface) : null;
+
+  return `
+    <div>
+      <span class="lesson-kicker">Canlı ölçüm</span>
+      <h3>Seçili düzenekteki akı ve aydınlanma</h3>
+      <p>Akı yüzeyinde <strong>Φ</strong> oranı; düz yüzeyde <strong>E = I cosα / d²</strong> bağıntısı izlenir.</p>
+    </div>
+    <div class="live-metrics">
+      <span>I <strong>${source.intensity.toFixed(0)} cd</strong></span>
+      <span>Φ <strong>${flux.toFixed(0)} lm</strong></span>
+      ${measurement ? `<span>d <strong>${measurement.distanceMeters.toFixed(2)} m</strong></span>` : ""}
+      ${measurement ? `<span>α <strong>${angle.toFixed(0)}°</strong></span>` : ""}
+      ${measurement ? `<span>E <strong>${measurement.illuminance.toFixed(1)} lx</strong></span>` : ""}
+      ${fluxMeasurement ? `<span>Φ<sub>yüzey</sub> <strong>${fluxMeasurement.capturedFlux.toFixed(0)} lm</strong></span>` : ""}
+    </div>
+  `;
+}
+
+function renderIlluminationHeroSvg() {
+  return `
+    <svg class="lesson-svg" viewBox="0 0 420 260" role="img" aria-label="Işık kaynağı, ışık akısı ve aydınlanan yüzey">
+      <defs>
+        <radialGradient id="heroGlow" cx="35%" cy="50%" r="55%">
+          <stop offset="0" stop-color="#fff8d7"/>
+          <stop offset="0.35" stop-color="#ffd166" stop-opacity="0.8"/>
+          <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="screenFill" x1="0" x2="1">
+          <stop offset="0" stop-color="#7ee7ff" stop-opacity="0.25"/>
+          <stop offset="1" stop-color="#e7fbff" stop-opacity="0.78"/>
+        </linearGradient>
+        <marker id="heroArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0 0 L8 4 L0 8 Z" fill="#ffd166"/>
+        </marker>
+      </defs>
+      <rect x="0" y="0" width="420" height="260" rx="26" fill="rgba(255,255,255,0.03)"/>
+      <circle cx="130" cy="132" r="98" fill="url(#heroGlow)"/>
+      <circle cx="130" cy="132" r="18" fill="#ffd166"/>
+      <circle cx="130" cy="132" r="6" fill="#fff8d7"/>
+      ${[0, 22, -22, 42, -42].map((angle) => {
+        const rad = (angle * Math.PI) / 180;
+        const x = 318;
+        const y = 132 + Math.tan(rad) * 188;
+        return `<line x1="150" y1="132" x2="${x}" y2="${y}" stroke="#ffd166" stroke-width="3" stroke-linecap="round" marker-end="url(#heroArrow)" opacity="${angle === 0 ? 0.95 : 0.7}"/>`;
+      }).join("")}
+      <rect x="324" y="54" width="28" height="156" rx="10" fill="url(#screenFill)" stroke="#9fe7ff" stroke-width="3"/>
+      <line x1="338" y1="132" x2="384" y2="132" stroke="#9fe7ff" stroke-width="2" stroke-dasharray="6 6"/>
+      <text x="104" y="226" fill="#f3f6ff" font-size="15" font-weight="700">I: ışık şiddeti</text>
+      <text x="210" y="70" fill="#ffd166" font-size="15" font-weight="700">Φ: ışık akısı</text>
+      <text x="300" y="232" fill="#9fe7ff" font-size="15" font-weight="700">E: aydınlanma</text>
+    </svg>
+  `;
+}
+
+function renderParticleModelSvg() {
+  return `
+    <svg class="model-svg" viewBox="0 0 240 160" aria-hidden="true">
+      <defs>
+        <marker id="particleArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <path d="M0 0 L7 3.5 L0 7 Z" fill="#ff8f70"/>
+        </marker>
+      </defs>
+      <circle cx="88" cy="82" r="18" fill="#ffd166"/>
+      <circle cx="88" cy="82" r="46" fill="#ffd166" opacity="0.13"/>
+      ${[-50, -30, -10, 10, 30, 50].map((angle) => {
+        const rad = (angle * Math.PI) / 180;
+        return `<line x1="104" y1="82" x2="${104 + Math.cos(rad) * 84}" y2="${82 + Math.sin(rad) * 84}" stroke="#ff8f70" stroke-width="3" marker-end="url(#particleArrow)"/>`;
+      }).join("")}
+      ${[38, 58, 124, 145, 164, 180].map((x, index) => `<circle cx="${x}" cy="${44 + (index % 3) * 34}" r="4" fill="#ff6b6b"/>`).join("")}
+      <text x="22" y="142" fill="#f3f6ff" font-size="13" font-weight="700">Tanecikler doğrusal yayılır</text>
+    </svg>
+  `;
+}
+
+function renderWaveModelSvg() {
+  return `
+    <svg class="model-svg" viewBox="0 0 240 160" aria-hidden="true">
+      <defs>
+        <radialGradient id="waveGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff3b0"/>
+          <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="120" cy="82" r="74" fill="url(#waveGlow)" opacity="0.8"/>
+      <circle cx="120" cy="82" r="17" fill="#ffd166"/>
+      <circle cx="120" cy="82" r="38" fill="none" stroke="#ff8f70" stroke-width="9" opacity="0.65"/>
+      <circle cx="120" cy="82" r="66" fill="none" stroke="#ff8f70" stroke-width="9" opacity="0.45"/>
+      ${[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
+        const rad = (angle * Math.PI) / 180;
+        return `<line x1="120" y1="82" x2="${120 + Math.cos(rad) * 78}" y2="${82 + Math.sin(rad) * 78}" stroke="#f3f6ff" stroke-width="2" opacity="0.55"/>`;
+      }).join("")}
+      <text x="43" y="142" fill="#f3f6ff" font-size="13" font-weight="700">Dalga cepheleri yayılır</text>
+    </svg>
+  `;
+}
+
+function renderRayModelSvg() {
+  return `
+    <svg class="model-svg" viewBox="0 0 240 160" aria-hidden="true">
+      <defs>
+        <marker id="rayArrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+          <path d="M0 0 L7 3.5 L0 7 Z" fill="#f3f6ff"/>
+        </marker>
+      </defs>
+      <circle cx="54" cy="118" r="15" fill="#ffd166"/>
+      <circle cx="54" cy="118" r="42" fill="#ffd166" opacity="0.12"/>
+      <path d="M76 110 C110 86 144 72 196 58" stroke="#f3f6ff" stroke-width="2.6" marker-end="url(#rayArrow)" fill="none"/>
+      <path d="M75 118 C112 112 150 106 206 98" stroke="#f3f6ff" stroke-width="2.6" marker-end="url(#rayArrow)" fill="none"/>
+      <path d="M72 126 C108 140 148 146 206 142" stroke="#f3f6ff" stroke-width="2.6" marker-end="url(#rayArrow)" fill="none"/>
+      <path d="M112 48 C132 62 146 80 154 104" stroke="#ff6b6b" stroke-width="4" fill="none"/>
+      <path d="M144 30 C168 54 182 82 188 118" stroke="#ff6b6b" stroke-width="4" fill="none"/>
+      <text x="30" y="30" fill="#f3f6ff" font-size="13" font-weight="700">Işın + dalga cephesi</text>
+    </svg>
+  `;
+}
+
+function renderFluxSurfacesSvg() {
+  return `
+    <svg class="diagram-svg" viewBox="0 0 520 280" role="img" aria-label="Küre, yarım küre ve çeyrek kürede ışık akısı">
+      <defs>
+        <radialGradient id="fluxGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#fff8d7"/>
+          <stop offset="0.45" stop-color="#ffd166" stop-opacity="0.56"/>
+          <stop offset="1" stop-color="#ffd166" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="520" height="280" rx="24" fill="rgba(255,255,255,0.025)"/>
+      ${[
+        { x: 105, label: "Tam küre", flux: "Φyüzey = Φ" },
+        { x: 260, label: "Yarım küre", flux: "Φyüzey = Φ / 2" },
+        { x: 415, label: "Çeyrek küre", flux: "Φyüzey = Φ / 4" }
+      ].map((entry, index) => `
+        <g>
+          <circle cx="${entry.x}" cy="118" r="58" fill="url(#fluxGlow)"/>
+          <circle cx="${entry.x}" cy="118" r="8" fill="#ffd166"/>
+          ${Array.from({ length: 16 }, (_, ray) => {
+            const angle = (ray / 16) * Math.PI * 2;
+            return `<line x1="${entry.x}" y1="118" x2="${entry.x + Math.cos(angle) * 50}" y2="${118 + Math.sin(angle) * 50}" stroke="#f3f6ff" stroke-width="1.4" opacity="0.42"/>`;
+          }).join("")}
+          ${
+            index === 0
+              ? `<circle cx="${entry.x}" cy="118" r="72" fill="rgba(126,231,255,0.14)" stroke="#9fe7ff" stroke-width="4"/>`
+              : index === 1
+                ? `<path d="M${entry.x - 72} 118 A72 72 0 0 1 ${entry.x + 72} 118 L${entry.x - 72} 118" fill="rgba(126,231,255,0.14)" stroke="#9fe7ff" stroke-width="4"/>`
+                : `<path d="M${entry.x} 118 L${entry.x} 46 A72 72 0 0 1 ${entry.x + 72} 118 Z" fill="rgba(126,231,255,0.14)" stroke="#9fe7ff" stroke-width="4"/>`
+          }
+          <text x="${entry.x}" y="222" text-anchor="middle" fill="#f3f6ff" font-size="15" font-weight="700">${entry.label}</text>
+          <text x="${entry.x}" y="248" text-anchor="middle" fill="#9fe7ff" font-size="14" font-weight="700">${entry.flux}</text>
+        </g>
+      `).join("")}
+    </svg>
+  `;
+}
+
+function renderIlluminanceGeometrySvg() {
+  return `
+    <svg class="diagram-svg" viewBox="0 0 520 280" role="img" aria-label="Yüzeye eğik gelen ışında aydınlanma şiddeti">
+      <defs>
+        <marker id="normalArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0 0 L8 4 L0 8 Z" fill="#9fe7ff"/>
+        </marker>
+        <marker id="lightArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0 0 L8 4 L0 8 Z" fill="#ffd166"/>
+        </marker>
+      </defs>
+      <rect width="520" height="280" rx="24" fill="rgba(255,255,255,0.025)"/>
+      <circle cx="128" cy="145" r="56" fill="#ffd166" opacity="0.15"/>
+      <circle cx="128" cy="145" r="14" fill="#ffd166"/>
+      <line x1="370" y1="42" x2="370" y2="238" stroke="#ff6b6b" stroke-width="7" stroke-linecap="round"/>
+      <line x1="128" y1="145" x2="370" y2="145" stroke="#ffd166" stroke-width="3" marker-end="url(#lightArrow)" opacity="0.8"/>
+      <line x1="128" y1="145" x2="370" y2="204" stroke="#ffd166" stroke-width="3" marker-end="url(#lightArrow)"/>
+      <line x1="370" y1="204" x2="285" y2="204" stroke="#9fe7ff" stroke-width="2.5" stroke-dasharray="8 7" marker-end="url(#normalArrow)"/>
+      <path d="M330 204 A40 40 0 0 0 321 176" stroke="#f3f6ff" stroke-width="2" fill="none"/>
+      <text x="318" y="196" fill="#f3f6ff" font-size="17" font-weight="700">α</text>
+      <text x="213" y="132" fill="#ffd166" font-size="14" font-weight="700">dik geliş: maksimum E</text>
+      <text x="206" y="190" fill="#ffd166" font-size="14" font-weight="700">eğik geliş: cosα etkisi</text>
+      <text x="384" y="146" fill="#f3f6ff" font-size="14" font-weight="700">B</text>
+      <text x="384" y="209" fill="#f3f6ff" font-size="14" font-weight="700">A</text>
+      <text x="286" y="225" fill="#9fe7ff" font-size="14" font-weight="700">normal</text>
+    </svg>
+  `;
+}
+
+function renderLampPackageSvg() {
+  return `
+    <svg class="lamp-svg" viewBox="0 0 240 280" role="img" aria-label="LED ampul ambalajı">
+      <defs>
+        <linearGradient id="lampBox" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0" stop-color="#26384c"/>
+          <stop offset="1" stop-color="#142435"/>
+        </linearGradient>
+        <radialGradient id="lampBulb" cx="50%" cy="35%" r="65%">
+          <stop offset="0" stop-color="#ffffff"/>
+          <stop offset="1" stop-color="#dce7ef"/>
+        </radialGradient>
+      </defs>
+      <rect x="42" y="18" width="156" height="232" rx="18" fill="url(#lampBox)" stroke="#5f7185" stroke-width="3"/>
+      <rect x="62" y="40" width="76" height="30" rx="4" fill="#ffcc5c"/>
+      <text x="72" y="62" fill="#26384c" font-size="24" font-weight="800">LED</text>
+      <text x="66" y="96" fill="#f3f6ff" font-size="18" font-weight="700">13 W</text>
+      <text x="66" y="124" fill="#f3f6ff" font-size="22" font-weight="800">100 W</text>
+      <text x="66" y="150" fill="#f3f6ff" font-size="20" font-weight="700">1521 <tspan fill="#ffd166">lm</tspan></text>
+      <circle cx="122" cy="185" r="38" fill="url(#lampBulb)"/>
+      <rect x="104" y="216" width="36" height="28" rx="5" fill="#b7c5cf"/>
+      <line x1="104" y1="224" x2="140" y2="224" stroke="#657381" stroke-width="3"/>
+      <line x1="104" y1="232" x2="140" y2="232" stroke="#657381" stroke-width="3"/>
+      <text x="106" y="266" fill="#f3f6ff" font-size="13" font-weight="700">E27</text>
+    </svg>
+  `;
+}
+
 function numberField(label, prop, value, min, max, step, full = false) {
   const digits = step < 1 ? 1 : 0;
 
@@ -3135,16 +3679,33 @@ function inspectorMarkup(item) {
   }
 
   if (isPointLight(item)) {
-    fields.push(numberField("Konum X", "x", item.x, 0, viewport.width, 1));
-    fields.push(numberField("Konum Y", "y", item.y, 0, viewport.height, 1));
     fields.push(numberField("Işık Şiddeti (cd)", "intensity", item.intensity, 20, 600, 1, true));
   }
 
   if (isLightSurface(item)) {
-    fields.push(numberField("Konum X", "x", item.x, 0, viewport.width, 1));
-    fields.push(numberField("Konum Y", "y", item.y, 0, viewport.height, 1));
     fields.push(numberField("Açı", "angle", item.angle, -180, 180, 1));
     fields.push(numberField("Yüzey Uzunluğu", "length", item.length, 60, 260, 1));
+  }
+
+  if (isFluxSurface(item)) {
+    fields.push(
+      selectField(
+        "Yüzey Tipi",
+        "surfaceShape",
+        item.surfaceShape || "sphere",
+        [
+          { value: "sphere", label: "Tam küre" },
+          { value: "hemisphere", label: "Yarım küre" },
+          { value: "quarter", label: "Çeyrek küre" },
+          { value: "prism", label: "Kapalı prizma/kutu" }
+        ],
+        true
+      )
+    );
+    fields.push(numberField("Yarıçap / Yarı Kenar", "radius", item.radius, 45, 220, 1));
+    if ((item.surfaceShape || "sphere") === "hemisphere" || (item.surfaceShape || "sphere") === "quarter") {
+      fields.push(numberField("Yön Açısı", "angle", item.angle, -180, 180, 1));
+    }
   }
 
   if (isVector(item)) {
@@ -3349,6 +3910,33 @@ function inspectorMarkup(item) {
                     <span>Kaynak <strong>bekleniyor</strong></span>
                     <span>Ölçüm <strong>hazır</strong></span>
                   </div>`;
+            })()
+          : ""
+      }
+      ${
+        isFluxSurface(item)
+          ? (() => {
+              const active = activePointLightForFluxSurface(item);
+              if (!active) {
+                return `<div class="vector-stats">
+                  <span>Kaynak <strong>bekleniyor</strong></span>
+                  <span>Yüzey <strong>${fluxSurfaceShapeData(item.surfaceShape).label}</strong></span>
+                  <span>Akı <strong>--</strong></span>
+                </div>`;
+              }
+              const measurement = fluxSurfaceMeasurement(active.source, item);
+              const status = measurement.shape === "prism"
+                ? measurement.inside ? "kaynak içinde" : "kaynak dışında"
+                : measurement.needsCenter && !measurement.centered
+                  ? "merkeze hizala"
+                  : "model uygun";
+              return `<div class="vector-stats">
+                <span>Yüzey <strong>${measurement.label}</strong></span>
+                <span>Yakalanan akı <strong>${measurement.capturedFlux.toFixed(0)} lm</strong></span>
+                <span>Oran <strong>${Math.round(measurement.ratio * 100)}%</strong></span>
+                <span>Durum <strong>${status}</strong></span>
+              </div>
+              <div class="inspector-note">${measurement.note}</div>`;
             })()
           : ""
       }
@@ -4872,6 +5460,96 @@ function drawOptics(trace) {
     ctx.restore();
   };
 
+  const drawFluxSurface = (item, isSelected) => {
+    const active = activePointLightForFluxSurface(item);
+    const measurement = active ? fluxSurfaceMeasurement(active.source, item) : null;
+    const shape = item.surfaceShape || "sphere";
+    const radius = item.radius;
+    const startAngle = degToRad(item.angle || 0);
+    const ratioText = measurement ? `${Math.round(measurement.ratio * 100)}%` : "--";
+    const fluxText = measurement ? `Φ=${measurement.capturedFlux.toFixed(0)} lm` : "Φ=--";
+
+    ctx.save();
+    ctx.fillStyle = "rgba(126, 231, 255, 0.12)";
+    ctx.strokeStyle = isSelected ? "#c7fbff" : "rgba(159, 231, 255, 0.8)";
+    ctx.lineWidth = isSelected ? 4 : 3;
+    ctx.setLineDash(shape === "prism" ? [] : [10, 7]);
+
+    if (shape === "prism") {
+      roundedRectPath(item.x - radius, item.y - radius, radius * 2, radius * 2, 18);
+      ctx.fill();
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.strokeStyle = "rgba(159, 231, 255, 0.28)";
+      ctx.beginPath();
+      ctx.moveTo(item.x - radius + 18, item.y - radius + 18);
+      ctx.lineTo(item.x + radius + 18, item.y - radius + 18);
+      ctx.lineTo(item.x + radius + 18, item.y + radius + 18);
+      ctx.moveTo(item.x + radius, item.y - radius);
+      ctx.lineTo(item.x + radius + 18, item.y - radius + 18);
+      ctx.moveTo(item.x + radius, item.y + radius);
+      ctx.lineTo(item.x + radius + 18, item.y + radius + 18);
+      ctx.stroke();
+    } else {
+      const span = shape === "sphere" ? Math.PI * 2 : shape === "hemisphere" ? Math.PI : Math.PI / 2;
+      ctx.beginPath();
+      if (shape === "sphere") {
+        ctx.arc(item.x, item.y, radius, 0, Math.PI * 2);
+      } else {
+        ctx.moveTo(item.x, item.y);
+        ctx.arc(item.x, item.y, radius, startAngle, startAngle + span);
+        ctx.closePath();
+      }
+      ctx.fill();
+      ctx.stroke();
+      if (shape !== "sphere") {
+        ctx.setLineDash([]);
+        ctx.strokeStyle = "rgba(255, 214, 102, 0.58)";
+        ctx.beginPath();
+        ctx.moveTo(item.x, item.y);
+        ctx.lineTo(item.x + Math.cos(startAngle) * radius, item.y + Math.sin(startAngle) * radius);
+        ctx.moveTo(item.x, item.y);
+        ctx.lineTo(item.x + Math.cos(startAngle + span) * radius, item.y + Math.sin(startAngle + span) * radius);
+        ctx.stroke();
+      }
+    }
+
+    if (active?.source) {
+      ctx.setLineDash([]);
+      ctx.strokeStyle = "rgba(255, 214, 102, 0.32)";
+      ctx.lineWidth = 1.4;
+      for (let index = 0; index < 12; index += 1) {
+        const angle = (index / 12) * Math.PI * 2;
+        const end = shape === "prism"
+          ? {
+              x: item.x + Math.cos(angle) * radius,
+              y: item.y + Math.sin(angle) * radius
+            }
+          : {
+              x: item.x + Math.cos(angle) * radius,
+              y: item.y + Math.sin(angle) * radius
+            };
+        ctx.beginPath();
+        ctx.moveTo(active.source.x, active.source.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+      }
+    }
+
+    ctx.setLineDash([]);
+    ctx.fillStyle = "rgba(239, 244, 255, 0.96)";
+    ctx.font = "700 12px Space Grotesk";
+    ctx.textAlign = "left";
+    ctx.fillText(fluxSurfaceShapeData(shape).label, item.x - radius, item.y - radius - 14);
+    ctx.fillStyle = measurement?.needsCenter && !measurement.centered ? "#ffd977" : "#9fe7ff";
+    ctx.fillText(`${fluxText} • ${ratioText}`, item.x - radius, item.y + radius + 18);
+    if (measurement?.needsCenter && !measurement.centered) {
+      ctx.fillStyle = "#ffd977";
+      ctx.fillText("oran için kaynağı merkeze hizala", item.x - radius, item.y + radius + 34);
+    }
+    ctx.restore();
+  };
+
   const drawRefractionBlock = (item, isSelected) => {
     const bounds = refractionBlockBounds(item);
     ctx.save();
@@ -5022,6 +5700,10 @@ function drawOptics(trace) {
 
     if (isPointLight(item)) {
       drawPointLight(item, isSelected);
+    }
+
+    if (isFluxSurface(item)) {
+      drawFluxSurface(item, isSelected);
     }
 
     if (isLightSurface(item)) {
@@ -5835,6 +6517,58 @@ function renderUI() {
   revealInspectorIfNeeded();
 }
 
+function loadIlluminationSample() {
+  state.scene = "optics";
+  state.opticsOutcome = "FIZ.11.4.1";
+  state.opticsVisible = true;
+  state.optics.items = [
+    {
+      id: uid("flux-surface"),
+      type: "flux-surface",
+      x: 220,
+      y: 320,
+      radius: 96,
+      angle: 0,
+      surfaceShape: "sphere"
+    },
+    {
+      id: uid("point-light"),
+      type: "point-light",
+      x: 220,
+      y: 320,
+      intensity: 180
+    },
+    {
+      id: uid("light-surface"),
+      type: "light-surface",
+      x: 560,
+      y: 320,
+      angle: 90,
+      length: 190
+    },
+    {
+      id: uid("light-surface"),
+      type: "light-surface",
+      x: 720,
+      y: 220,
+      angle: 55,
+      length: 150
+    }
+  ];
+  selectedId = state.optics.items[0].id;
+  shouldRevealInspector = true;
+  state.notice = "Örnek düzenek kuruldu: akı yüzeyini, dik yüzeyi ve eğik yüzeyi karşılaştırabilirsin.";
+  saveState();
+  renderUI();
+}
+
+function focusIlluminationTools() {
+  state.notice = "Noktasal ışık kaynağı, akı yüzeyi ve aydınlanan yüzey araçları bu kazanım için birlikte kullanılabilir.";
+  saveState();
+  renderUI();
+  document.getElementById("toolbox-panel")?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
 function addItem(type) {
   if (state.scene === "optics" && !activeOpticsOutcome()) {
     state.notice = "Önce optik çıktısını seçmelisin.";
@@ -5914,7 +6648,7 @@ function openScene(scene) {
   state.running = false;
   state.scene = ["optics", "vectors", "heat", "electricity"].includes(scene) ? scene : "optics";
   if (state.scene === "optics") {
-    state.opticsOutcome = null;
+    state.opticsOutcome = "FIZ.11.4.1";
     state.optics.items = [];
   }
   if (state.scene === "vectors") {
@@ -5953,7 +6687,7 @@ function setScene(scene) {
   state.running = false;
   state.scene = ["optics", "vectors", "heat", "electricity"].includes(scene) ? scene : "optics";
   if (state.scene === "optics") {
-    state.opticsOutcome = null;
+    state.opticsOutcome = "FIZ.11.4.1";
     state.optics.items = [];
   }
   if (state.scene === "vectors") {
@@ -6177,6 +6911,13 @@ function hitItem(point) {
 
     if (isLightSurface(item)) {
       return pointInsideLightSurface(point, item, 14);
+    }
+
+    if (isFluxSurface(item)) {
+      if ((item.surfaceShape || "sphere") === "prism") {
+        return Math.abs(point.x - item.x) <= item.radius + 8 && Math.abs(point.y - item.y) <= item.radius + 8;
+      }
+      return Math.hypot(point.x - item.x, point.y - item.y) <= item.radius + 10;
     }
 
     if (isEye(item)) {
@@ -6412,6 +7153,18 @@ function initEvents() {
         saveState();
         renderUI();
         return;
+      }
+
+      const illuminationAction = event.target.closest("[data-illumination-action]");
+      if (illuminationAction) {
+        if (illuminationAction.dataset.illuminationAction === "load-sample") {
+          loadIlluminationSample();
+          return;
+        }
+        if (illuminationAction.dataset.illuminationAction === "focus-tools") {
+          focusIlluminationTools();
+          return;
+        }
       }
     }
 
