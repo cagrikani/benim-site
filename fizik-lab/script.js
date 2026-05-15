@@ -2948,7 +2948,28 @@ function renderModuleControls() {
 
   if (state.scene === "optics") {
     const outcome = activeOpticsOutcome();
-    copy.textContent = "Önce optik çıktısını seç, sonra yalnızca o çıktıya uygun araçlarla düzenek kur.";
+    const isIlluminationOutcome = outcome?.id === "FIZ.11.4.1";
+    copy.textContent = isIlluminationOutcome
+      ? "Akı yüzeyi şekillerini sahneye ekle ve ölç."
+      : "Önce optik çıktısını seç, sonra yalnızca o çıktıya uygun araçlarla düzenek kur.";
+    const outcomeDetails = isIlluminationOutcome
+      ? renderFluxShapeControls()
+      : `
+        <div class="vector-mode-note">
+          ${
+            outcome
+              ? `<strong>${outcome.shortTitle}</strong> seçili. ${outcome.description}`
+              : "Optik modülünde çalışmaya başlamadan önce yukarıdan bir çıktı seç."
+          }
+        </div>
+        ${
+          outcome
+            ? `<div class="vector-mode-note subtle">Aktif araçlar: ${outcome.tools
+                .map((type) => toolCatalog.optics.find((tool) => tool.type === type)?.label || type)
+                .join(" • ")}</div>`
+            : ""
+        }
+      `;
     controls.innerHTML = `
       <div class="outcome-selector">
         ${OPTICS_OUTCOMES.map((entry) => `
@@ -2962,21 +2983,7 @@ function renderModuleControls() {
           </button>
         `).join("")}
       </div>
-      <div class="vector-mode-note">
-        ${
-          outcome
-            ? `<strong>${outcome.shortTitle}</strong> seçili. ${outcome.description}`
-            : "Optik modülünde çalışmaya başlamadan önce yukarıdan bir çıktı seç."
-        }
-      </div>
-      ${
-        outcome
-          ? `<div class="vector-mode-note subtle">Aktif araçlar: ${outcome.tools
-              .map((type) => toolCatalog.optics.find((tool) => tool.type === type)?.label || type)
-              .join(" • ")}</div>`
-          : ""
-      }
-      ${outcome?.id === "FIZ.11.4.1" ? renderIlluminationLesson() : ""}
+      ${outcomeDetails}
     `;
     return;
   }
@@ -3958,6 +3965,35 @@ function renderInspector() {
   if (modalInspector) {
     modalInspector.innerHTML = markup;
   }
+}
+
+function renderFluxShapeControls() {
+  const shapes = ["sphere", "hemisphere", "quarter", "prism"];
+  return `
+    <section class="flux-shape-panel" aria-label="Akı yüzeyi şekilleri">
+      <div class="flux-shape-head">
+        <div>
+          <strong>Akı yüzeyi şekilleri</strong>
+          <span>Tam, yarım, çeyrek küre ve kapalı prizma/kutu.</span>
+        </div>
+        <button class="primary-button compact-action" type="button" data-illumination-action="load-sample">
+          Hepsini sahneye ekle
+        </button>
+      </div>
+      <div class="flux-shape-grid">
+        ${shapes.map((shape) => {
+          const data = fluxSurfaceShapeData(shape);
+          return `
+            <button class="flux-shape-button" type="button" data-flux-shape="${shape}">
+              <span class="flux-shape-icon ${shape}" aria-hidden="true"></span>
+              <strong>${data.label}</strong>
+              <small>Φ = ${shape === "sphere" || shape === "prism" ? "Φ" : shape === "hemisphere" ? "Φ/2" : "Φ/4"}</small>
+            </button>
+          `;
+        }).join("")}
+      </div>
+    </section>
+  `;
 }
 
 function renderObjectList() {
@@ -6521,43 +6557,80 @@ function loadIlluminationSample() {
   state.scene = "optics";
   state.opticsOutcome = "FIZ.11.4.1";
   state.opticsVisible = true;
+  const shapeSetups = [
+    { shape: "sphere", x: 150, y: 290, radius: 70, angle: 0, intensity: 120 },
+    { shape: "hemisphere", x: 360, y: 290, radius: 78, angle: 180, intensity: 120 },
+    { shape: "quarter", x: 570, y: 290, radius: 86, angle: 180, intensity: 120 },
+    { shape: "prism", x: 780, y: 290, radius: 72, angle: 0, intensity: 120 }
+  ];
   state.optics.items = [
-    {
+    ...shapeSetups.map((setup) => ({
       id: uid("flux-surface"),
       type: "flux-surface",
-      x: 220,
-      y: 320,
-      radius: 96,
-      angle: 0,
-      surfaceShape: "sphere"
-    },
-    {
+      x: setup.x,
+      y: setup.y,
+      radius: setup.radius,
+      angle: setup.angle,
+      surfaceShape: setup.shape
+    })),
+    ...shapeSetups.map((setup) => ({
       id: uid("point-light"),
       type: "point-light",
-      x: 220,
-      y: 320,
-      intensity: 180
-    },
-    {
-      id: uid("light-surface"),
-      type: "light-surface",
-      x: 560,
-      y: 320,
-      angle: 90,
-      length: 190
-    },
-    {
-      id: uid("light-surface"),
-      type: "light-surface",
-      x: 720,
-      y: 220,
-      angle: 55,
-      length: 150
-    }
+      x: setup.x,
+      y: setup.y,
+      intensity: setup.intensity
+    }))
   ];
   selectedId = state.optics.items[0].id;
   shouldRevealInspector = true;
-  state.notice = "Örnek düzenek kuruldu: akı yüzeyini, dik yüzeyi ve eğik yüzeyi karşılaştırabilirsin.";
+  state.notice = "Tam küre, yarım küre, çeyrek küre ve kapalı prizma/kutu sahneye eklendi.";
+  saveState();
+  renderUI();
+}
+
+function setSelectedFluxShape(shape) {
+  const allowedShapes = ["sphere", "hemisphere", "quarter", "prism"];
+  const nextShape = allowedShapes.includes(shape) ? shape : "sphere";
+  let fluxSurface = selectedItem();
+
+  if (!fluxSurface || !isFluxSurface(fluxSurface)) {
+    fluxSurface = currentItems().find((item) => isFluxSurface(item));
+  }
+
+  if (!fluxSurface) {
+    let source = currentItems().find((item) => isPointLight(item));
+    if (!source) {
+      source = {
+        id: uid("point-light"),
+        type: "point-light",
+        x: 300,
+        y: 290,
+        intensity: 120
+      };
+      currentItems().push(source);
+    }
+
+    fluxSurface = {
+      id: uid("flux-surface"),
+      type: "flux-surface",
+      x: source.x,
+      y: source.y,
+      radius: 96,
+      angle: 0,
+      surfaceShape: nextShape
+    };
+    currentItems().unshift(fluxSurface);
+  }
+
+  fluxSurface.surfaceShape = nextShape;
+  if (nextShape === "hemisphere") fluxSurface.angle = 180;
+  if (nextShape === "quarter") fluxSurface.angle = 180;
+  if (nextShape === "sphere" || nextShape === "prism") fluxSurface.angle = 0;
+
+  selectedId = fluxSurface.id;
+  shouldRevealInspector = true;
+  state.opticsVisible = true;
+  state.notice = `${fluxSurfaceShapeData(nextShape).label} seçildi.`;
   saveState();
   renderUI();
 }
@@ -7165,6 +7238,12 @@ function initEvents() {
           focusIlluminationTools();
           return;
         }
+      }
+
+      const fluxShapeButton = event.target.closest("[data-flux-shape]");
+      if (fluxShapeButton) {
+        setSelectedFluxShape(fluxShapeButton.dataset.fluxShape);
+        return;
       }
     }
 

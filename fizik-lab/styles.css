@@ -778,6 +778,141 @@ h1 {
   color: var(--text);
 }
 
+.flux-shape-panel {
+  display: grid;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 214, 102, 0.1), rgba(79, 209, 197, 0.09)),
+    rgba(12, 22, 42, 0.76);
+}
+
+.flux-shape-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.flux-shape-head div {
+  display: grid;
+  gap: 3px;
+}
+
+.flux-shape-head strong {
+  color: var(--text);
+  font-size: 0.98rem;
+}
+
+.flux-shape-head span {
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.flux-shape-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
+  gap: 10px;
+}
+
+.flux-shape-button {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  min-height: 76px;
+  border: 1px solid rgba(159, 231, 255, 0.18);
+  border-radius: 8px;
+  padding: 10px;
+  color: var(--text);
+  background: rgba(7, 15, 30, 0.46);
+  cursor: pointer;
+}
+
+.flux-shape-button:hover {
+  border-color: rgba(255, 214, 102, 0.42);
+  background: rgba(18, 35, 61, 0.72);
+}
+
+.flux-shape-button strong,
+.flux-shape-button small {
+  min-width: 0;
+}
+
+.flux-shape-button strong {
+  font-size: 0.9rem;
+}
+
+.flux-shape-button small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.flux-shape-icon {
+  position: relative;
+  grid-row: 1 / span 2;
+  width: 56px;
+  height: 48px;
+}
+
+.flux-shape-icon::before,
+.flux-shape-icon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.flux-shape-icon::after {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff8cf 0%, #ffd977 58%, #ff9f43 100%);
+  box-shadow: 0 0 14px rgba(255, 217, 119, 0.5);
+}
+
+.flux-shape-icon.sphere::before {
+  width: 42px;
+  height: 42px;
+  border: 3px solid rgba(159, 231, 255, 0.86);
+  border-radius: 50%;
+  background: rgba(159, 231, 255, 0.12);
+}
+
+.flux-shape-icon.hemisphere::before {
+  width: 46px;
+  height: 24px;
+  border: 3px solid rgba(159, 231, 255, 0.86);
+  border-bottom: 0;
+  border-radius: 46px 46px 0 0;
+  background: rgba(159, 231, 255, 0.12);
+  transform: translate(-50%, -35%);
+}
+
+.flux-shape-icon.quarter::before {
+  width: 34px;
+  height: 34px;
+  border-top: 3px solid rgba(159, 231, 255, 0.86);
+  border-left: 3px solid rgba(159, 231, 255, 0.86);
+  border-radius: 34px 0 0 0;
+  background: rgba(159, 231, 255, 0.1);
+  transform: translate(-28%, -28%);
+}
+
+.flux-shape-icon.prism::before {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(159, 231, 255, 0.86);
+  border-radius: 6px;
+  background: rgba(159, 231, 255, 0.1);
+  box-shadow: 8px -8px 0 rgba(159, 231, 255, 0.14);
+}
+
 .illumination-lesson {
   display: grid;
   gap: 16px;
