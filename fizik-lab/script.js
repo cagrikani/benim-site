@@ -1911,22 +1911,108 @@ function fluxSurfaceSourceInside(source, surface) {
   return Math.hypot(source.x - surface.x, source.y - surface.y) <= surface.radius;
 }
 
-function activePointLightForFluxSurface(surface) {
-  const sources = currentItems().filter((item) => isPointLight(item));
-  if (!sources.length) {
-    return null;
+function fluxSurfaceForSource(source) {
+  if (!source) return null;
+  return currentItems().find((item) =>
+    isFluxSurface(item) && (item.id === source.lockedToSurfaceId || item.sourceId === source.id)
+  ) || null;
+}
+
+function sourceForFluxSurface(surface) {
+  if (!surface) return null;
+  const items = currentItems();
+  return items.find((item) => isPointLight(item) && item.id === surface.sourceId) ||
+    items.find((item) => isPointLight(item) && item.lockedToSurfaceId === surface.id) ||
+    null;
+}
+
+function linkFluxSurfaceSource(surface, source) {
+  if (!surface || !source) return null;
+  currentItems().forEach((item) => {
+    if (isFluxSurface(item) && item.id !== surface.id && item.sourceId === source.id) {
+      delete item.sourceId;
+    }
+    if (isPointLight(item) && item.id !== source.id && item.lockedToSurfaceId === surface.id) {
+      delete item.lockedToSurfaceId;
+    }
+  });
+
+  surface.sourceId = source.id;
+  source.lockedToSurfaceId = surface.id;
+  source.x = surface.x;
+  source.y = surface.y;
+  source.intensity = clamp(Number(source.intensity) || 120, 20, 600);
+  return source;
+}
+
+function createFluxSurfaceSource(surface) {
+  const source = {
+    id: uid("point-light"),
+    type: "point-light",
+    x: surface.x,
+    y: surface.y,
+    intensity: 120,
+    lockedToSurfaceId: surface.id
+  };
+  const items = currentItems();
+  const surfaceIndex = items.findIndex((item) => item.id === surface.id);
+  items.splice(surfaceIndex >= 0 ? surfaceIndex + 1 : items.length, 0, source);
+  return source;
+}
+
+function ensureSingleFluxSurfaceSource(surface, options = {}) {
+  const create = options.create !== false;
+  if (!surface) return null;
+  const items = currentItems();
+  let source = sourceForFluxSurface(surface);
+
+  if (!source) {
+    source = items.find((item) =>
+      isPointLight(item) && !fluxSurfaceForSource(item) && fluxSurfaceSourceInside(item, surface)
+    ) || items.find((item) => isPointLight(item) && !fluxSurfaceForSource(item));
   }
 
-  return [...sources]
-    .map((source) => ({
-      source,
-      distancePx: Math.hypot(source.x - surface.x, source.y - surface.y),
-      inside: fluxSurfaceSourceInside(source, surface)
-    }))
-    .sort((a, b) => {
-      if (a.inside !== b.inside) return a.inside ? -1 : 1;
-      return a.distancePx - b.distancePx;
-    })[0];
+  if (!source && create) {
+    source = createFluxSurfaceSource(surface);
+  }
+
+  return source ? linkFluxSurfaceSource(surface, source) : null;
+}
+
+function syncFluxSourceLockForItem(item) {
+  if (isFluxSurface(item)) {
+    ensureSingleFluxSurfaceSource(item);
+  }
+  if (isPointLight(item)) {
+    const surface = fluxSurfaceForSource(item);
+    if (surface) {
+      linkFluxSurfaceSource(surface, item);
+    }
+  }
+}
+
+function syncFluxSurfaceSources() {
+  if (state.scene !== "optics") return;
+  currentItems().filter((item) => isFluxSurface(item)).forEach((surface) => {
+    ensureSingleFluxSurfaceSource(surface);
+  });
+  currentItems().filter((item) => isPointLight(item)).forEach((source) => {
+    const surface = fluxSurfaceForSource(source);
+    if (surface) {
+      linkFluxSurfaceSource(surface, source);
+    }
+  });
+}
+
+function activePointLightForFluxSurface(surface) {
+  const source = ensureSingleFluxSurfaceSource(surface, { create: false });
+  if (!source) return null;
+  return {
+    source,
+    distancePx: 0,
+    inside: fluxSurfaceSourceInside(source, surface),
+    locked: true
+  };
 }
 
 function fluxSurfaceMeasurement(source, surface) {
@@ -2356,7 +2442,7 @@ function makeItem(type) {
   }
 
   if (type === "flux-surface") {
-    const source = currentItems().find((item) => isPointLight(item));
+    const source = currentItems().find((item) => isPointLight(item) && !fluxSurfaceForSource(item));
     return {
       id: uid("flux-surface"),
       type,
@@ -2551,6 +2637,7 @@ function constrainItem(item) {
     item.x = clamp(Number(item.x) || 0, 24, width - 24);
     item.y = clamp(Number(item.y) || 0, 24, height - 24);
     item.intensity = clamp(Number(item.intensity) || 120, 20, 600);
+    syncFluxSourceLockForItem(item);
   }
 
   if (isLightSurface(item)) {
@@ -2568,6 +2655,7 @@ function constrainItem(item) {
     item.surfaceShape = ["sphere", "hemisphere", "quarter", "prism"].includes(item.surfaceShape)
       ? item.surfaceShape
       : "sphere";
+    syncFluxSourceLockForItem(item);
   }
 
   if (item.type === "optical-object") {
@@ -2740,7 +2828,8 @@ function itemMeta(item) {
     return `${Math.round(item.angle)} derece • ${color.label} ışık`;
   }
   if (item.type === "point-light") {
-    return `${item.intensity.toFixed(0)} cd • Φ ${pointLightFlux(item).toFixed(0)} lm`;
+    const surface = fluxSurfaceForSource(item);
+    return `${item.intensity.toFixed(0)} cd • Φ ${pointLightFlux(item).toFixed(0)} lm${surface ? " • merkezde kilitli" : ""}`;
   }
   if (item.type === "flux-surface") {
     const active = activePointLightForFluxSurface(item);
@@ -3209,7 +3298,8 @@ function inspectorMarkup(item) {
     `;
   }
 
-  const fields = isVector(item) || isHeatMaterial(item)
+  const lockedFluxSurface = isPointLight(item) ? fluxSurfaceForSource(item) : null;
+  const fields = isVector(item) || isHeatMaterial(item) || lockedFluxSurface
     ? []
     : [
         numberField("Konum X", "x", item.x, 0, viewport.width, 1),
@@ -3456,7 +3546,7 @@ function inspectorMarkup(item) {
           ? `<div class="vector-stats">
               <span>Işık şiddeti <strong>${item.intensity.toFixed(0)} cd</strong></span>
               <span>Işık akısı <strong>${pointLightFlux(item).toFixed(0)} lm</strong></span>
-              <span>Yayılım <strong>izotropik</strong></span>
+              <span>Konum <strong>${lockedFluxSurface ? "merkezde kilitli" : "serbest"}</strong></span>
             </div>`
           : ""
       }
@@ -6020,6 +6110,7 @@ function renderUI() {
   document.getElementById("inspector-modal").hidden = !inspectorModalOpen;
   arrangePanelsForScene();
   trimVectorsToModeLimit();
+  syncFluxSurfaceSources();
   ensureSelection();
   renderToolGrid();
   renderLegend();
@@ -6121,24 +6212,30 @@ function loadIlluminationSample() {
     { shape: "quarter", x: 570, y: 290, radius: 86, angle: 180, intensity: 120 },
     { shape: "prism", x: 780, y: 290, radius: 72, angle: 0, intensity: 120 }
   ];
-  state.optics.items = [
-    ...shapeSetups.map((setup) => ({
-      id: uid("flux-surface"),
-      type: "flux-surface",
-      x: setup.x,
-      y: setup.y,
-      radius: setup.radius,
-      angle: setup.angle,
-      surfaceShape: setup.shape
-    })),
-    ...shapeSetups.map((setup) => ({
-      id: uid("point-light"),
-      type: "point-light",
-      x: setup.x,
-      y: setup.y,
-      intensity: setup.intensity
-    }))
-  ];
+  state.optics.items = shapeSetups.flatMap((setup) => {
+    const surfaceId = uid("flux-surface");
+    const sourceId = uid("point-light");
+    return [
+      {
+        id: surfaceId,
+        type: "flux-surface",
+        x: setup.x,
+        y: setup.y,
+        radius: setup.radius,
+        angle: setup.angle,
+        surfaceShape: setup.shape,
+        sourceId
+      },
+      {
+        id: sourceId,
+        type: "point-light",
+        x: setup.x,
+        y: setup.y,
+        intensity: setup.intensity,
+        lockedToSurfaceId: surfaceId
+      }
+    ];
+  });
   selectedId = state.optics.items[0].id;
   shouldRevealInspector = true;
   state.notice = "Tam küre, yarım küre, çeyrek küre ve kapalı prizma/kutu sahneye eklendi.";
@@ -6156,7 +6253,7 @@ function setSelectedFluxShape(shape) {
   }
 
   if (!fluxSurface) {
-    let source = currentItems().find((item) => isPointLight(item));
+    let source = currentItems().find((item) => isPointLight(item) && !fluxSurfaceForSource(item));
     if (!source) {
       source = {
         id: uid("point-light"),
@@ -6184,6 +6281,7 @@ function setSelectedFluxShape(shape) {
   if (nextShape === "hemisphere") fluxSurface.angle = 180;
   if (nextShape === "quarter") fluxSurface.angle = 180;
   if (nextShape === "sphere" || nextShape === "prism") fluxSurface.angle = 0;
+  ensureSingleFluxSurfaceSource(fluxSurface);
 
   selectedId = fluxSurface.id;
   shouldRevealInspector = true;
@@ -6237,6 +6335,9 @@ function addItem(type) {
 
   const item = makeItem(type);
   currentItems().push(item);
+  if (isFluxSurface(item)) {
+    ensureSingleFluxSurfaceSource(item);
+  }
   selectedId = item.id;
   shouldRevealInspector = true;
   if (state.scene === "electricity") {
@@ -6659,7 +6760,8 @@ function initCanvasInteractions() {
     shouldRevealInspector = Boolean(hit);
 
     if (hit) {
-      const draggable = !(state.scene === "heat" && isHeatMaterial(hit));
+      const lockedFluxSource = state.scene === "optics" && isPointLight(hit) && fluxSurfaceForSource(hit);
+      const draggable = !(state.scene === "heat" && isHeatMaterial(hit)) && !lockedFluxSource;
       if (draggable) {
         const mode = isVector(hit) ? vectorHandleMode(point, hit) : "move";
         dragState = {
@@ -6672,7 +6774,11 @@ function initCanvasInteractions() {
       }
     }
 
-    state.notice = hit ? `${itemTitle(hit)} secildi.` : "Secim kaldirildi.";
+    state.notice = hit
+      ? state.scene === "optics" && isPointLight(hit) && fluxSurfaceForSource(hit)
+        ? "Işık kaynağı bağlı olduğu yüzeyin merkezine kilitli."
+        : `${itemTitle(hit)} secildi.`
+      : "Secim kaldirildi.";
     renderUI();
   });
 
@@ -7011,7 +7117,16 @@ function initEvents() {
     if (!item) return;
 
     if (button.dataset.action === "delete") {
-      state[state.scene].items = currentItems().filter((entry) => entry.id !== item.id);
+      const deletedIds = new Set([item.id]);
+      if (isFluxSurface(item)) {
+        const source = sourceForFluxSurface(item);
+        if (source) deletedIds.add(source.id);
+      }
+      if (isPointLight(item)) {
+        const surface = fluxSurfaceForSource(item);
+        if (surface) deletedIds.add(surface.id);
+      }
+      state[state.scene].items = currentItems().filter((entry) => !deletedIds.has(entry.id));
       if (state.scene === "electricity") {
         removeElectricalWiresForItem(item.id);
         state.electricity.solution = computeElectricalSolution();
@@ -7026,7 +7141,7 @@ function initEvents() {
       }
       selectedId = null;
       closeInspectorModal();
-      state.notice = `${itemTitle(item)} silindi.`;
+      state.notice = deletedIds.size > 1 ? "Bağlı akı yüzeyi ve ışık kaynağı silindi." : `${itemTitle(item)} silindi.`;
     }
 
     if (button.dataset.action === "reset-velocity") {
