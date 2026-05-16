@@ -1014,6 +1014,10 @@ function isRoundObject(item) {
   return item.type === "round-object";
 }
 
+function isViewObstacle(item) {
+  return item.type === "view-obstacle";
+}
+
 function isPointLight(item) {
   return item.type === "point-light";
 }
@@ -2316,6 +2320,44 @@ function segmentIntersection(aStart, aEnd, bStart, bEnd) {
   };
 }
 
+function viewObstacleBounds(item) {
+  return {
+    left: item.x - item.width / 2,
+    right: item.x + item.width / 2,
+    top: item.y - item.height / 2,
+    bottom: item.y + item.height / 2
+  };
+}
+
+function pointInsideRect(point, bounds) {
+  return point.x >= bounds.left && point.x <= bounds.right && point.y >= bounds.top && point.y <= bounds.bottom;
+}
+
+function segmentIntersectsRect(start, end, bounds) {
+  if (pointInsideRect(start, bounds) || pointInsideRect(end, bounds)) {
+    return true;
+  }
+
+  const corners = [
+    { x: bounds.left, y: bounds.top },
+    { x: bounds.right, y: bounds.top },
+    { x: bounds.right, y: bounds.bottom },
+    { x: bounds.left, y: bounds.bottom }
+  ];
+
+  return corners.some((corner, index) =>
+    segmentIntersection(start, end, corner, corners[(index + 1) % corners.length])
+  );
+}
+
+function opaqueViewObstacles() {
+  return currentItems().filter((item) => isViewObstacle(item) && item.material !== "transparent");
+}
+
+function segmentBlockedByOpaqueObstacle(start, end) {
+  return opaqueViewObstacles().some((item) => segmentIntersectsRect(start, end, viewObstacleBounds(item)));
+}
+
 function planeMirrorImagePoint(mirror, point) {
   const endpoints = mirrorEndpoints(mirror);
   return reflectPointAcrossLine(point, endpoints.start, endpoints.end);
@@ -2346,6 +2388,14 @@ function planeMirrorImageForOpticalObject(mirror, objectItem) {
     top: imageTop,
     virtual: true
   };
+}
+
+function opticsPairMatches(first, second) {
+  if (!first?.pairId && !second?.pairId) {
+    return true;
+  }
+
+  return first?.pairId && first.pairId === second?.pairId;
 }
 
 function mirrorBackDirection(item) {
@@ -2752,12 +2802,21 @@ function constrainItem(item) {
     item.x = clamp(Number(item.x) || 0, 30, width - 30);
     item.y = clamp(Number(item.y) || 0, 30, height - 30);
     item.angle = clamp(Number(item.angle) || 0, -180, 180);
-    item.length = clamp(Number(item.length) || 140, 60, 240);
+    item.length = clamp(Number(item.length) || 140, 60, item.type === "plane-mirror" ? 560 : 240);
     item.radius = item.type === "plane-mirror" ? 0 : clamp(Number(item.radius) || 180, 90, 320);
+    item.surfaceMode = item.surfaceMode === "rough" ? "rough" : "smooth";
     if (item.type !== "plane-mirror") {
       item.type = "spherical-mirror";
       item.mirrorMode = mirrorMode(item);
     }
+  }
+
+  if (isViewObstacle(item)) {
+    item.width = clamp(Number(item.width) || 110, 40, 260);
+    item.height = clamp(Number(item.height) || 34, 20, 160);
+    item.x = clamp(Number(item.x) || 0, item.width / 2, width - item.width / 2);
+    item.y = clamp(Number(item.y) || 0, item.height / 2, height - item.height / 2);
+    item.material = item.material === "transparent" ? "transparent" : "opaque";
   }
 
   if (isLens(item)) {
@@ -2814,6 +2873,7 @@ function itemTitle(item) {
   if (item.type === "fiber") return "Fiber optik kablo";
   if (item.type === "prism") return "Prizma";
   if (item.type === "refraction-block") return "Saydam ortam bloğu";
+  if (isViewObstacle(item)) return item.material === "transparent" ? "Saydam cisim" : "Saydam olmayan cisim";
   if (item.type === "plane-mirror") return "Düz ayna";
   if (item.type === "spherical-mirror") return mirrorMode(item) === "concave" ? "Küresel ayna • Çukur" : "Küresel ayna • Tümsek";
   if (item.type === "convex-lens") return "İnce kenarlı mercek";
@@ -2845,7 +2905,7 @@ function itemMeta(item) {
       : `${Math.round(item.angle)} derece • ışık kaynağı bekleniyor`;
   }
   if (item.type === "optical-object") return `${Math.round(item.height)} px boy`;
-  if (item.type === "round-object") return `${Math.round(item.radius)} px yaricap`;
+  if (item.type === "round-object") return `${item.label ? `${item.label} • ` : ""}${Math.round(item.radius)} px yaricap`;
   if (item.type === "eye") return `${Math.round(item.angle)} derece bakış`;
   if (item.type === "vector") {
     return `${vectorLabel(item)} • ${Math.round(vectorMagnitude(item))} br • ${vectorAngle(item)} derece`;
@@ -2891,8 +2951,13 @@ function itemMeta(item) {
   if (item.type === "refraction-block") {
     return `${Math.round(item.width)}×${Math.round(item.height)} px • n ${item.index.toFixed(2)}`;
   }
+  if (isViewObstacle(item)) {
+    return `${Math.round(item.width)}×${Math.round(item.height)} px • ${item.material === "transparent" ? "saydam" : "opak"}`;
+  }
   if (isMirror(item)) {
-    const radiusText = item.type === "plane-mirror" ? "düz yüzey" : `${mirrorMode(item) === "concave" ? "Çukur" : "Tümsek"} • R ${Math.round(item.radius)}`;
+    const radiusText = item.type === "plane-mirror"
+      ? (item.surfaceMode === "rough" ? "pürüzlü yüzey" : "düz yüzey")
+      : `${mirrorMode(item) === "concave" ? "Çukur" : "Tümsek"} • R ${Math.round(item.radius)}`;
     return `${Math.round(item.angle)} derece • ${Math.round(item.length)} px • ${radiusText}`;
   }
 
@@ -3038,12 +3103,17 @@ function renderModuleControls() {
   if (state.scene === "optics") {
     const outcome = activeOpticsOutcome();
     const isIlluminationOutcome = outcome?.id === "FIZ.11.4.1";
+    const isPlaneMirrorOutcome = outcome?.id === "FIZ.11.4.2";
     copy.textContent = isIlluminationOutcome
       ? "Akı yüzeyi şekillerini sahneye ekle ve ölç."
-      : "Önce optik çıktısını seç, sonra yalnızca o çıktıya uygun araçlarla düzenek kur.";
+      : isPlaneMirrorOutcome
+        ? "Düzlem ayna simülasyonunu seç ve sahnede değiştir."
+        : "Önce optik çıktısını seç, sonra yalnızca o çıktıya uygun araçlarla düzenek kur.";
     const outcomeDetails = isIlluminationOutcome
       ? renderFluxShapeControls()
-      : `
+      : isPlaneMirrorOutcome
+        ? renderPlaneMirrorControls()
+        : `
         <div class="vector-mode-note">
           ${
             outcome
@@ -3421,6 +3491,12 @@ function inspectorMarkup(item) {
   }
 
   if (isRoundObject(item)) {
+    fields.push(`
+      <div class="field">
+        <label>Etiket</label>
+        <input data-prop="label" type="text" value="${item.label || ""}" />
+      </div>
+    `);
     fields.push(numberField("Yarıçap", "radius", item.radius, 10, 40, 1, true));
   }
 
@@ -3455,9 +3531,40 @@ function inspectorMarkup(item) {
     fields.push(numberField("Kırılma İndisi", "index", item.index || 1.5, 1, 2.4, 0.01, true));
   }
 
+  if (isViewObstacle(item)) {
+    fields.push(numberField("Genişlik", "width", item.width, 40, 260, 1));
+    fields.push(numberField("Yükseklik", "height", item.height, 20, 160, 1));
+    fields.push(
+      selectField(
+        "Geçirgenlik",
+        "material",
+        item.material || "opaque",
+        [
+          { value: "opaque", label: "Saydam olmayan" },
+          { value: "transparent", label: "Saydam" }
+        ],
+        true
+      )
+    );
+  }
+
   if (isMirror(item)) {
     fields.push(numberField("Açı", "angle", item.angle, -180, 180, 1));
-    fields.push(numberField("Uzunluk", "length", item.length, 60, 240, 1));
+    fields.push(numberField("Uzunluk", "length", item.length, 60, item.type === "plane-mirror" ? 560 : 240, 1));
+    if (item.type === "plane-mirror") {
+      fields.push(
+        selectField(
+          "Yüzey",
+          "surfaceMode",
+          item.surfaceMode || "smooth",
+          [
+            { value: "smooth", label: "Düzgün" },
+            { value: "rough", label: "Pürüzlü" }
+          ],
+          true
+        )
+      );
+    }
     if (item.type !== "plane-mirror") {
       fields.push(
         selectField(
@@ -3644,6 +3751,39 @@ function renderFluxShapeControls() {
   `;
 }
 
+function renderPlaneMirrorControls() {
+  const scenarios = [
+    { key: "law", label: "Yansıma" },
+    { key: "regular", label: "Düzgün" },
+    { key: "diffuse", label: "Dağınık" },
+    { key: "image", label: "Görüntü" },
+    { key: "field", label: "Görüş Alanı" },
+    { key: "mirror-size", label: "Ayna Boyu" },
+    { key: "mirror-distance", label: "Uzaklık" },
+    { key: "obstacle", label: "Engel" },
+    { key: "two-mirror", label: "İki Ayna" }
+  ];
+
+  return `
+    <section class="plane-sim-panel" aria-label="Düzlem ayna simülasyonları">
+      <div class="plane-sim-head">
+        <strong>Düzlem ayna simülasyonları</strong>
+        <button class="primary-button compact-action" type="button" data-plane-mirror-action="field">
+          Görüş alanını kur
+        </button>
+      </div>
+      <div class="plane-sim-grid">
+        ${scenarios.map((scenario) => `
+          <button class="plane-sim-button" type="button" data-plane-mirror-action="${scenario.key}">
+            <span class="plane-sim-icon ${scenario.key}" aria-hidden="true"></span>
+            <strong>${scenario.label}</strong>
+          </button>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
 function renderObjectList() {
   const list = document.getElementById("object-list");
   const items = currentItems();
@@ -3788,6 +3928,16 @@ function reflectFromTangent(direction, tangent) {
   });
 }
 
+function roughMirrorTangent(item, point, tangent) {
+  if (item.surfaceMode !== "rough") {
+    return tangent;
+  }
+
+  const local = toLocal(point, item);
+  const jitter = Math.sin(local.x * 0.085 + item.x * 0.013) * 0.42;
+  return rotateLocalPoint(normalizeVector(tangent), jitter);
+}
+
 function apparentDepthForTank(tank, objectItem) {
   const bounds = depthTankBounds(tank);
   const insideX = objectItem.x >= bounds.left + 8 && objectItem.x <= bounds.right - 8;
@@ -3840,6 +3990,14 @@ function planeMirrorViewForEye(mirror, eye, objectItem) {
     return null;
   }
 
+  if (!opticsPairMatches(mirror, eye)) {
+    return null;
+  }
+
+  if (!opticsPairMatches(mirror, objectItem)) {
+    return null;
+  }
+
   if (!isInFrontOfPlaneMirror(mirror, eye) || !isInFrontOfPlaneMirror(mirror, objectItem)) {
     return null;
   }
@@ -3849,6 +4007,13 @@ function planeMirrorViewForEye(mirror, eye, objectItem) {
   const hitPoint = segmentIntersection(eye, imagePoint, endpoints.start, endpoints.end);
 
   if (!hitPoint) {
+    return null;
+  }
+
+  if (
+    segmentBlockedByOpaqueObstacle(objectItem, hitPoint) ||
+    segmentBlockedByOpaqueObstacle(hitPoint, eye)
+  ) {
     return null;
   }
 
@@ -3866,6 +4031,10 @@ function planeMirrorViewForEye(mirror, eye, objectItem) {
 
 function planeMirrorFieldForEye(mirror, eye) {
   if (mirror.type !== "plane-mirror") {
+    return null;
+  }
+
+  if (!opticsPairMatches(mirror, eye)) {
     return null;
   }
 
@@ -3887,7 +4056,31 @@ function planeMirrorFieldForEye(mirror, eye) {
     return null;
   }
 
-  return endpoints;
+  const tangent = normalizeVector({
+    x: endpoints.end.x - endpoints.start.x,
+    y: endpoints.end.y - endpoints.start.y
+  });
+  const startIncoming = normalizeVector({ x: endpoints.start.x - eye.x, y: endpoints.start.y - eye.y });
+  const endIncoming = normalizeVector({ x: endpoints.end.x - eye.x, y: endpoints.end.y - eye.y });
+  const startDirection = reflectFromTangent(startIncoming, tangent);
+  const endDirection = reflectFromTangent(endIncoming, tangent);
+  const startExit = extendRayToBounds(
+    { x: endpoints.start.x + startDirection.x, y: endpoints.start.y + startDirection.y },
+    startDirection
+  );
+  const endExit = extendRayToBounds(
+    { x: endpoints.end.x + endDirection.x, y: endpoints.end.y + endDirection.y },
+    endDirection
+  );
+  const eyeImage = planeMirrorImagePoint(mirror, eye);
+
+  return {
+    start: endpoints.start,
+    end: endpoints.end,
+    startExit,
+    endExit,
+    eyeImage
+  };
 }
 
 function buildFiberGuide(item, hitPoint, direction, beamColor) {
@@ -4054,6 +4247,7 @@ function closestOpticsHit(origin, direction, laser) {
         }
 
         if (hit && (!closest || hit.t < closest.t)) {
+          const tangent = roughMirrorTangent(item, hit.point, { x: end.x - start.x, y: end.y - start.y });
           closest = {
             t: hit.t,
             item,
@@ -4061,7 +4255,7 @@ function closestOpticsHit(origin, direction, laser) {
             nextDirection:
               item.type === "spherical-mirror"
                 ? reflectFromNormal(direction, reflectiveNormalForSphericalMirror(item, hit.point))
-                : reflectFromTangent(direction, { x: end.x - start.x, y: end.y - start.y })
+                : reflectFromTangent(direction, tangent)
           };
         }
       }
@@ -4129,7 +4323,13 @@ function buildOpticsTrace() {
         break;
       }
 
-      segments.push({ from: { ...origin }, to: { ...hit.point }, kind: hit.item.type, color: hit.beamColor || beam.hex });
+      segments.push({
+        from: { ...origin },
+        to: { ...hit.point },
+        kind: hit.item.type,
+        itemId: hit.item.id,
+        color: hit.beamColor || beam.hex
+      });
       if (Array.isArray(hit.extraSegments)) {
         segments.push(...hit.extraSegments);
       }
@@ -4983,7 +5183,83 @@ function drawOptics(trace) {
     ctx.strokeStyle = "rgba(239, 244, 255, 0.85)";
     ctx.lineWidth = 2;
     ctx.stroke();
+    if (item.label) {
+      ctx.fillStyle = "rgba(239, 244, 255, 0.95)";
+      ctx.font = "700 13px Space Grotesk";
+      ctx.textAlign = "center";
+      ctx.fillText(item.label, item.x, item.y - item.radius - 8);
+    }
     ctx.restore();
+  };
+
+  const drawViewObstacle = (item, isSelected) => {
+    const bounds = viewObstacleBounds(item);
+    const isTransparent = item.material === "transparent";
+    ctx.save();
+    roundedRectPath(bounds.left, bounds.top, item.width, item.height, 6);
+    ctx.fillStyle = isTransparent ? "rgba(126, 231, 255, 0.16)" : "rgba(20, 28, 39, 0.86)";
+    ctx.strokeStyle = isSelected
+      ? "#fff1a6"
+      : isTransparent
+        ? "rgba(126, 231, 255, 0.82)"
+        : "rgba(255, 241, 166, 0.6)";
+    ctx.lineWidth = isSelected ? 4 : 2.5;
+    ctx.fill();
+    ctx.stroke();
+    if (isTransparent) {
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      ctx.beginPath();
+      ctx.moveTo(bounds.left + 12, bounds.bottom - 6);
+      ctx.lineTo(bounds.right - 12, bounds.top + 6);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "rgba(239, 244, 255, 0.94)";
+    ctx.font = "700 12px Space Grotesk";
+    ctx.textAlign = "center";
+    ctx.fillText(isTransparent ? "Saydam" : "Opak", item.x, bounds.top - 8);
+    ctx.restore();
+  };
+
+  const drawReflectionMarkers = () => {
+    trace.segments.forEach((segment, index) => {
+      if (segment.kind !== "plane-mirror" || !segment.itemId) return;
+      const mirror = currentItems().find((entry) => entry.id === segment.itemId);
+      const next = trace.segments[index + 1];
+      if (!mirror || !next) return;
+
+      const hit = segment.to;
+      const endpoints = mirrorEndpoints(mirror);
+      const tangent = roughMirrorTangent(mirror, hit, {
+        x: endpoints.end.x - endpoints.start.x,
+        y: endpoints.end.y - endpoints.start.y
+      });
+      let normal = normalizeVector({ x: -tangent.y, y: tangent.x });
+      const incoming = normalizeVector({ x: segment.from.x - hit.x, y: segment.from.y - hit.y });
+      const outgoing = normalizeVector({ x: next.to.x - hit.x, y: next.to.y - hit.y });
+      if (dot(incoming, normal) < 0) {
+        normal = { x: -normal.x, y: -normal.y };
+      }
+      const incidence = Math.acos(clamp(Math.abs(dot(incoming, normal)), -1, 1)) * (180 / Math.PI);
+      const reflection = Math.acos(clamp(Math.abs(dot(outgoing, normal)), -1, 1)) * (180 / Math.PI);
+
+      ctx.save();
+      ctx.setLineDash([5, 5]);
+      ctx.strokeStyle = "rgba(239, 244, 255, 0.72)";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(hit.x - normal.x * 42, hit.y - normal.y * 42);
+      ctx.lineTo(hit.x + normal.x * 42, hit.y + normal.y * 42);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(239, 244, 255, 0.95)";
+      ctx.font = "700 12px Space Grotesk";
+      ctx.textAlign = "center";
+      ctx.fillText("N", hit.x + normal.x * 50, hit.y + normal.y * 50);
+      ctx.fillStyle = "rgba(255, 241, 166, 0.98)";
+      ctx.fillText(`i=${incidence.toFixed(0)}°`, hit.x - 30, hit.y - 14);
+      ctx.fillText(`r=${reflection.toFixed(0)}°`, hit.x + 34, hit.y - 14);
+      ctx.restore();
+    });
   };
 
   const drawDepthTank = (item, isSelected) => {
@@ -5347,6 +5623,25 @@ function drawOptics(trace) {
       ctx.strokeStyle = mirrorMode(item) === "concave" ? "rgba(255, 214, 102, 0.95)" : "rgba(102, 224, 255, 0.92)";
       ctx.lineWidth = isSelected ? 3.5 : 3;
       ctx.stroke();
+    } else if (item.type === "plane-mirror" && item.surfaceMode === "rough") {
+      const endpoints = mirrorEndpoints(item);
+      const tangent = normalizeVector({ x: endpoints.end.x - endpoints.start.x, y: endpoints.end.y - endpoints.start.y });
+      const normal = { x: -tangent.y, y: tangent.x };
+      ctx.strokeStyle = "rgba(255, 241, 166, 0.88)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let index = 0; index <= 18; index += 1) {
+        const t = index / 18;
+        const base = {
+          x: endpoints.start.x + (endpoints.end.x - endpoints.start.x) * t,
+          y: endpoints.start.y + (endpoints.end.y - endpoints.start.y) * t
+        };
+        const jag = Math.sin(index * 1.8 + item.x * 0.02) * 7;
+        const point = { x: base.x + normal.x * jag, y: base.y + normal.y * jag };
+        if (index === 0) ctx.moveTo(point.x, point.y);
+        else ctx.lineTo(point.x, point.y);
+      }
+      ctx.stroke();
     } else if (item.type !== "plane-mirror") {
       ctx.strokeStyle = "rgba(255, 255, 255, 0.55)";
       ctx.lineWidth = 1.75;
@@ -5357,6 +5652,7 @@ function drawOptics(trace) {
   const opticalObjects = currentItems().filter((item) => item.type === "optical-object");
   const roundObjects = currentItems().filter((item) => isRoundObject(item));
   const eyes = currentItems().filter((item) => isEye(item));
+  const viewObstacles = currentItems().filter((item) => isViewObstacle(item));
 
   currentItems().forEach((item) => {
     const isSelected = item.id === selectedId;
@@ -5401,7 +5697,7 @@ function drawOptics(trace) {
     }
 
     if (isRoundObject(item)) {
-      drawRoundObject(item, isSelected ? "rgba(142, 246, 215, 0.92)" : "rgba(123, 211, 137, 0.82)");
+      drawRoundObject(item, item.color || (isSelected ? "rgba(142, 246, 215, 0.92)" : "rgba(123, 211, 137, 0.82)"));
     }
 
     if (isEye(item)) {
@@ -5422,6 +5718,10 @@ function drawOptics(trace) {
 
     if (isRefractionBlock(item)) {
       drawRefractionBlock(item, isSelected);
+    }
+
+    if (isViewObstacle(item)) {
+      drawViewObstacle(item, isSelected);
     }
 
     if (isMirror(item)) {
@@ -5448,6 +5748,32 @@ function drawOptics(trace) {
         }
 
         drawSegmentObject(image.base, image.top, "rgba(255, 209, 102, 0.8)", true);
+        const eye = eyes.find((entry) => isInFrontOfPlaneMirror(item, entry));
+        if (eye) {
+          const objectPoints = [
+            opticalObjectEndpoints(objectItem).base,
+            opticalObjectEndpoints(objectItem).top
+          ];
+          [image.base, image.top].forEach((imagePoint, index) => {
+            const hitPoint = segmentIntersection(eye, imagePoint, mirrorEndpoints(item).start, mirrorEndpoints(item).end);
+            if (!hitPoint) return;
+            ctx.save();
+            ctx.setLineDash([6, 5]);
+            ctx.strokeStyle = "rgba(255, 241, 166, 0.55)";
+            ctx.beginPath();
+            ctx.moveTo(objectPoints[index].x, objectPoints[index].y);
+            ctx.lineTo(hitPoint.x, hitPoint.y);
+            ctx.lineTo(eye.x, eye.y);
+            ctx.stroke();
+            ctx.setLineDash([3, 5]);
+            ctx.strokeStyle = "rgba(255, 209, 102, 0.38)";
+            ctx.beginPath();
+            ctx.moveTo(hitPoint.x, hitPoint.y);
+            ctx.lineTo(imagePoint.x, imagePoint.y);
+            ctx.stroke();
+            ctx.restore();
+          });
+        }
         return;
       }
 
@@ -5465,6 +5791,9 @@ function drawOptics(trace) {
     });
 
     roundObjects.forEach((roundObject) => {
+      if (roundObject.role === "view-point") {
+        return;
+      }
       const image = imageForElement(item, roundObject);
       if (!image || !Number.isFinite(image.height)) {
         return;
@@ -5488,14 +5817,44 @@ function drawOptics(trace) {
       const field = planeMirrorFieldForEye(item, eye);
       if (field) {
         ctx.save();
+        ctx.fillStyle = "rgba(235, 104, 255, 0.13)";
+        ctx.beginPath();
+        ctx.moveTo(field.start.x, field.start.y);
+        ctx.lineTo(field.end.x, field.end.y);
+        ctx.lineTo(field.endExit.x, field.endExit.y);
+        ctx.lineTo(field.startExit.x, field.startExit.y);
+        ctx.closePath();
+        ctx.fill();
+
         ctx.setLineDash([8, 6]);
-        ctx.strokeStyle = "rgba(183, 220, 255, 0.6)";
+        ctx.strokeStyle = "rgba(183, 220, 255, 0.55)";
         ctx.beginPath();
         ctx.moveTo(eye.x, eye.y);
         ctx.lineTo(field.start.x, field.start.y);
         ctx.moveTo(eye.x, eye.y);
         ctx.lineTo(field.end.x, field.end.y);
         ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(255, 82, 82, 0.78)";
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(field.start.x, field.start.y);
+        ctx.lineTo(field.startExit.x, field.startExit.y);
+        ctx.moveTo(field.end.x, field.end.y);
+        ctx.lineTo(field.endExit.x, field.endExit.y);
+        ctx.stroke();
+        if (field.eyeImage) {
+          ctx.setLineDash([5, 5]);
+          ctx.strokeStyle = "rgba(255, 82, 82, 0.45)";
+          ctx.beginPath();
+          ctx.moveTo(field.eyeImage.x - 10, field.eyeImage.y - 10);
+          ctx.lineTo(field.eyeImage.x + 10, field.eyeImage.y + 10);
+          ctx.moveTo(field.eyeImage.x + 10, field.eyeImage.y - 10);
+          ctx.lineTo(field.eyeImage.x - 10, field.eyeImage.y + 10);
+          ctx.stroke();
+        }
         ctx.restore();
       }
 
@@ -5519,7 +5878,7 @@ function drawOptics(trace) {
         ctx.restore();
 
         drawRoundObject(
-          { x: view.imagePoint.x, y: view.imagePoint.y, radius: roundObject.radius },
+          { x: view.imagePoint.x, y: view.imagePoint.y, radius: roundObject.radius, label: roundObject.label ? `${roundObject.label}'` : "" },
           "rgba(255, 209, 102, 0.78)",
           0.9,
           true
@@ -5607,6 +5966,7 @@ function drawOptics(trace) {
     ctx.stroke();
   });
   ctx.restore();
+  drawReflectionMarkers();
 }
 
 function vectorEnd(item, origin = item) {
@@ -6291,6 +6651,150 @@ function setSelectedFluxShape(shape) {
   renderUI();
 }
 
+function angleToPoint(from, to) {
+  return radToDeg(Math.atan2(to.y - from.y, to.x - from.x));
+}
+
+function planeMirrorScenarioItems(kind) {
+  const mirror = (props) => ({
+    id: uid("mirror"),
+    type: "plane-mirror",
+    x: 520,
+    y: 330,
+    angle: 90,
+    length: 210,
+    radius: 0,
+    surfaceMode: "smooth",
+    ...props
+  });
+  const laser = (props) => ({
+    id: uid("laser"),
+    type: "laser",
+    x: 220,
+    y: 160,
+    angle: 0,
+    colorMode: "single",
+    color: "red",
+    ...props
+  });
+  const eye = (props) => ({ id: uid("eye"), type: "eye", x: 430, y: 310, angle: 0, ...props });
+  const point = (props) => ({
+    id: uid("round"),
+    type: "round-object",
+    x: 220,
+    y: 410,
+    radius: 9,
+    color: "rgba(255, 82, 82, 0.9)",
+    ...props
+  });
+  const obstacle = (props) => ({
+    id: uid("view-obstacle"),
+    type: "view-obstacle",
+    x: 360,
+    y: 430,
+    width: 110,
+    height: 34,
+    material: "opaque",
+    ...props
+  });
+  const parallelLasers = (surfaceMode) => [190, 270, 350, 430, 510].map((x) =>
+    laser({ x, y: 120, angle: 58, color: "violet" })
+  );
+  const wallPoints = (y = 510) => [110, 180, 250, 320, 390, 460, 530, 600, 670].map((x, index) =>
+    point({ x, y, radius: 8, label: String(index + 1), color: "rgba(255, 40, 40, 0.92)", role: "view-point" })
+  );
+
+  if (kind === "regular") {
+    return [
+      mirror({ x: 480, y: 425, angle: 180, length: 650, surfaceMode: "smooth" }),
+      ...parallelLasers("smooth")
+    ];
+  }
+
+  if (kind === "diffuse") {
+    return [
+      mirror({ x: 480, y: 425, angle: 180, length: 650, surfaceMode: "rough" }),
+      ...parallelLasers("rough")
+    ];
+  }
+
+  if (kind === "image") {
+    return [
+      mirror({ x: 520, y: 305, angle: 90, length: 300 }),
+      { id: uid("object"), type: "optical-object", x: 265, y: 455, height: 140 },
+      point({ x: 310, y: 305, radius: 16, label: "Cisim", color: "rgba(123, 211, 137, 0.9)" }),
+      eye({ x: 185, y: 185, angle: 24 })
+    ];
+  }
+
+  if (kind === "field") {
+    return [
+      mirror({ x: 700, y: 310, angle: 90, length: 210 }),
+      eye({ x: 555, y: 360, angle: -8 }),
+      ...wallPoints(510)
+    ];
+  }
+
+  if (kind === "mirror-size") {
+    return [
+      mirror({ x: 665, y: 210, angle: 90, length: 100, pairId: "top" }),
+      eye({ x: 545, y: 250, angle: -4, pairId: "top" }),
+      ...wallPoints(360).map((item) => ({ ...item, y: 360, pairId: "top" })),
+      mirror({ x: 665, y: 470, angle: 90, length: 220, pairId: "bottom" }),
+      eye({ x: 545, y: 510, angle: -4, pairId: "bottom" }),
+      ...wallPoints(570).map((item) => ({ ...item, y: 570, pairId: "bottom" }))
+    ];
+  }
+
+  if (kind === "mirror-distance") {
+    return [
+      mirror({ x: 620, y: 210, angle: 90, length: 170, pairId: "top" }),
+      eye({ x: 500, y: 250, angle: -4, pairId: "top" }),
+      ...wallPoints(360).map((item) => ({ ...item, y: 360, pairId: "top" })),
+      mirror({ x: 740, y: 470, angle: 90, length: 170, pairId: "bottom" }),
+      eye({ x: 500, y: 510, angle: -4, pairId: "bottom" }),
+      ...wallPoints(570).map((item) => ({ ...item, y: 570, pairId: "bottom" }))
+    ];
+  }
+
+  if (kind === "obstacle") {
+    return [
+      mirror({ x: 720, y: 325, angle: 90, length: 220 }),
+      eye({ x: 570, y: 365, angle: -6 }),
+      ...wallPoints(520),
+      obstacle({ x: 420, y: 455, width: 120, height: 34, material: "opaque" }),
+      obstacle({ x: 420, y: 405, width: 120, height: 26, material: "transparent" })
+    ];
+  }
+
+  if (kind === "two-mirror") {
+    const firstHit = { x: 510, y: 420 };
+    return [
+      mirror({ x: 545, y: 420, angle: 180, length: 470 }),
+      mirror({ x: 430, y: 255, angle: 135, length: 250 }),
+      laser({ x: 760, y: 130, angle: angleToPoint({ x: 760, y: 130 }, firstHit), color: "red" })
+    ];
+  }
+
+  return [
+    mirror({ x: 500, y: 390, angle: 180, length: 560 }),
+    laser({ x: 300, y: 150, angle: angleToPoint({ x: 300, y: 150 }, { x: 470, y: 390 }), color: "red" })
+  ];
+}
+
+function loadPlaneMirrorScenario(kind = "law") {
+  state.scene = "optics";
+  state.opticsOutcome = "FIZ.11.4.2";
+  state.opticsVisible = true;
+  state.optics.items = planeMirrorScenarioItems(kind);
+  state.optics.items.forEach(constrainItem);
+  selectedId = state.optics.items[0]?.id || null;
+  shouldRevealInspector = true;
+  state.notice = "Düzlem ayna simülasyonu sahneye kuruldu.";
+  saveState();
+  renderUI();
+}
+
 function focusIlluminationTools() {
   state.notice = "Noktasal ışık kaynağı, akı yüzeyi ve aydınlanan yüzey araçları bu kazanım için birlikte kullanılabilir.";
   saveState();
@@ -6674,6 +7178,10 @@ function hitItem(point) {
       return pointInsideRefractionBlock(point, item);
     }
 
+    if (isViewObstacle(item)) {
+      return pointInsideRect(point, viewObstacleBounds(item));
+    }
+
     if (isVector(item)) {
       const start = state.vectors.mode === "components" ? { x: viewport.width / 2, y: viewport.height / 2 } : vectorTail(item);
       return (
@@ -6886,6 +7394,10 @@ function initEvents() {
         selectedId = null;
         state.opticsVisible = true;
         const outcome = activeOpticsOutcome();
+        if (outcomeButton.dataset.opticsOutcome === "FIZ.11.4.2") {
+          loadPlaneMirrorScenario("law");
+          return;
+        }
         state.notice = `${outcome.code} seçildi. Araç kutusu bu çıktıya göre güncellendi.`;
         saveState();
         renderUI();
@@ -6907,6 +7419,12 @@ function initEvents() {
       const fluxShapeButton = event.target.closest("[data-flux-shape]");
       if (fluxShapeButton) {
         setSelectedFluxShape(fluxShapeButton.dataset.fluxShape);
+        return;
+      }
+
+      const planeMirrorButton = event.target.closest("[data-plane-mirror-action]");
+      if (planeMirrorButton) {
+        loadPlaneMirrorScenario(planeMirrorButton.dataset.planeMirrorAction);
         return;
       }
     }
