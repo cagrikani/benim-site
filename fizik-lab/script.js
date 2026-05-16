@@ -5647,6 +5647,21 @@ function drawOptics(trace) {
       ctx.lineWidth = 1.75;
       ctx.stroke();
     }
+
+    if (isSelected) {
+      const handles = mirrorHandlePoints(item);
+      [handles.start, handles.end].forEach((handle) => {
+        ctx.save();
+        ctx.fillStyle = "#fff1a6";
+        ctx.strokeStyle = "rgba(14, 30, 54, 0.92)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(handle.x, handle.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      });
+    }
   };
 
   const opticalObjects = currentItems().filter((item) => item.type === "optical-object");
@@ -7094,6 +7109,26 @@ function vectorHandleMode(point, item) {
   return "move";
 }
 
+function mirrorHandlePoints(item) {
+  const points = mirrorPolyline(item);
+  return {
+    start: points[0],
+    end: points[points.length - 1]
+  };
+}
+
+function mirrorHandleMode(point, item) {
+  const handles = mirrorHandlePoints(item);
+  const startDistance = Math.hypot(point.x - handles.start.x, point.y - handles.start.y);
+  const endDistance = Math.hypot(point.x - handles.end.x, point.y - handles.end.y);
+  const closest = startDistance <= endDistance ? "start" : "end";
+  const closestDistance = Math.min(startDistance, endDistance);
+
+  return closestDistance <= 22
+    ? { mode: "mirror-rotate", handle: closest }
+    : { mode: "move", handle: null };
+}
+
 function hitItem(point) {
   if (state.scene === "heat") {
     const thermometer = [...heatThermometers()].reverse().find(
@@ -7192,6 +7227,14 @@ function hitItem(point) {
 
     if (isMirror(item)) {
       const points = mirrorPolyline(item);
+      const handles = mirrorHandlePoints(item);
+      if (
+        Math.hypot(point.x - handles.start.x, point.y - handles.start.y) <= 22 ||
+        Math.hypot(point.x - handles.end.x, point.y - handles.end.y) <= 22
+      ) {
+        return true;
+      }
+
       for (let index = 0; index < points.length - 1; index += 1) {
         if (distanceToSegment(point, points[index], points[index + 1]) <= 12) {
           return true;
@@ -7271,10 +7314,16 @@ function initCanvasInteractions() {
       const lockedFluxSource = state.scene === "optics" && isPointLight(hit) && fluxSurfaceForSource(hit);
       const draggable = !(state.scene === "heat" && isHeatMaterial(hit)) && !lockedFluxSource;
       if (draggable) {
-        const mode = isVector(hit) ? vectorHandleMode(point, hit) : "move";
+        const mirrorMode = isMirror(hit) ? mirrorHandleMode(point, hit) : null;
+        const mirrorHandlePoint = mirrorMode?.handle ? mirrorHandlePoints(hit)[mirrorMode.handle] : null;
+        const mode = isVector(hit) ? vectorHandleMode(point, hit) : mirrorMode?.mode || "move";
         dragState = {
           id: hit.id,
           mode,
+          mirrorHandle: mirrorMode?.handle || null,
+          mirrorAngleOffset: mirrorHandlePoint
+            ? radToDeg(Math.atan2(mirrorHandlePoint.y - hit.y, mirrorHandlePoint.x - hit.x)) - (hit.angle || 0)
+            : 0,
           offsetX: point.x - hit.x,
           offsetY: point.y - hit.y
         };
@@ -7317,6 +7366,9 @@ function initCanvasInteractions() {
       const anchor = state.vectors.mode === "components" ? { x: viewport.width / 2, y: viewport.height / 2 } : vectorTail(item);
       item.dx = point.x - anchor.x;
       item.dy = point.y - anchor.y;
+    } else if (dragState.mode === "mirror-rotate" && isMirror(item)) {
+      const rawAngle = radToDeg(Math.atan2(point.y - item.y, point.x - item.x));
+      item.angle = rawAngle - dragState.mirrorAngleOffset;
     } else {
       item.x = point.x - dragState.offsetX;
       item.y = point.y - dragState.offsetY;
