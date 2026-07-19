@@ -223,6 +223,7 @@ const defaultState = {
   electricity: {
     items: [],
     wires: [],
+    scenario: "ohm",
     toolMode: "select",
     pendingTerminal: null,
     hoveredTerminal: null,
@@ -316,6 +317,9 @@ function normalizeState(raw) {
     electricity: {
       items: Array.isArray(raw.electricity?.items) ? raw.electricity.items : [],
       wires: Array.isArray(raw.electricity?.wires) ? raw.electricity.wires : [],
+      scenario: ["ohm", "series", "parallel", "bulb"].includes(raw.electricity?.scenario)
+        ? raw.electricity.scenario
+        : "ohm",
       toolMode: raw.electricity?.toolMode === "wire" ? "wire" : "select",
       pendingTerminal: null,
       hoveredTerminal: null,
@@ -807,9 +811,12 @@ function computeElectricalSolution() {
     measurements[entry.item.id] = { current: 0, voltage: nodeVoltages[entry.node] ?? 0 };
   });
 
-  const totalResistance = filteredBranches
-    .filter((branch) => branch.item.type === "resistor" || branch.item.type === "bulb")
-    .reduce((sum, branch) => sum + Math.max(branch.item.resistance || 100, 0.001), 0);
+  const resistiveBranches = components
+    .filter((item) => item.type === "resistor" || item.type === "bulb")
+    .map((item) => ({ item }));
+  const totalResistance = state.electricity.scenario === "parallel" && resistiveBranches.length
+    ? 1 / resistiveBranches.reduce((sum, branch) => sum + 1 / Math.max(branch.item.resistance || 100, 0.001), 0)
+    : resistiveBranches.reduce((sum, branch) => sum + Math.max(branch.item.resistance || 100, 0.001), 0);
   const totalCurrent = batteries.reduce(
     (sum, branch) => sum + Math.abs(measurements[branch.item.id]?.current || 0),
     0,
@@ -820,9 +827,6 @@ function computeElectricalSolution() {
   );
 
   const warnings = [];
-  if (!filteredBranches.some((branch) => branch.item.type === "ground")) {
-    warnings.push("Topraklama bagli degil.");
-  }
   if (filteredBranches.some((branch) => branch.item.type === "switch" && !branch.item.closed)) {
     warnings.push("Anahtar acik; devre tamamlanmiyor.");
   }
@@ -1058,6 +1062,7 @@ function isElectricalComponent(item) {
   return [
     "battery",
     "resistor",
+    "bulb",
     "ammeter",
     "voltmeter",
     "switch",
@@ -2863,8 +2868,8 @@ function itemTitle(item) {
   if (item.type === "heat-liquid") return "Sivi madde";
   if (item.type === "thermometer") return "Termometre";
   if (item.type === "battery") return "Pil";
-  if (item.type === "resistor") return "Direnç";
-  if (item.type === "bulb") return "Ampul";
+  if (item.type === "resistor") return item.name || "Direnç";
+  if (item.type === "bulb") return item.name || "Ampul";
   if (item.type === "ammeter") return "Ampermetre";
   if (item.type === "voltmeter") return "Voltmetre";
   if (item.type === "switch") return "Anahtar";
@@ -2931,10 +2936,12 @@ function itemMeta(item) {
       return `${item.name || "L"} • ${item.resistance.toFixed(0)} Ω • parlaklik ${Math.min(Math.abs(measure?.power || 0) / 2, 100).toFixed(0)}%`;
     }
     if (item.type === "ammeter") {
-      return `${item.name || "A"} • ${Math.abs(measure?.current || 0).toFixed(3)} A`;
+      const reading = electricityProbeReading(item);
+      return reading.target ? `${reading.label} • ${reading.value.toFixed(3)} A` : "Bir devre elemanına yaklaştır";
     }
     if (item.type === "voltmeter") {
-      return `${item.name || "V"} • ${Math.abs(measure?.voltage || 0).toFixed(2)} V`;
+      const reading = electricityProbeReading(item);
+      return reading.target ? `${reading.label} • ${reading.value.toFixed(2)} V` : "Bir devre elemanına yaklaştır";
     }
     if (item.type === "switch") {
       return item.closed ? "Kapali • akim geciriyor" : "Acik • devre kesik";
@@ -3081,9 +3088,9 @@ function renderLegend() {
   }
   if (state.scene === "electricity") {
     legend.innerHTML = `
-      <span class="legend-chip laser">Terminaller</span>
-      <span class="legend-chip mirror">Kablo baglantisi</span>
-      <span class="legend-chip force">Akim ve gerilim olcumu</span>
+      <span class="legend-chip laser">Hazır devre</span>
+      <span class="legend-chip mirror">Canlı hesaplama</span>
+      <span class="legend-chip force">Akım ve gerilim</span>
     `;
     return;
   }
@@ -3104,16 +3111,21 @@ function renderModuleControls() {
     const outcome = activeOpticsOutcome();
     const isIlluminationOutcome = outcome?.id === "FIZ.11.4.1";
     const isPlaneMirrorOutcome = outcome?.id === "FIZ.11.4.2";
+    const isSphericalMirrorOutcome = outcome?.id === "FIZ.11.4.3" || outcome?.id === "FIZ.11.4.4";
     copy.textContent = isIlluminationOutcome
       ? "Akı yüzeyi şekillerini sahneye ekle ve ölç."
       : isPlaneMirrorOutcome
         ? "Düzlem ayna simülasyonunu seç ve sahnede değiştir."
-        : "Önce optik çıktısını seç, sonra yalnızca o çıktıya uygun araçlarla düzenek kur.";
+        : isSphericalMirrorOutcome
+          ? "Küresel ayna simülasyonunu seç ve sahnede değiştir."
+          : "Önce optik çıktısını seç, sonra yalnızca o çıktıya uygun araçlarla düzenek kur.";
     const outcomeDetails = isIlluminationOutcome
       ? renderFluxShapeControls()
       : isPlaneMirrorOutcome
         ? renderPlaneMirrorControls()
-        : `
+        : isSphericalMirrorOutcome
+          ? renderSphericalMirrorControls()
+          : `
         <div class="vector-mode-note">
           ${
             outcome
@@ -3282,38 +3294,54 @@ function renderModuleControls() {
 
   if (state.scene === "electricity") {
     const solution = state.electricity.solution || computeElectricalSolution();
-    const components = electricalComponents();
-    copy.textContent = "Elektrik elemanlarini sahneye ekle, kablo araci ile terminalleri bagla ve devreyi cozdur.";
+    const battery = electricalComponents().find((item) => item.type === "battery");
+    const switchItem = electricalComponents().find((item) => item.type === "switch");
+    const resistors = electricalComponents().filter((item) => item.type === "resistor" || item.type === "bulb");
+    const current = solution.circuitClosed ? solution.totalCurrent : 0;
+    const equivalentResistance = solution.totalResistance || 0;
+    const scenarioDescriptions = {
+      ohm: "Gerilim ve direnci değiştir; akımın nasıl değiştiğini anında gör.",
+      series: "İki direncin seri bağlı devrede eş değer direnci nasıl artırdığını incele.",
+      parallel: "Paralel kollarda eş değer direncin ve toplam akımın nasıl değiştiğini karşılaştır.",
+      bulb: "Anahtarı açıp kapat; gerilim arttıkça ampul parlaklığını gözlemle."
+    };
+    copy.textContent = "Yükler sabit yuvalarda kalır; A ve V ölçü aletlerini istediğin elemana taşıyabilirsin.";
     controls.innerHTML = `
-      <div class="vector-controls">
-        <div class="scene-switch" aria-label="Elektrik etkileşimi">
-          <button class="scene-button ${state.electricity.toolMode === "select" ? "active" : ""}" type="button" data-electricity-tool="select">Sec ve tasi</button>
-          <button class="scene-button ${state.electricity.toolMode === "wire" ? "active" : ""}" type="button" data-electricity-tool="wire">Kablo ciz</button>
+      <div class="electric-controls">
+        <div class="electric-scenarios" aria-label="Elektrik deneyi">
+          <button class="scene-button ${state.electricity.scenario === "ohm" ? "active" : ""}" type="button" data-electricity-scenario="ohm">Ohm yasası</button>
+          <button class="scene-button ${state.electricity.scenario === "series" ? "active" : ""}" type="button" data-electricity-scenario="series">Seri devre</button>
+          <button class="scene-button ${state.electricity.scenario === "parallel" ? "active" : ""}" type="button" data-electricity-scenario="parallel">Paralel devre</button>
+          <button class="scene-button ${state.electricity.scenario === "bulb" ? "active" : ""}" type="button" data-electricity-scenario="bulb">Ampul</button>
         </div>
-        <div class="vector-mode-note">
-          ${components.length} eleman • ${state.electricity.wires.length} kablo • ${
-            state.electricity.pendingTerminal ? "Ilk terminal secildi, ikinci ucu tikla." : "Dogru baglanti icin eleman terminallerine tikla."
-          }
+        <p class="electric-description">${scenarioDescriptions[state.electricity.scenario]}</p>
+        <div class="electric-fields">
+          <label class="electric-range">
+            <span>Gerilim <strong data-electricity-value="voltage">${(battery?.voltage || 0).toFixed(0)} V</strong></span>
+            <input id="electricity-voltage" type="range" min="1" max="24" step="1" value="${battery?.voltage || 9}" data-electricity-prop="voltage" />
+          </label>
+          ${resistors.map((item, index) => `
+            <label class="electric-range">
+              <span>${item.type === "bulb" ? "Ampul direnci" : `R${index + 1}`} <strong data-electricity-value="${item.id}">${item.resistance.toFixed(0)} Ω</strong></span>
+              <input id="electricity-resistance-${index}" type="range" min="10" max="300" step="10" value="${item.resistance}" data-electricity-resistance="${item.id}" />
+            </label>
+          `).join("")}
         </div>
-        <div class="vector-mode-note subtle">
-          ${
-            solution.valid
-              ? solution.circuitClosed
-                ? `Toplam akim ${solution.totalCurrent.toFixed(3)} A • kaynak ${solution.equivalentVoltage.toFixed(1)} V • direnc ${solution.totalResistance?.toFixed(1) ?? "--"} Ω`
-                : "Devre henuz kapanmadi. Anahtari kapat ve kablolari tamamla."
-              : "Hesap icin bagli en az bir pil gereklidir."
-          }
+        <div class="electric-switch-row">
+          <span>Devre anahtarı</span>
+          <button class="${switchItem?.closed ? "primary-button" : "secondary-button"} compact-action" type="button" data-electricity-action="toggle-switch" aria-pressed="${switchItem?.closed === true}">
+            ${switchItem?.closed ? "Anahtar kapalı • akım var" : "Anahtar açık • akım yok"}
+          </button>
         </div>
-        ${
-          solution.warnings?.length
-            ? `<div class="vector-mode-note subtle">${solution.warnings.join(" • ")}</div>`
-            : ""
-        }
-        <div class="inline-actions">
-          <button class="primary-button compact-action" type="button" data-electricity-action="solve" ${components.some((item) => item.type === "battery") ? "" : "disabled"}>Devreyi cozdur</button>
-          <button class="secondary-button compact-action" type="button" data-electricity-action="clear-pending" ${state.electricity.pendingTerminal ? "" : "disabled"}>Secimi sifirla</button>
-          <button class="secondary-button compact-action" type="button" data-electricity-action="clear-wires" ${state.electricity.wires.length ? "" : "disabled"}>Kablolari sil</button>
+        <div class="electric-metrics" aria-live="polite">
+          <div><span>Toplam akım</span><strong data-electricity-output="current">${current.toFixed(3)} A</strong></div>
+          <div><span>Eş değer direnç</span><strong data-electricity-output="resistance">${equivalentResistance.toFixed(1)} Ω</strong></div>
+          <div><span>Kaynak</span><strong data-electricity-output="voltage">${(battery?.voltage || 0).toFixed(0)} V</strong></div>
         </div>
+        <div class="electric-formula" data-electricity-output="formula">${solution.circuitClosed
+          ? `I = V / R → ${current.toFixed(3)} A = ${(battery?.voltage || 0).toFixed(0)} V / ${equivalentResistance.toFixed(1)} Ω`
+          : "Anahtar açıkken devreden akım geçmez: I = 0 A"}</div>
+        <button class="secondary-button compact-action" type="button" data-electricity-action="reset">Varsayılana dön</button>
       </div>
     `;
     return;
@@ -3779,6 +3807,39 @@ function renderPlaneMirrorControls() {
             <strong>${scenario.label}</strong>
           </button>
         `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderSphericalMirrorControls() {
+  const scenarios = [
+    { key: "compare", label: "Çukur/Tümsek" },
+    { key: "focus", label: "Odak" },
+    { key: "concave-image", label: "Çukur Görüntü" },
+    { key: "convex-image", label: "Tümsek Görüntü" },
+    { key: "inside-focus", label: "Odak İçi" },
+    { key: "beyond-center", label: "Merkez Dışı" }
+  ];
+
+  return `
+    <section class="plane-sim-panel spherical-sim-panel" aria-label="Küresel ayna simülasyonları">
+      <div class="plane-sim-head">
+        <strong>Küresel ayna simülasyonları</strong>
+        <button class="primary-button compact-action" type="button" data-spherical-mirror-action="compare">
+          Karşılaştırmayı kur
+        </button>
+      </div>
+      <div class="plane-sim-grid">
+        ${scenarios.map((scenario) => `
+          <button class="plane-sim-button" type="button" data-spherical-mirror-action="${scenario.key}">
+            <span class="plane-sim-icon spherical-sim-icon ${scenario.key}" aria-hidden="true"></span>
+            <strong>${scenario.label}</strong>
+          </button>
+        `).join("")}
+      </div>
+      <div class="vector-mode-note subtle">
+        Çukur aynada gerçek/sanal görüntü ve odak davranışı; tümsek aynada sanal, düz ve küçük görüntü gözlenir.
       </div>
     </section>
   `;
@@ -4841,7 +4902,8 @@ function drawHeat() {
 
 function drawElectricWirePath(start, end, highlight = false) {
   const midX = (start.x + end.x) / 2;
-  ctx.strokeStyle = highlight ? "#ffd977" : "rgba(111, 227, 186, 0.92)";
+  const energized = state.electricity.solution?.circuitClosed;
+  ctx.strokeStyle = highlight ? "#ffd977" : energized ? "rgba(111, 227, 186, 0.96)" : "rgba(136, 157, 190, 0.48)";
   ctx.lineWidth = highlight ? 4 : 3;
   ctx.lineCap = "round";
   ctx.beginPath();
@@ -4852,16 +4914,156 @@ function drawElectricWirePath(start, end, highlight = false) {
   ctx.stroke();
 }
 
+function parallelBranchColor(item) {
+  const colors = ["#d98724", "#2d78b8", "#7656a8"];
+  const index = electricityLoads().findIndex((entry) => entry.id === item.id);
+  return colors[Math.max(index, 0) % colors.length];
+}
+
+function drawParallelWire(points, color, width = 4) {
+  if (points.length < 2) return;
+  ctx.save();
+  ctx.strokeStyle = state.electricity.solution?.circuitClosed ? color : "rgba(104, 118, 136, 0.56)";
+  ctx.lineWidth = width;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  points.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawParallelCircuitWires(solution) {
+  const components = electricalComponents();
+  const battery = components.find((item) => item.type === "battery");
+  const switchItem = components.find((item) => item.type === "switch");
+  const loads = electricityLoads(components);
+  if (!battery || !switchItem || !loads.length) return;
+
+  const batteryLeft = electricalTerminalByKey(battery, "left");
+  const batteryRight = electricalTerminalByKey(battery, "right");
+  const switchLeft = electricalTerminalByKey(switchItem, "left");
+  const switchRight = electricalTerminalByKey(switchItem, "right");
+  const leftBusX = 625;
+  const rightBusX = 850;
+  const topY = Math.min(...loads.map((item) => item.y));
+  const bottomY = Math.max(...loads.map((item) => item.y));
+  const returnY = 510;
+  const supplyColor = "#159b87";
+
+  drawParallelWire([batteryRight, switchLeft], supplyColor);
+  drawParallelWire([switchRight, { x: leftBusX, y: switchRight.y }], supplyColor);
+  drawParallelWire([{ x: leftBusX, y: topY }, { x: leftBusX, y: bottomY }], supplyColor, 5);
+  drawParallelWire(
+    [
+      { x: rightBusX, y: topY },
+      { x: rightBusX, y: returnY },
+      { x: batteryLeft.x - 18, y: returnY },
+      { x: batteryLeft.x - 18, y: batteryLeft.y },
+      batteryLeft
+    ],
+    supplyColor,
+    5,
+  );
+
+  loads.forEach((item) => {
+    const leftTerminal = electricalTerminalByKey(item, "left");
+    const rightTerminal = electricalTerminalByKey(item, "right");
+    const color = parallelBranchColor(item);
+    drawParallelWire([{ x: leftBusX, y: item.y }, leftTerminal], color);
+    drawParallelWire([rightTerminal, { x: rightBusX, y: item.y }], color);
+
+    ctx.save();
+    ctx.fillStyle = solution.circuitClosed ? color : "#71819f";
+    [leftBusX, rightBusX].forEach((x) => {
+      ctx.beginPath();
+      ctx.arc(x, item.y, 6, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+  });
+
+  ctx.save();
+  ctx.fillStyle = "#25364a";
+  ctx.font = "600 12px 'IBM Plex Sans', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("AKIM BÖLÜNÜR", leftBusX, topY - 46);
+  ctx.fillText("AKIM BİRLEŞİR", rightBusX, topY - 46);
+  ctx.restore();
+}
+
+function drawBreadboardSurface() {
+  const left = 42;
+  const top = 96;
+  const width = viewport.width - 84;
+  const height = viewport.height - 142;
+
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 10;
+  ctx.fillStyle = "#e8edf1";
+  roundedRectPath(left, top, width, height, 18);
+  ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = "rgba(43, 57, 74, 0.28)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  const drawRail = (y, color, sign) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(left + 44, y);
+    ctx.lineTo(left + width - 28, y);
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.font = "700 15px 'Space Grotesk', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(sign, left + 24, y + 5);
+  };
+  drawRail(top + 34, "#d95757", "+");
+  drawRail(top + 56, "#3578ba", "−");
+  drawRail(top + height - 56, "#d95757", "+");
+  drawRail(top + height - 34, "#3578ba", "−");
+
+  const rowGroups = [
+    [top + 94, top + 120, top + 146, top + 172],
+    [top + 238, top + 264, top + 290, top + 316]
+  ];
+  ctx.fillStyle = "rgba(59, 72, 88, 0.38)";
+  rowGroups.flat().forEach((y) => {
+    for (let x = left + 48; x <= left + width - 34; x += 28) {
+      ctx.beginPath();
+      ctx.arc(x, y, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+
+  ctx.fillStyle = "rgba(52, 65, 82, 0.6)";
+  ctx.font = "500 12px 'IBM Plex Sans', sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("Sabit bağlantı yuvaları", left + 18, top + height - 76);
+  ctx.restore();
+}
+
 function drawElectricComponent(item, measurement) {
   const config = electricalConfigForType(item.type);
   const left = item.x - config.width / 2;
   const top = item.y - config.height / 2;
   const terminals = electricalTerminals(item);
+  const probeReading = isElectricalProbe(item) ? electricityProbeReading(item) : null;
 
   ctx.save();
   ctx.fillStyle = "rgba(13, 21, 35, 0.92)";
-  ctx.strokeStyle = item.id === selectedId ? "rgba(79, 209, 197, 0.96)" : "rgba(148, 173, 214, 0.34)";
-  ctx.lineWidth = item.id === selectedId ? 2.5 : 1.4;
+  const parallelLoad = state.electricity.scenario === "parallel" && (item.type === "resistor" || item.type === "bulb");
+  ctx.strokeStyle = item.id === selectedId
+    ? "rgba(79, 209, 197, 0.96)"
+    : parallelLoad
+      ? parallelBranchColor(item)
+      : "rgba(148, 173, 214, 0.34)";
+  ctx.lineWidth = item.id === selectedId || parallelLoad ? 2.5 : 1.4;
   roundedRectPath(left, top, config.width, config.height, Math.min(24, config.height / 2));
   ctx.fill();
   ctx.stroke();
@@ -4938,22 +5140,29 @@ function drawElectricComponent(item, measurement) {
     ctx.moveTo(item.x - 10, item.y - 12);
     ctx.lineTo(item.x + 10, item.y + 12);
     ctx.stroke();
-  } else {
+  } else if (isElectricalProbe(item)) {
     ctx.beginPath();
     ctx.arc(item.x, item.y, 24, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.font = "700 22px 'Space Grotesk', sans-serif";
+    ctx.font = "700 18px 'Space Grotesk', sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(item.type === "ammeter" ? "A" : "V", item.x, item.y + 1);
+    ctx.fillText(item.type === "ammeter" ? "A" : "V", item.x, item.y - 9);
+    ctx.font = "600 11px 'IBM Plex Sans', sans-serif";
+    ctx.fillStyle = item.type === "ammeter" ? "#ffd977" : "#7bd0ff";
+    ctx.fillText(
+      `${probeReading.value.toFixed(item.type === "ammeter" ? 3 : 2)} ${probeReading.unit}`,
+      item.x,
+      item.y + 13,
+    );
   }
 
-  terminals.forEach((terminal) => {
-    const pending = sameTerminal(state.electricity.pendingTerminal, { itemId: item.id, terminal: terminal.key });
-    const hovered = sameTerminal(state.electricity.hoveredTerminal, { itemId: item.id, terminal: terminal.key });
-    ctx.fillStyle = pending ? "#ffd977" : hovered ? "#ff8f6b" : "#57e39c";
+  if (!isElectricalProbe(item)) terminals.forEach((terminal) => {
+    ctx.fillStyle = state.electricity.solution?.circuitClosed
+      ? parallelLoad ? parallelBranchColor(item) : "#57e39c"
+      : "#71819f";
     ctx.beginPath();
-    ctx.arc(terminal.x, terminal.y, pending ? 8 : hovered ? 8 : 7, 0, Math.PI * 2);
+    ctx.arc(terminal.x, terminal.y, 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.strokeStyle = "rgba(8, 15, 28, 0.9)";
     ctx.lineWidth = 2;
@@ -4962,15 +5171,15 @@ function drawElectricComponent(item, measurement) {
 
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillStyle = "#eff6ff";
+  ctx.fillStyle = "#18263a";
   ctx.font = "600 14px 'Space Grotesk', sans-serif";
   ctx.fillText(itemTitle(item), left, top - 12);
   ctx.font = "500 12px 'IBM Plex Sans', sans-serif";
-  ctx.fillStyle = "rgba(220, 233, 255, 0.82)";
+  ctx.fillStyle = "rgba(28, 45, 66, 0.78)";
   ctx.fillText(itemMeta(item), left, top + config.height + 18);
 
-  if (measurement) {
-    ctx.fillStyle = "rgba(79, 209, 197, 0.92)";
+  if (measurement && !isElectricalProbe(item)) {
+    ctx.fillStyle = "#087d73";
     ctx.fillText(
       `${Math.abs(measurement.current || 0).toFixed(3)} A • ${Math.abs(measurement.voltage || 0).toFixed(2)} V`,
       left,
@@ -4980,26 +5189,56 @@ function drawElectricComponent(item, measurement) {
   ctx.restore();
 }
 
+function drawElectricityProbeLink(probe) {
+  const reading = electricityProbeReading(probe);
+  if (!reading.target) return;
+  const color = probe.type === "ammeter" ? "#d98724" : "#2d78b8";
+  const angle = Math.atan2(reading.target.y - probe.y, reading.target.x - probe.x);
+  const start = { x: probe.x + Math.cos(angle) * 30, y: probe.y + Math.sin(angle) * 30 };
+  const targetConfig = electricalConfigForType(reading.target.type);
+  const targetRadius = Math.max(targetConfig.width, targetConfig.height) / 2 + 8;
+  const end = {
+    x: reading.target.x - Math.cos(angle) * targetRadius,
+    y: reading.target.y - Math.sin(angle) * targetRadius
+  };
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.setLineDash([7, 6]);
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.lineTo(end.x, end.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.arc(end.x, end.y, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawElectricity() {
   state.electricity.solution = computeElectricalSolution();
   const solution = state.electricity.solution;
+  drawBreadboardSurface();
 
-  ctx.save();
-  ctx.fillStyle = "rgba(9, 15, 28, 0.76)";
-  roundedRectPath(22, 22, viewport.width - 44, viewport.height - 44, 26);
-  ctx.fill();
-  ctx.restore();
-
-  electricWires().forEach((wire) => {
-    const endpoints = getElectricalWireEndpoints(wire);
-    if (!endpoints) return;
-    drawElectricWirePath(endpoints.from, endpoints.to, wire.id === state.electricity.selectedWireId);
-  });
+  if (state.electricity.scenario === "parallel") {
+    drawParallelCircuitWires(solution);
+  } else {
+    electricWires().forEach((wire) => {
+      const endpoints = getElectricalWireEndpoints(wire);
+      if (!endpoints) return;
+      drawElectricWirePath(endpoints.from, endpoints.to, wire.id === state.electricity.selectedWireId);
+    });
+  }
 
   const pendingPoint = electricalPendingPoint();
   if (pendingPoint && dragState?.mode === "wire-preview" && dragState.previewPoint) {
     drawElectricWirePath(pendingPoint, dragState.previewPoint, true);
   }
+
+  electricalComponents().filter(isElectricalProbe).forEach(drawElectricityProbeLink);
 
   electricalComponents().forEach((item) => {
     drawElectricComponent(item, solution.measurements[item.id]);
@@ -5008,16 +5247,16 @@ function drawElectricity() {
   ctx.save();
   ctx.fillStyle = "rgba(255,255,255,0.94)";
   ctx.font = "700 22px 'Space Grotesk', sans-serif";
-  ctx.fillText("Elektrik devresi", 40, 54);
+  ctx.fillText("Breadboard devresi", 40, 54);
   ctx.font = "500 13px 'IBM Plex Sans', sans-serif";
   ctx.fillStyle = "rgba(211, 223, 246, 0.84)";
-  ctx.fillText(
-    solution.circuitClosed
-      ? `Devre kapali • toplam akim ${solution.totalCurrent.toFixed(3)} A`
-      : "Devre acik veya baglanti eksik. Pili, direncleri ve anahtari kabloyla bagla.",
-    40,
-    76,
-  );
+  const branchCurrents = electricityLoads().map((item) => Math.abs(solution.measurements[item.id]?.current || 0));
+  const subtitle = state.electricity.scenario === "parallel" && solution.circuitClosed
+    ? `I = ${branchCurrents.map((current, index) => `I${index + 1} ${current.toFixed(3)} A`).join(" + ")} = ${solution.totalCurrent.toFixed(3)} A`
+    : solution.circuitClosed
+      ? `Devre kapalı • toplam akım ${solution.totalCurrent.toFixed(3)} A`
+      : "Anahtar açık • devreden akım geçmiyor";
+  ctx.fillText(subtitle, 40, 76);
   ctx.restore();
 }
 
@@ -6291,14 +6530,15 @@ function renderSummaries(trace = { segments: [], interactions: 0 }) {
   if (state.scene === "electricity") {
     const components = electricalComponents(items);
     const solution = state.electricity.solution || computeElectricalSolution();
-    primary.textContent = `${components.length} eleman`;
+    const scenarioNames = { ohm: "Ohm yasası", series: "Seri devre", parallel: "Paralel devre", bulb: "Ampul devresi" };
+    primary.textContent = scenarioNames[state.electricity.scenario] || `${components.length} eleman`;
     secondary.textContent = solution.circuitClosed
       ? `${solution.totalCurrent.toFixed(3)} A devre akimi`
-      : "Devre acik";
+      : "Anahtar açık";
     tertiary.textContent = solution.valid
-      ? `${state.electricity.wires.length} kablo • ${solution.equivalentVoltage.toFixed(1)} V kaynak`
-      : "Pil ve baglanti bekleniyor";
-    sceneState.textContent = state.electricity.toolMode === "wire" ? "Kablo cizimi acik" : "Hazir";
+      ? `${solution.totalResistance?.toFixed(1) || "--"} Ω • ${solution.equivalentVoltage.toFixed(1)} V`
+      : "Hazır devre yükleniyor";
+    sceneState.textContent = solution.circuitClosed ? "Akım geçiyor" : "Anahtar açık";
     return;
   }
 
@@ -6423,6 +6663,12 @@ function arrangePanelsForScene() {
     return;
   }
 
+  if (state.scene === "electricity") {
+    stageSide.append(moduleControlsPanel, navigationPanel, inspectorPanel, toolboxPanel);
+    bottomStrip.append(objectPanel);
+    return;
+  }
+
   stageSide.append(inspectorPanel, toolboxPanel, navigationPanel);
   workspaceSlot.append(moduleControlsPanel);
   bottomStrip.append(objectPanel);
@@ -6482,6 +6728,19 @@ function renderUI() {
   }
 
   document.getElementById("lab-screen").dataset.scene = state.scene;
+  document.querySelector("#lab-screen .eyebrow").textContent = state.scene === "electricity" ? "Hazır deneyler" : "Bagimsiz proje";
+  document.querySelector("#lab-screen .hero h1").textContent = state.scene === "electricity" ? "Elektrik Laboratuvarı" : "Fizik Lab";
+  document.querySelector("#lab-screen .hero-text").textContent = state.scene === "electricity"
+    ? "Ohm yasasını, seri-paralel bağlantıları ve ampul parlaklığını değerleri değiştirerek incele."
+    : "Kullanici bos bir sahnede kendi duzenegini kurar. Lazer, ayna, akı yüzeyi, mercek, prizma, fiber ve gorunur derinlik araclari ile optik simulasyonlari tasarlanabilir.";
+  const heroStats = document.querySelectorAll("#lab-screen .hero-stat strong");
+  if (heroStats.length === 3) {
+    heroStats[0].textContent = state.scene === "electricity" ? "Hazır devre + canlı ölçüm" : "Bos sahne + arac kutusu";
+    heroStats[1].textContent = state.scene === "electricity" ? "Ohm, seri, paralel ve ampul" : "Optik, Vektörler, Isı-Sıcaklık ve Elektrik";
+    heroStats[2].textContent = state.scene === "electricity" ? "Seç, ayarla, karşılaştır" : "Sec, surukle, duzenle";
+  }
+  document.querySelector(".stage-toolbar h2").textContent = state.scene === "electricity" ? "Breadboard" : "Deney Sahasi";
+  document.querySelector("#module-controls-panel h2").textContent = state.scene === "electricity" ? "Devre Kontrolleri" : "Modul Kontrolleri";
   document.getElementById("inspector-modal").hidden = !inspectorModalOpen;
   arrangePanelsForScene();
   trimVectorsToModeLimit();
@@ -6490,6 +6749,7 @@ function renderUI() {
   renderToolGrid();
   renderLegend();
   renderModuleControls();
+  renderElectricityDock();
   renderInspector();
   renderObjectList();
   renderScene();
@@ -6522,8 +6782,10 @@ function renderUI() {
           ? state.heat.mode === "heating"
             ? "Kap bos. Malzeme ekleyip isitmayi baslat."
             : "Iki malzeme ekleyip karistirma deneyini kur."
-          : "Elektrik elemani ekle, kablo araciyla terminalleri bagla ve devreyi cozdur.";
-  document.getElementById("toolbox-panel").hidden = state.scene === "vectors";
+          : "Hazır bir deney seç ve devre değerlerini değiştir.";
+  document.getElementById("toolbox-panel").hidden = state.scene === "vectors" || state.scene === "electricity";
+  document.getElementById("inspector-panel").hidden = state.scene === "electricity";
+  document.querySelector(".object-panel").hidden = state.scene === "electricity";
   document.getElementById("toolbox-copy").textContent =
     state.scene === "optics"
       ? activeOpticsOutcome()
@@ -6537,7 +6799,7 @@ function renderUI() {
           ? state.heat.mode === "heating"
             ? "Malzemeleri ve termometreyi bu kutudan ekleyebilirsin."
             : "Karistirma icin iki madde ve istersen termometre ekle."
-          : "Elektrik elemanlarini ekle. Kablo karti, baglanti modunu acar.";
+          : "Elektrik deneyleri hazır devrelerle çalışır.";
   document.getElementById("status-text").textContent =
     state.notice ||
     (state.scene === "optics"
@@ -6554,7 +6816,7 @@ function renderUI() {
           ? state.heat.mode === "heating"
             ? "Kap icine madde ekle, isitici gucunu ayarla ve grafigi izle."
             : "Iki farkli sicakliktaki maddeyi ayni ortama getir ve isi alisverisini incele."
-          : "Pili, direnci, anahtari ve olcu aletlerini terminallerinden kabloyla bagla.");
+          : "Gerilim ve direnç değerlerini değiştir; akım otomatik hesaplansın.");
   document.getElementById("run-scene-button").textContent =
     state.scene === "optics"
       ? "Isin yolunu hesapla"
@@ -6571,8 +6833,8 @@ function renderUI() {
         : state.scene === "electricity"
           ? "Kablo modunu kapat"
           : "Yardimcilari gizle";
-  document.getElementById("run-scene-button").style.display = state.scene === "vectors" ? "none" : "";
-  document.getElementById("pause-scene-button").style.display = state.scene === "vectors" ? "none" : "";
+  document.getElementById("run-scene-button").style.display = state.scene === "vectors" || state.scene === "electricity" ? "none" : "";
+  document.getElementById("pause-scene-button").style.display = state.scene === "vectors" || state.scene === "electricity" ? "none" : "";
   restoreFocusedInput(focusSnapshot);
   revealInspectorIfNeeded();
 }
@@ -6810,6 +7072,447 @@ function loadPlaneMirrorScenario(kind = "law") {
   renderUI();
 }
 
+function sphericalMirrorScenarioItems(kind) {
+  const mirror = (props) => ({
+    id: uid("mirror"),
+    type: "spherical-mirror",
+    x: 700,
+    y: 320,
+    angle: 0,
+    length: 190,
+    radius: 240,
+    mirrorMode: "concave",
+    ...props
+  });
+  const object = (props) => ({
+    id: uid("object"),
+    type: "optical-object",
+    x: 420,
+    y: 330,
+    height: 120,
+    ...props
+  });
+  const laser = (props) => ({
+    id: uid("laser"),
+    type: "laser",
+    x: 190,
+    y: 300,
+    angle: 0,
+    colorMode: "single",
+    color: "red",
+    ...props
+  });
+  const objectTop = (item) => ({ x: item.x, y: item.y - item.height });
+  const objectRaySet = (targetObject, targetMirror) => {
+    const top = objectTop(targetObject);
+    const center = sphericalMirrorCenter(targetMirror);
+    return [
+      laser({ x: top.x, y: top.y, angle: 0, color: "red" }),
+      laser({ x: top.x, y: top.y, angle: angleToPoint(top, center), color: "green" }),
+      laser({ x: top.x, y: top.y, angle: angleToPoint(top, { x: targetMirror.x, y: targetMirror.y }), color: "yellow" })
+    ];
+  };
+
+  if (kind === "focus") {
+    const focusMirror = mirror({ x: 720, y: 300, length: 220, radius: 260 });
+    return [
+      focusMirror,
+      ...[220, 260, 300, 340, 380].map((y, index) =>
+        laser({ x: 180, y, angle: 0, color: ["red", "orange", "yellow", "green", "blue"][index] })
+      )
+    ];
+  }
+
+  if (kind === "concave-image") {
+    const concave = mirror({ x: 705, y: 330, length: 200, radius: 240, mirrorMode: "concave" });
+    const mainObject = object({ x: 430, y: 330, height: 118 });
+    return [concave, mainObject, ...objectRaySet(mainObject, concave)];
+  }
+
+  if (kind === "convex-image") {
+    const convex = mirror({ x: 680, y: 330, length: 200, radius: 240, mirrorMode: "convex" });
+    const mainObject = object({ x: 390, y: 330, height: 122 });
+    return [convex, mainObject, ...objectRaySet(mainObject, convex)];
+  }
+
+  if (kind === "inside-focus") {
+    const concave = mirror({ x: 720, y: 330, length: 200, radius: 240, mirrorMode: "concave" });
+    const mainObject = object({ x: 650, y: 330, height: 82 });
+    return [concave, mainObject, ...objectRaySet(mainObject, concave)];
+  }
+
+  if (kind === "beyond-center") {
+    const concave = mirror({ x: 720, y: 330, length: 210, radius: 220, mirrorMode: "concave" });
+    const mainObject = object({ x: 425, y: 330, height: 118 });
+    return [concave, mainObject, ...objectRaySet(mainObject, concave)];
+  }
+
+  const upper = mirror({ x: 720, y: 205, length: 150, radius: 230, mirrorMode: "concave" });
+  const lower = mirror({ x: 720, y: 435, length: 150, radius: 230, mirrorMode: "convex" });
+  return [
+    upper,
+    lower,
+    ...[165, 205, 245].map((y) => laser({ x: 190, y, angle: 0, color: "red" })),
+    ...[395, 435, 475].map((y) => laser({ x: 190, y, angle: 0, color: "blue" }))
+  ];
+}
+
+function loadSphericalMirrorScenario(kind = "compare") {
+  const sphericalOutcomes = ["FIZ.11.4.3", "FIZ.11.4.4"];
+  if (!sphericalOutcomes.includes(state.opticsOutcome)) {
+    state.opticsOutcome = kind === "compare" || kind === "focus" ? "FIZ.11.4.3" : "FIZ.11.4.4";
+  }
+
+  const labels = {
+    compare: "Çukur ve tümsek ayna karşılaştırması",
+    focus: "Odak deneyi",
+    "concave-image": "Çukur aynada görüntü",
+    "convex-image": "Tümsek aynada görüntü",
+    "inside-focus": "Odak içi cisim",
+    "beyond-center": "Merkez dışındaki cisim"
+  };
+
+  state.scene = "optics";
+  state.opticsVisible = true;
+  state.optics.items = sphericalMirrorScenarioItems(kind);
+  state.optics.items.forEach(constrainItem);
+  selectedId = state.optics.items.find((item) => item.type === "spherical-mirror")?.id || null;
+  shouldRevealInspector = true;
+  state.notice = `${labels[kind] || "Küresel ayna"} simülasyonu sahneye kuruldu.`;
+  saveState();
+  renderUI();
+}
+
+function electricityScenarioItems(kind = "ohm") {
+  const battery = { id: uid("battery"), type: "battery", x: 150, y: 300, voltage: 9 };
+  const switchItem = { id: uid("switch"), type: "switch", x: 430, y: 440, closed: true };
+  const ammeter = { id: uid("ammeter"), type: "ammeter", x: 720, y: 430, name: "A" };
+  const voltmeter = { id: uid("voltmeter"), type: "voltmeter", x: 830, y: 430, name: "V" };
+  const resistor = (name, x, y, resistance = 100) => ({ id: uid("resistor"), type: "resistor", x, y, resistance, name });
+  const bulb = { id: uid("bulb"), type: "bulb", x: 520, y: 170, resistance: 60, name: "L" };
+  const wire = (fromItem, fromTerminal, toItem, toTerminal) => ({
+    id: uid("wire"),
+    from: { itemId: fromItem.id, terminal: fromTerminal },
+    to: { itemId: toItem.id, terminal: toTerminal }
+  });
+
+  if (kind === "parallel") {
+    const branchOne = resistor("R1", 700, 205, 100);
+    const branchTwo = resistor("R2", 700, 395, 100);
+    const parallelSwitch = { ...switchItem, x: 365, y: 300 };
+    const parallelAmmeter = { ...ammeter, x: 535, y: 300 };
+    return {
+      items: [battery, parallelSwitch, parallelAmmeter, voltmeter, branchOne, branchTwo],
+      wires: [
+        wire(battery, "right", parallelSwitch, "left"),
+        wire(parallelSwitch, "right", parallelAmmeter, "left"),
+        wire(parallelAmmeter, "right", branchOne, "left"),
+        wire(parallelAmmeter, "right", branchTwo, "left"),
+        wire(branchOne, "right", battery, "left"),
+        wire(branchTwo, "right", battery, "left")
+      ]
+    };
+  }
+
+  if (kind === "series") {
+    const first = resistor("R1", 385, 170, 100);
+    const second = resistor("R2", 625, 170, 100);
+    return {
+      items: [battery, first, second, ammeter, voltmeter, switchItem],
+      wires: [
+        wire(battery, "right", first, "left"),
+        wire(first, "right", second, "left"),
+        wire(second, "right", ammeter, "left"),
+        wire(ammeter, "right", switchItem, "right"),
+        wire(switchItem, "left", battery, "left")
+      ]
+    };
+  }
+
+  if (kind === "bulb") {
+    return {
+      items: [battery, bulb, ammeter, voltmeter, switchItem],
+      wires: [
+        wire(battery, "right", bulb, "left"),
+        wire(bulb, "right", ammeter, "left"),
+        wire(ammeter, "right", switchItem, "right"),
+        wire(switchItem, "left", battery, "left")
+      ]
+    };
+  }
+
+  const mainResistor = resistor("R", 500, 170, 100);
+  return {
+    items: [battery, mainResistor, ammeter, voltmeter, switchItem],
+    wires: [
+      wire(battery, "right", mainResistor, "left"),
+      wire(mainResistor, "right", ammeter, "left"),
+      wire(ammeter, "right", switchItem, "right"),
+      wire(switchItem, "left", battery, "left")
+    ]
+  };
+}
+
+function electricityLoads(items = electricalComponents()) {
+  return items.filter((item) => item.type === "resistor" || item.type === "bulb");
+}
+
+function isElectricalProbe(item) {
+  return item?.type === "ammeter" || item?.type === "voltmeter";
+}
+
+function electricityProbeTargets() {
+  return electricalComponents().filter((item) => !isElectricalProbe(item) && item.type !== "ground");
+}
+
+function hitElectricalProbe(point) {
+  return [...electricalComponents()].reverse().find((item) => {
+    if (!isElectricalProbe(item)) return false;
+    const config = electricalConfigForType(item.type);
+    return Math.abs(point.x - item.x) <= config.width / 2 && Math.abs(point.y - item.y) <= config.height / 2;
+  }) || null;
+}
+
+function updateElectricityProbeTarget(probe) {
+  if (!isElectricalProbe(probe)) return;
+  let nearest = null;
+  let nearestDistance = Infinity;
+  electricityProbeTargets().forEach((item) => {
+    const config = electricalConfigForType(item.type);
+    const dx = Math.max(Math.abs(probe.x - item.x) - config.width / 2, 0);
+    const dy = Math.max(Math.abs(probe.y - item.y) - config.height / 2, 0);
+    const distance = Math.hypot(dx, dy);
+    if (distance <= 86 && distance < nearestDistance) {
+      nearest = item;
+      nearestDistance = distance;
+    }
+  });
+  probe.probeTargetId = nearest?.id || null;
+}
+
+function normalizeElectricityProbeTargets() {
+  const validIds = new Set(electricityProbeTargets().map((item) => item.id));
+  electricalComponents().filter(isElectricalProbe).forEach((probe) => {
+    if (!validIds.has(probe.probeTargetId)) {
+      probe.probeTargetId = null;
+    }
+  });
+}
+
+function electricityProbeReading(probe) {
+  const target = electricalComponents().find((item) => item.id === probe?.probeTargetId);
+  if (!isElectricalProbe(probe) || !target) {
+    return { target: null, label: "Ölçüm noktası seçilmedi", value: 0, unit: probe?.type === "voltmeter" ? "V" : "A" };
+  }
+
+  const solution = state.electricity.solution || computeElectricalSolution();
+  const measurement = solution.measurements[target.id] || {};
+  if (probe.type === "ammeter") {
+    const current = target.type === "battery" || target.type === "switch"
+      ? solution.circuitClosed ? solution.totalCurrent : 0
+      : Math.abs(measurement.current || 0);
+    return { target, label: itemTitle(target), value: current, unit: "A" };
+  }
+
+  const battery = electricalComponents().find((item) => item.type === "battery");
+  const voltage = target.type === "battery"
+    ? Number(target.voltage) || 0
+    : target.type === "switch" && !target.closed
+      ? Number(battery?.voltage) || 0
+      : Math.abs(measurement.voltage || 0);
+  return { target, label: itemTitle(target), value: voltage, unit: "V" };
+}
+
+function arrangeElectricityBoard() {
+  const components = electricalComponents();
+  const battery = components.find((item) => item.type === "battery");
+  const switchItem = components.find((item) => item.type === "switch");
+  const ammeter = components.find((item) => item.type === "ammeter");
+  const voltmeter = components.find((item) => item.type === "voltmeter");
+  const loads = electricityLoads(components);
+
+  if (!battery || !switchItem || !ammeter || !voltmeter) return;
+
+  if (state.electricity.scenario === "parallel") {
+    battery.x = 140;
+    battery.y = 300;
+    switchItem.x = 345;
+    switchItem.y = 300;
+    ammeter.x = 210;
+    ammeter.y = 430;
+    voltmeter.x = 315;
+    voltmeter.y = 430;
+    const rows = loads.length === 1 ? [300] : loads.length === 2 ? [205, 395] : [165, 300, 435];
+    loads.forEach((item, index) => {
+      item.x = 730;
+      item.y = rows[index];
+      item.name = item.type === "bulb" ? `L${index + 1}` : `R${index + 1}`;
+    });
+    return;
+  }
+
+  battery.x = 140;
+  battery.y = 300;
+  switchItem.x = 480;
+  switchItem.y = 440;
+  ammeter.x = 720;
+  ammeter.y = 430;
+  voltmeter.x = 830;
+  voltmeter.y = 430;
+  const columns = loads.length === 1 ? [500] : loads.length === 2 ? [385, 625] : [290, 500, 710];
+  loads.forEach((item, index) => {
+    item.x = columns[index];
+    item.y = 170;
+    item.name = item.type === "bulb" ? `L${index + 1}` : `R${index + 1}`;
+  });
+}
+
+function rebuildElectricityWires() {
+  const components = electricalComponents();
+  const battery = components.find((item) => item.type === "battery");
+  const switchItem = components.find((item) => item.type === "switch");
+  const loads = electricityLoads(components);
+  const wires = [];
+  const connect = (fromItem, fromTerminal, toItem, toTerminal) => {
+    wires.push({
+      id: uid("wire"),
+      from: { itemId: fromItem.id, terminal: fromTerminal },
+      to: { itemId: toItem.id, terminal: toTerminal }
+    });
+  };
+
+  if (!battery || !switchItem || !loads.length) {
+    state.electricity.wires = [];
+    return;
+  }
+
+  if (state.electricity.scenario === "parallel") {
+    connect(battery, "right", switchItem, "left");
+    loads.forEach((item) => {
+      connect(switchItem, "right", item, "left");
+      connect(item, "right", battery, "left");
+    });
+  } else {
+    connect(battery, "right", loads[0], "left");
+    loads.slice(1).forEach((item, index) => connect(loads[index], "right", item, "left"));
+    connect(loads[loads.length - 1], "right", switchItem, "right");
+    connect(switchItem, "left", battery, "left");
+  }
+
+  state.electricity.wires = wires;
+}
+
+function addElectricityLoad(type) {
+  const loads = electricityLoads();
+  if (loads.length >= 3) {
+    state.notice = "Breadboard üzerinde en fazla üç yük yuvası kullanılabilir.";
+    renderUI();
+    return;
+  }
+
+  const nextType = type === "bulb" ? "bulb" : "resistor";
+  state.electricity.items.push({
+    id: uid(nextType),
+    type: nextType,
+    x: 500,
+    y: 170,
+    resistance: nextType === "bulb" ? 60 : 100,
+    name: nextType === "bulb" ? `L${loads.length + 1}` : `R${loads.length + 1}`
+  });
+  if (state.electricity.scenario !== "parallel") {
+    state.electricity.scenario = electricityLoads().length > 1 ? "series" : nextType === "bulb" ? "bulb" : "ohm";
+  }
+  arrangeElectricityBoard();
+  rebuildElectricityWires();
+  normalizeElectricityProbeTargets();
+  state.electricity.solution = computeElectricalSolution();
+  state.notice = `${nextType === "bulb" ? "Ampul" : "Direnç"} boş breadboard yuvasına eklendi.`;
+  selectedId = null;
+  saveState();
+  renderUI();
+}
+
+function removeLastElectricityLoad() {
+  const loads = electricityLoads();
+  if (loads.length <= 1) {
+    state.notice = "Devrede en az bir yük elemanı kalmalıdır.";
+    renderUI();
+    return;
+  }
+
+  const removed = loads[loads.length - 1];
+  state.electricity.items = state.electricity.items.filter((item) => item.id !== removed.id);
+  const remaining = electricityLoads();
+  if (state.electricity.scenario !== "parallel" && remaining.length === 1) {
+    state.electricity.scenario = remaining[0].type === "bulb" ? "bulb" : "ohm";
+  }
+  arrangeElectricityBoard();
+  rebuildElectricityWires();
+  normalizeElectricityProbeTargets();
+  state.electricity.solution = computeElectricalSolution();
+  state.notice = "Son yük elemanı breadboard üzerinden çıkarıldı.";
+  selectedId = null;
+  saveState();
+  renderUI();
+}
+
+function loadElectricityScenario(kind = "ohm", announce = true) {
+  const validKind = ["ohm", "series", "parallel", "bulb"].includes(kind) ? kind : "ohm";
+  const setup = electricityScenarioItems(validKind);
+  state.scene = "electricity";
+  state.electricity.scenario = validKind;
+  state.electricity.items = setup.items;
+  state.electricity.wires = setup.wires;
+  state.electricity.toolMode = "select";
+  state.electricity.pendingTerminal = null;
+  state.electricity.hoveredTerminal = null;
+  state.electricity.selectedWireId = null;
+  selectedId = null;
+  arrangeElectricityBoard();
+  rebuildElectricityWires();
+  normalizeElectricityProbeTargets();
+  state.electricity.solution = computeElectricalSolution();
+  if (announce) {
+    const labels = { ohm: "Ohm yasası", series: "Seri devre", parallel: "Paralel devre", bulb: "Ampul devresi" };
+    state.notice = `${labels[validKind]} hazır.`;
+  }
+  saveState();
+  renderUI();
+}
+
+function toggleElectricitySwitch() {
+  const switchItem = electricalComponents().find((item) => item.type === "switch");
+  if (!switchItem) return;
+  switchItem.closed = !switchItem.closed;
+  state.electricity.solution = computeElectricalSolution();
+  state.notice = switchItem.closed ? "Anahtar kapatıldı; devreden akım geçiyor." : "Anahtar açıldı; akım kesildi.";
+  saveState();
+  renderUI();
+}
+
+function renderElectricityDock() {
+  const dock = document.getElementById("electricity-dock");
+  if (!dock) return;
+  dock.hidden = state.scene !== "electricity";
+  if (dock.hidden) {
+    dock.innerHTML = "";
+    return;
+  }
+
+  const loadCount = electricityLoads().length;
+  dock.innerHTML = `
+    <div class="electricity-dock-copy">
+      <strong>Eleman yuvaları</strong>
+      <span>${loadCount}/3 dolu • Yeni yük otomatik bağlanır; A ve V ölçü aletleri sürüklenebilir.</span>
+    </div>
+    <div class="electricity-dock-actions">
+      <button class="secondary-button" type="button" data-electricity-add="resistor" ${loadCount >= 3 ? "disabled" : ""}>+ Direnç</button>
+      <button class="secondary-button" type="button" data-electricity-add="bulb" ${loadCount >= 3 ? "disabled" : ""}>+ Ampul</button>
+      <button class="secondary-button" type="button" data-electricity-action="remove-load" ${loadCount <= 1 ? "disabled" : ""}>Son elemanı çıkar</button>
+    </div>
+  `;
+}
+
 function focusIlluminationTools() {
   state.notice = "Noktasal ışık kaynağı, akı yüzeyi ve aydınlanan yüzey araçları bu kazanım için birlikte kullanılabilir.";
   saveState();
@@ -6868,6 +7571,10 @@ function addItem(type) {
 }
 
 function clearScene() {
+  if (state.scene === "electricity") {
+    loadElectricityScenario(state.electricity.scenario);
+    return;
+  }
   stopAnimationLoop();
   state.running = false;
   lastTick = 0;
@@ -6911,11 +7618,9 @@ function openScene(scene) {
   state.view = "lab";
   selectedId = null;
   if (state.scene === "electricity") {
-    state.electricity.toolMode = "select";
-    state.electricity.pendingTerminal = null;
-    state.electricity.hoveredTerminal = null;
-    state.electricity.selectedWireId = null;
-    state.electricity.solution = computeElectricalSolution();
+    state.view = "lab";
+    loadElectricityScenario(state.electricity.scenario || "ohm", false);
+    return;
   }
   state.notice = `${sceneLabel()} modul acildi.`;
   saveState();
@@ -6949,8 +7654,8 @@ function setScene(scene) {
   }
   selectedId = null;
   if (state.scene === "electricity") {
-    state.electricity.pendingTerminal = null;
-    state.electricity.solution = computeElectricalSolution();
+    loadElectricityScenario(state.electricity.scenario || "ohm", false);
+    return;
   }
   state.notice = `${sceneLabel()} modul aktif.`;
   saveState();
@@ -7268,6 +7973,33 @@ function hitItem(point) {
 function initCanvasInteractions() {
   canvas.addEventListener("pointerdown", (event) => {
     const point = canvasPoint(event);
+    if (state.scene === "electricity") {
+      const probeHit = hitElectricalProbe(point);
+      if (probeHit) {
+        selectedId = probeHit.id;
+        dragState = {
+          id: probeHit.id,
+          mode: "electric-probe",
+          offsetX: point.x - probeHit.x,
+          offsetY: point.y - probeHit.y
+        };
+        canvas.setPointerCapture(event.pointerId);
+        state.notice = `${itemTitle(probeHit)} hareket ediyor; ölçmek istediğin elemana yaklaştır.`;
+        renderUI();
+        return;
+      }
+      const boardHit = hitItem(point);
+      if (boardHit?.type === "switch") {
+        toggleElectricitySwitch();
+        return;
+      }
+      selectedId = boardHit?.id || null;
+      state.notice = boardHit
+        ? `${itemTitle(boardHit)} breadboard yuvasına sabitlenmiş. Değerini kontrol panelinden değiştirebilirsin.`
+        : "Ampermetre ve voltmetreyi ölçmek istediğin elemana doğru sürükleyebilirsin.";
+      renderUI();
+      return;
+    }
     if (state.scene === "electricity" && state.electricity.toolMode === "wire") {
       const terminalHit = hitElectricalTerminal(point);
       if (terminalHit) {
@@ -7342,14 +8074,7 @@ function initCanvasInteractions() {
   canvas.addEventListener("pointermove", (event) => {
     const point = canvasPoint(event);
 
-    if (state.scene === "electricity") {
-      state.electricity.hoveredTerminal = hitElectricalTerminal(point);
-    }
-
     if (!dragState) {
-      if (state.scene === "electricity") {
-        renderUI();
-      }
       return;
     }
 
@@ -7374,6 +8099,16 @@ function initCanvasInteractions() {
       item.y = point.y - dragState.offsetY;
     }
     constrainItem(item);
+    if (dragState.mode === "electric-probe" && isElectricalProbe(item)) {
+      updateElectricityProbeTarget(item);
+      const reading = electricityProbeReading(item);
+      state.notice = reading.target
+        ? `${itemTitle(item)}: ${reading.label} üzerinde ${reading.value.toFixed(item.type === "ammeter" ? 3 : 2)} ${reading.unit}`
+        : `${itemTitle(item)} için bir ölçüm noktasına yaklaş.`;
+      document.getElementById("status-text").textContent = state.notice;
+      renderScene();
+      return;
+    }
     snapVectorForMode(item);
     if (isVector(item)) {
       state.vectors.resultVisible = false;
@@ -7393,8 +8128,15 @@ function initCanvasInteractions() {
     }
     const item = currentItems().find((entry) => entry.id === dragState.id);
     if (item) {
+      if (dragState.mode === "electric-probe" && isElectricalProbe(item)) {
+        updateElectricityProbeTarget(item);
+        const reading = electricityProbeReading(item);
+        state.notice = reading.target
+          ? `${itemTitle(item)}, ${reading.label} üzerinden ${reading.value.toFixed(item.type === "ammeter" ? 3 : 2)} ${reading.unit} okuyor.`
+          : `${itemTitle(item)} ölçüm noktası bekliyor.`;
+      }
       snapVectorForMode(item);
-      if (isElectricalComponent(item)) {
+      if (isElectricalComponent(item) && !isElectricalProbe(item)) {
         state.electricity.solution = computeElectricalSolution();
       }
     }
@@ -7407,6 +8149,7 @@ function initCanvasInteractions() {
   canvas.addEventListener("pointercancel", release);
   canvas.addEventListener("pointerleave", release);
   canvas.addEventListener("dblclick", (event) => {
+    if (state.scene === "electricity") return;
     const point = canvasPoint(event);
     const hit = hitItem(point);
     if (!hit) return;
@@ -7431,6 +8174,18 @@ function initEvents() {
     addItem(button.dataset.add);
   });
 
+  document.getElementById("electricity-dock").addEventListener("click", (event) => {
+    const addButton = event.target.closest("[data-electricity-add]");
+    if (addButton) {
+      addElectricityLoad(addButton.dataset.electricityAdd);
+      return;
+    }
+    const actionButton = event.target.closest("[data-electricity-action]");
+    if (actionButton?.dataset.electricityAction === "remove-load") {
+      removeLastElectricityLoad();
+    }
+  });
+
   document.querySelectorAll("[data-home-module]").forEach((button) => {
     button.addEventListener("click", () => openScene(button.dataset.homeModule));
   });
@@ -7448,6 +8203,14 @@ function initEvents() {
         const outcome = activeOpticsOutcome();
         if (outcomeButton.dataset.opticsOutcome === "FIZ.11.4.2") {
           loadPlaneMirrorScenario("law");
+          return;
+        }
+        if (outcomeButton.dataset.opticsOutcome === "FIZ.11.4.3") {
+          loadSphericalMirrorScenario("compare");
+          return;
+        }
+        if (outcomeButton.dataset.opticsOutcome === "FIZ.11.4.4") {
+          loadSphericalMirrorScenario("concave-image");
           return;
         }
         state.notice = `${outcome.code} seçildi. Araç kutusu bu çıktıya göre güncellendi.`;
@@ -7479,6 +8242,12 @@ function initEvents() {
         loadPlaneMirrorScenario(planeMirrorButton.dataset.planeMirrorAction);
         return;
       }
+
+      const sphericalMirrorButton = event.target.closest("[data-spherical-mirror-action]");
+      if (sphericalMirrorButton) {
+        loadSphericalMirrorScenario(sphericalMirrorButton.dataset.sphericalMirrorAction);
+        return;
+      }
     }
 
     if (state.scene === "vectors") {
@@ -7498,6 +8267,12 @@ function initEvents() {
     }
 
     if (state.scene === "electricity") {
+      const scenarioButton = event.target.closest("[data-electricity-scenario]");
+      if (scenarioButton) {
+        loadElectricityScenario(scenarioButton.dataset.electricityScenario);
+        return;
+      }
+
       const toolButton = event.target.closest("[data-electricity-tool]");
       if (toolButton) {
         state.electricity.toolMode = toolButton.dataset.electricityTool === "wire" ? "wire" : "select";
@@ -7514,6 +8289,14 @@ function initEvents() {
 
       const actionButton = event.target.closest("[data-electricity-action]");
       if (actionButton) {
+        if (actionButton.dataset.electricityAction === "toggle-switch") {
+          toggleElectricitySwitch();
+          return;
+        }
+        if (actionButton.dataset.electricityAction === "reset") {
+          loadElectricityScenario(state.electricity.scenario);
+          return;
+        }
         if (actionButton.dataset.electricityAction === "solve") {
           runScene();
           return;
@@ -7622,6 +8405,47 @@ function initEvents() {
   });
 
   document.getElementById("module-controls").addEventListener("input", (event) => {
+    if (state.scene === "electricity") {
+      const batteryInput = event.target.closest("[data-electricity-prop=\"voltage\"]");
+      const resistanceInput = event.target.closest("[data-electricity-resistance]");
+      if (batteryInput) {
+        const battery = electricalComponents().find((item) => item.type === "battery");
+        if (battery) battery.voltage = clamp(Number(batteryInput.value) || 9, 1, 24);
+      }
+      if (resistanceInput) {
+        const resistor = electricalComponents().find((item) => item.id === resistanceInput.dataset.electricityResistance);
+        if (resistor) resistor.resistance = clamp(Number(resistanceInput.value) || 100, 10, 300);
+      }
+      if (batteryInput || resistanceInput) {
+        state.electricity.solution = computeElectricalSolution();
+        state.notice = "Devre değerleri güncellendi.";
+        const solution = state.electricity.solution;
+        const battery = electricalComponents().find((item) => item.type === "battery");
+        const current = solution.circuitClosed ? solution.totalCurrent : 0;
+        const resistance = solution.totalResistance || 0;
+        const voltage = battery?.voltage || 0;
+        const changedItem = resistanceInput
+          ? electricalComponents().find((item) => item.id === resistanceInput.dataset.electricityResistance)
+          : null;
+        const voltageValue = document.querySelector('[data-electricity-value="voltage"]');
+        const resistanceValue = changedItem
+          ? document.querySelector(`[data-electricity-value="${changedItem.id}"]`)
+          : null;
+        if (voltageValue) voltageValue.textContent = `${voltage.toFixed(0)} V`;
+        if (resistanceValue) resistanceValue.textContent = `${changedItem.resistance.toFixed(0)} Ω`;
+        document.querySelector('[data-electricity-output="current"]').textContent = `${current.toFixed(3)} A`;
+        document.querySelector('[data-electricity-output="resistance"]').textContent = `${resistance.toFixed(1)} Ω`;
+        document.querySelector('[data-electricity-output="voltage"]').textContent = `${voltage.toFixed(0)} V`;
+        document.querySelector('[data-electricity-output="formula"]').textContent = solution.circuitClosed
+          ? `I = V / R → ${current.toFixed(3)} A = ${voltage.toFixed(0)} V / ${resistance.toFixed(1)} Ω`
+          : "Anahtar açıkken devreden akım geçmez: I = 0 A";
+        document.getElementById("status-text").textContent = state.notice;
+        saveState();
+        renderScene();
+        return;
+      }
+    }
+
     const input = event.target.closest("[data-heat-prop]");
     if (!input || state.scene !== "heat") return;
 

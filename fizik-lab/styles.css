@@ -544,7 +544,7 @@ h1 {
 }
 
 #lab-screen[data-scene="electricity"] .workspace-main {
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 360px;
 }
 
 #lab-screen[data-scene="optics"] .control-strip-bottom {
@@ -582,6 +582,179 @@ h1 {
 
 #lab-screen[data-scene="electricity"] .control-strip-bottom {
   grid-template-columns: minmax(280px, 0.92fr) minmax(280px, 1.08fr);
+}
+
+#lab-screen[data-scene="electricity"] .readout-grid {
+  display: none;
+}
+
+#lab-screen[data-scene="electricity"] #module-controls-panel {
+  padding: 16px;
+}
+
+#lab-screen[data-scene="electricity"] #module-controls-panel .panel-head {
+  margin-bottom: 14px;
+}
+
+.electric-controls,
+.electric-fields {
+  display: grid;
+  gap: 14px;
+}
+
+.electric-scenarios {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.electric-scenarios .scene-button {
+  min-width: 0;
+  border-radius: 8px;
+  padding: 11px 10px;
+}
+
+.electric-description {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.electric-range {
+  display: grid;
+  gap: 8px;
+}
+
+.electric-range span,
+.electric-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.electric-range strong {
+  color: var(--text);
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.electric-range input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.electric-switch-row {
+  padding-top: 2px;
+}
+
+.electric-switch-row > span {
+  color: var(--muted);
+}
+
+.electric-switch-row button {
+  border-radius: 8px;
+}
+
+.electric-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  padding-block: 12px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.electric-metrics div {
+  min-width: 0;
+  padding-inline: 10px;
+  border-right: 1px solid var(--border);
+}
+
+.electric-metrics div:first-child {
+  padding-left: 0;
+}
+
+.electric-metrics div:last-child {
+  padding-right: 0;
+  border-right: 0;
+}
+
+.electric-metrics span,
+.electric-metrics strong {
+  display: block;
+}
+
+.electric-metrics span {
+  min-height: 2.5em;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.electric-metrics strong {
+  margin-top: 5px;
+  color: var(--text);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 1.05rem;
+}
+
+.electric-formula {
+  color: var(--accent);
+  font-family: "Space Grotesk", sans-serif;
+  line-height: 1.5;
+}
+
+.electric-controls > .secondary-button {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.electricity-dock[hidden] {
+  display: none;
+}
+
+.electricity-dock {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.electricity-dock-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.electricity-dock-copy strong {
+  font-family: "Space Grotesk", sans-serif;
+}
+
+.electricity-dock-copy span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.electricity-dock-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.electricity-dock-actions .secondary-button {
+  border-radius: 8px;
+  padding: 10px 13px;
+}
+
+.electricity-dock-actions button:disabled,
+.electric-controls button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+  transform: none;
+  box-shadow: none;
 }
 
 #lab-screen[data-scene="heat"] .workspace-slot {
@@ -1037,6 +1210,65 @@ h1 {
   transform: rotate(32deg);
 }
 
+.spherical-sim-panel {
+  background:
+    linear-gradient(135deg, rgba(255, 214, 102, 0.1), rgba(102, 224, 255, 0.1)),
+    rgba(12, 22, 42, 0.76);
+}
+
+.spherical-sim-icon::before {
+  left: 17px;
+  top: 5px;
+  right: auto;
+  bottom: auto;
+  width: 18px;
+  height: 28px;
+  border: 0;
+  border-right: 5px solid rgba(169, 232, 255, 0.96);
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.spherical-sim-icon::after {
+  left: 3px;
+  top: 11px;
+  width: 30px;
+  height: 2px;
+  background: #ff5252;
+  box-shadow: 0 10px 0 #ffb454;
+  transform: none;
+}
+
+.spherical-sim-icon.convex-image::before,
+.spherical-sim-icon.compare::before {
+  border-right: 0;
+  border-left: 5px solid rgba(169, 232, 255, 0.96);
+  left: 20px;
+}
+
+.spherical-sim-icon.compare::after {
+  left: 5px;
+  width: 27px;
+  box-shadow: 0 10px 0 #5da9ff;
+}
+
+.spherical-sim-icon.focus::after {
+  top: 8px;
+  box-shadow: 0 9px 0 #ff5252, 0 18px 0 #ff5252;
+}
+
+.spherical-sim-icon.inside-focus::after {
+  top: 15px;
+  transform: rotate(-17deg);
+}
+
+.spherical-sim-icon.beyond-center::after {
+  top: 9px;
+  transform: rotate(16deg);
+}
+
 .illumination-lesson {
   display: grid;
   gap: 16px;
@@ -1368,6 +1600,7 @@ h1 {
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--surface-light);
+  color: var(--text);
 }
 
 .tool-card {
@@ -1830,6 +2063,7 @@ h1 {
   display: block;
   line-height: 1.6;
   margin-top: 6px;
+  color: var(--muted);
 }
 
 .workspace-top {
@@ -2110,6 +2344,18 @@ h1 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  #lab-screen[data-scene="electricity"] .stage-side {
+    grid-template-columns: 1fr;
+  }
+
+  #lab-screen[data-scene="electricity"] .electric-scenarios {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  #lab-screen[data-scene="electricity"] .electric-fields {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .control-strip-bottom {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2200,6 +2446,33 @@ h1 {
   .workspace-top {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  #lab-screen[data-scene="electricity"] .electric-scenarios {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #lab-screen[data-scene="electricity"] .electric-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .electric-switch-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .electricity-dock {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .electricity-dock-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .electricity-dock-actions .secondary-button:last-child {
+    grid-column: 1 / -1;
   }
 
   .control-strip-bottom {
