@@ -114,8 +114,11 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /YAPIM AŞAMASINDA/);
   assert.match(page, /MechanicsLabHub/);
   assert.match(page, /OpticsLabHub/);
+  assert.match(page, /ModernPhysicsLabHub/);
   assert.match(page, /module\.key === "waves-optics"/);
   assert.match(page, /onNavigate\("waves-optics"\)/);
+  assert.match(page, /module\.key === "modern-physics"/);
+  assert.match(page, /onNavigate\("modern-physics"\)/);
   assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
 });
@@ -224,6 +227,74 @@ test("optik düzeneği gerçekçi ray, lazer, açı tablası, ekran ve cam elema
   assert.match(css, /\.optics-data-table\s*\{/);
   assert.match(css, /\.optics-analysis-grid\s*\{/);
   assert.match(css, /\.optics-report\s*\{/);
+});
+
+test("Modern Fizik alanı gerçek fotoelektrik düzeneği ve TYMM deney akışını sunar", async () => {
+  const hub = await readFile(
+    new URL("app/ModernPhysicsLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("app/PhotoelectricLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(hub, /Modern Fizik deney setleri/);
+  assert.match(hub, /Fotoelektrik etki/);
+  assert.match(hub, /PhotoelectricLab/);
+  assert.match(page, /FİZ\.12\.4\.1/);
+  assert.match(page, /FİZ\.12\.4\.2/);
+  assert.match(page, /FİZ\.12\.4\.3/);
+  assert.match(page, /application\/x-photoelectric-equipment/);
+  assert.match(page, /Cıva ışık kaynağı/);
+  assert.match(page, /Kırınım ağı/);
+  assert.match(page, /h\/e aparatı/);
+  assert.match(page, /Dijital multimetre/);
+  assert.match(page, /Renk filtresi/);
+  assert.match(page, /Geçirgenlik filtresi/);
+  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onStageDrop/);
+  assert.match(page, /requestAnimationFrame/);
+  assert.match(page, /BOŞALT düğmesine bas/);
+  assert.match(page, /Çizgi spektrumu hazır/);
+  assert.match(page, /PLANCK = 6\.62607015e-34/);
+  assert.match(page, /WORK_FUNCTION_EV = 1\.412/);
+  assert.match(page, /wavelength: 578/);
+  assert.match(page, /wavelength: 546\.074/);
+  assert.match(page, /wavelength: 435\.835/);
+  assert.match(page, /wavelength: 404\.656/);
+  assert.match(page, /wavelength: 365\.483/);
+  assert.match(page, /stoppingVoltageFor/);
+  assert.match(page, /photocurrentFor/);
+  assert.match(page, /linearRegression/);
+  assert.match(page, /Şiddet - durdurma gerilimi/);
+  assert.match(page, /Frekans - durdurma gerilimi/);
+  assert.match(page, /Planck sabiti ve yüzey/);
+  assert.match(page, /Güneş paneli/);
+  assert.match(page, /Fotoselli kapı/);
+  assert.match(page, /Duman dedektörü/);
+  assert.match(page, /TYMM · AÇIK UÇLU ÇIKIŞ KARTI/);
+});
+
+test("fotoelektrik tezgâhı gerçekçi cihaz, tayf, bağlantı ve ölçüm görsellerini içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.photoelectric-lab-section\s*\{/);
+  assert.match(css, /\.pe-builder\s*\{/);
+  assert.match(css, /\.pe-equipment-panel\s*\{/);
+  assert.match(css, /\.pe-stage\.drag-over\s*\{/);
+  assert.match(css, /\.pe-apparatus\s*\{/);
+  assert.match(css, /\.pe-mercury-lamp\s*\{/);
+  assert.match(css, /\.pe-grating\s*\{/);
+  assert.match(css, /\.pe-spectrum\s*,/);
+  assert.match(css, /\.pe-he-apparatus\s*\{/);
+  assert.match(css, /\.pe-photodiode-window\s*\{/);
+  assert.match(css, /\.pe-multimeter\s*\{/);
+  assert.match(css, /\.pe-cable\s*\{/);
+  assert.match(css, /\.pe-electron-stream\s*\{/);
+  assert.match(css, /@keyframes pe-electron-flight/);
+  assert.match(css, /\.pe-graph-canvas\s*\{/);
+  assert.match(css, /\.pe-data-table\s*\{/);
+  assert.match(css, /\.pe-life-cards\s*\{/);
+  assert.match(css, /\.pe-report\s*\{/);
 });
 
 test("balistik sarkaç modülü PDF düzeneğiyle kurulabilir ve iki yöntemle hız bulur", async () => {

@@ -49,3 +49,13 @@ hipotez oluşturabilir; kırmızı, yeşil ve mavi ışığı karşılaştırabi
 kırılma veya iki tam yansıma sonrasında ışının ekrana ulaştığını gözleyebilir.
 Optik tabla çevrildiğinde cam eleman aynı eksende döner; ışın yolu, dönen
 yüzeylerle kesişim ve Snell yasası kullanılarak yeniden hesaplanır.
+
+## Açık deney seti: Modern Fizik
+
+- Cıva tayfı ve gerçek h/e aparatıyla fotoelektrik etki
+- Işık şiddeti, fotoakım ve durdurma gerilimi karşılaştırması
+- Frekans-durdurma gerilimi grafiğinden Planck sabiti ve iş fonksiyonu
+
+Öğrenciler ışık kaynağı, kırınım ağı, fotodiyot, filtreler ve multimetreden
+oluşan düzeneği kurar; fototüpü boşaltıp ölçüm alır, verilerini grafikle
+karşılaştırır ve fotoelektrik etkinin günlük yaşam uygulamalarını yorumlar.

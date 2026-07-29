@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import MechanicsLabHub from "./MechanicsLabHub";
+import ModernPhysicsLabHub from "./ModernPhysicsLabHub";
 import OpticsLabHub from "./OpticsLabHub";
 
 type PortalView =
@@ -10,6 +11,7 @@ type PortalView =
   | "free-labs"
   | "mechanics"
   | "waves-optics"
+  | "modern-physics"
   | "placeholder";
 
 type ModuleCard = {
@@ -48,9 +50,10 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
   {
     key: "modern-physics",
     title: "Modern Fizik",
-    description: "Atomdan kuantuma uzanan yeni deney alanı.",
-    detail: "Hazırlanıyor",
+    description: "Işık ve elektronların enerji alışverişini gerçek düzenekle keşfet.",
+    detail: "1 deney açık",
     visual: "portal-visual-modern",
+    available: true,
   },
 ];
 
@@ -223,8 +226,8 @@ function HomeView({
           </div>
           <div className="portal-hero-notes">
             <span>
-              <b>07</b>
-              çalışan mekanik deneyi
+              <b>09</b>
+              çalışan deney
             </span>
             <span>
               <b>12</b>
@@ -439,7 +442,7 @@ function CollectionView({
         <aside>
           <b>{modules.length}</b>
           <span>{isExperiment ? "deney alanı" : "serbest konu alanı"}</span>
-          <small>{isExperiment ? "Mekanik ve Dalgalar-Optik açık" : "İskelet hazır"}</small>
+          <small>{isExperiment ? "Mekanik, Optik ve Modern Fizik açık" : "İskelet hazır"}</small>
         </aside>
       </div>
       <ModuleGrid
@@ -449,6 +452,8 @@ function CollectionView({
             onNavigate("mechanics");
           } else if (module.key === "waves-optics" && module.available) {
             onNavigate("waves-optics");
+          } else if (module.key === "modern-physics" && module.available) {
+            onNavigate("modern-physics");
           } else {
             onPlaceholder(module, type);
           }
@@ -527,6 +532,10 @@ export default function Home() {
 
   if (view === "waves-optics") {
     return <OpticsLabHub onBack={() => navigate("experiment-sets")} />;
+  }
+
+  if (view === "modern-physics") {
+    return <ModernPhysicsLabHub onBack={() => navigate("experiment-sets")} />;
   }
 
   return (
