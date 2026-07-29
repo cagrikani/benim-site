@@ -11,6 +11,7 @@ import CollisionLab from "./CollisionLab";
 import BallisticPendulumLab from "./BallisticPendulumLab";
 import FreeFallLab from "./FreeFallLab";
 import MotionLab from "./MotionLab";
+import TorqueLab from "./TorqueLab";
 import TwoDimensionalMotionLab from "./TwoDimensionalMotionLab";
 
 type ActiveModule =
@@ -20,6 +21,7 @@ type ActiveModule =
   | "two-dimensional"
   | "collisions"
   | "ballistic-pendulum"
+  | "torque"
   | null;
 type GridPoint = { x: number; y: number };
 type WorkspaceVector = {
@@ -802,11 +804,19 @@ export default function MechanicsLabHub({
           >
             Balistik sarkaç
           </button>
+          <button
+            className={activeModule === "torque" ? "active" : ""}
+            type="button"
+            onClick={() => setActiveModule("torque")}
+          >
+            Tork
+          </button>
         </nav>
         <span className="curriculum-chip">
           TYMM ·{" "}
           {activeModule === "collisions" ||
-          activeModule === "ballistic-pendulum"
+          activeModule === "ballistic-pendulum" ||
+          activeModule === "torque"
             ? "12."
             : activeModule === "free-fall" ||
                 activeModule === "two-dimensional"
@@ -952,6 +962,30 @@ export default function MechanicsLabHub({
               {activeModule === "ballistic-pendulum" ? "Açık" : "Deneyi aç"} →
             </strong>
           </button>
+          <button
+            className={`torque-module-choice ${activeModule === "torque" ? "active" : ""}`}
+            type="button"
+            aria-pressed={activeModule === "torque"}
+            onClick={() => setActiveModule("torque")}
+          >
+            <span
+              className="module-choice-visual torque-choice-visual"
+              aria-hidden="true"
+            >
+              <i className="choice-torque-table" />
+              <i className="choice-torque-base" />
+              <i className="choice-torque-disc" />
+              <i className="choice-torque-reader" />
+              <i className="choice-torque-pulley" />
+              <i className="choice-torque-pan" />
+            </span>
+            <span className="module-choice-copy">
+              <small>MODÜL 07 · DENEY 7</small>
+              <b>Dönme dinamiği ve tork</b>
+              <em>Düzeneği kur; yarıçap, kütle ve eylemsizliği araştır</em>
+            </span>
+            <strong>{activeModule === "torque" ? "Açık" : "Deneyi aç"} →</strong>
+          </button>
         </div>
       </section>
 
@@ -971,6 +1005,8 @@ export default function MechanicsLabHub({
 
       {activeModule === "ballistic-pendulum" && <BallisticPendulumLab />}
 
+      {activeModule === "torque" && <TorqueLab />}
+
       <footer>
         <div className="brand footer-brand">
           <span className="brand-mark">FA</span>
@@ -988,10 +1024,13 @@ export default function MechanicsLabHub({
             "TYMM FİZ.12.1.4 öğrenme çıktısıyla uyumludur."}
           {activeModule === "ballistic-pendulum" &&
             "TYMM FİZ.12.1.4 ve FİZ.12.2.5 öğrenme çıktılarıyla uyumludur."}
+          {activeModule === "torque" &&
+            "TYMM FİZ.12.1.1 ve FİZ.12.1.5 öğrenme çıktılarıyla uyumludur."}
           {activeModule !== "free-fall" &&
             activeModule !== "two-dimensional" &&
             activeModule !== "collisions" &&
             activeModule !== "ballistic-pendulum" &&
+            activeModule !== "torque" &&
             "TYMM FİZ.9.2.3 ve FİZ.9.2.4 öğrenme çıktılarıyla uyumludur."}
         </p>
         <a href="#ust">Başa dön ↑</a>

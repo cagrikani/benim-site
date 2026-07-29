@@ -48,7 +48,7 @@ test("vektör çalışma alanı hazır teori ve formül sunmaz", async () => {
   assert.doesNotMatch(page, /\|A\||R =|Math\.hypot/);
 });
 
-test("altı modül ve serbest vektör çizimi etkileşimlidir", async () => {
+test("yedi modül ve serbest vektör çizimi etkileşimlidir", async () => {
   const page = await readFile(new URL("app/MechanicsLabHub.tsx", projectRoot), "utf8");
   assert.match(page, /activeModule/);
   assert.match(page, /module-choice-grid/);
@@ -58,20 +58,24 @@ test("altı modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /setActiveModule\("two-dimensional"\)/);
   assert.match(page, /setActiveModule\("collisions"\)/);
   assert.match(page, /setActiveModule\("ballistic-pendulum"\)/);
+  assert.match(page, /setActiveModule\("torque"\)/);
   assert.match(page, /activeModule === "vectors"/);
   assert.match(page, /activeModule === "motion"/);
   assert.match(page, /activeModule === "free-fall"/);
   assert.match(page, /activeModule === "two-dimensional"/);
   assert.match(page, /activeModule === "collisions"/);
   assert.match(page, /activeModule === "ballistic-pendulum"/);
+  assert.match(page, /activeModule === "torque"/);
   assert.match(page, /FreeFallLab/);
   assert.match(page, /TwoDimensionalMotionLab/);
   assert.match(page, /CollisionLab/);
   assert.match(page, /BallisticPendulumLab/);
+  assert.match(page, /TorqueLab/);
   assert.match(page, /Serbest düşme/);
   assert.match(page, /İki boyutta hareket/);
   assert.match(page, /Çarpışmalar/);
   assert.match(page, /Balistik sarkaç/);
+  assert.match(page, /Dönme dinamiği ve tork/);
   assert.match(page, /onPointerDown/);
   assert.match(page, /setPointerCapture/);
   assert.match(page, /pointFromPointer/);
@@ -187,6 +191,63 @@ test("balistik sarkaç düzeneği fırlatıcı, açıölçer ve yakalayıcıyı 
   assert.match(css, /\.ballistic-analysis-grid\s*\{/);
   assert.match(css, /\.ballistic-graphs\s*\{/);
   assert.match(css, /\.ballistic-report\s*\{/);
+});
+
+test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async () => {
+  const page = await readFile(
+    new URL("app/TorqueLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(page, /FİZ\.12\.1\.1/);
+  assert.match(page, /FİZ\.12\.1\.5/);
+  assert.match(page, /SETUP_ORDER/);
+  assert.match(page, /Ayarlanabilir ayaklı metal taban ve dönme ekseni/);
+  assert.match(page, /991 g kütleli yatay ana disk/);
+  assert.match(page, /1,50 - 2,00 - 2,50 cm kademeli yarıçap makarası/);
+  assert.match(page, /Disk kenarına temas eden optik okuyucu/);
+  assert.match(page, /Masa kenarı ip yönlendirme makarası/);
+  assert.match(page, /İp, 5 g kefe ve asılı kütleler/);
+  assert.match(page, /Hareket zamanlayıcı ve canlı grafik ekranı/);
+  assert.match(page, /Yedek disk, metal halka ve metal blok/);
+  assert.match(page, /application\/x-torque-equipment/);
+  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onStageDrop/);
+  assert.match(page, /const RADII = \[0\.015, 0\.02, 0\.025\]/);
+  assert.match(page, /const MASSES = \[0\.03, 0\.05, 0\.07, 0\.09\]/);
+  assert.match(page, /second-disk/);
+  assert.match(page, /requestAnimationFrame/);
+  assert.match(page, /theoreticalAlpha/);
+  assert.match(page, /const torque = force \* radius/);
+  assert.match(page, /completion\.total === 11/);
+  assert.match(page, /Açısal hız - zaman/);
+  assert.match(page, /Yarıçap - açısal ivme/);
+  assert.match(page, /Kütle - açısal ivme/);
+  assert.match(page, /Eylemsizlik momenti - açısal ivme/);
+  assert.match(page, /İşlemsel analizi göster/);
+  assert.match(page, /τ = r · F/);
+  assert.match(page, /α = τ \/ I/);
+  assert.match(page, /rastgele sapma eklenmez/);
+  assert.match(page, /KISA DENEY RAPORU/);
+});
+
+test("tork düzeneği yatay disk, optik okuyucu ve masa makarasını gerçekçi sahnede gösterir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.torque-choice-visual\s*\{/);
+  assert.match(css, /\.torque-apparatus\s*\{/);
+  assert.match(css, /\.torque-workbench\s*\{/);
+  assert.match(css, /\.torque-base\s*\{/);
+  assert.match(css, /\.torque-disc\s*\{/);
+  assert.match(css, /\.torque-stepped-pulley\s*\{/);
+  assert.match(css, /\.torque-optical-reader\s*\{/);
+  assert.match(css, /\.torque-edge-pulley\s*\{/);
+  assert.match(css, /\.torque-hanging-pan\s*\{/);
+  assert.match(css, /\.torque-data-logger\s*\{/);
+  assert.match(css, /\.torque-attachment-rack\s*\{/);
+  assert.match(css, /\.torque-velocity-canvas\s*\{/);
+  assert.match(css, /\.torque-data-table\s*\{/);
+  assert.match(css, /\.torque-analysis-grid\s*\{/);
+  assert.match(css, /\.torque-relation-bars\s*\{/);
+  assert.match(css, /\.torque-report\s*\{/);
 });
 
 test("çarpışmalar modülü PDF düzeneğiyle kurulabilir ve veri üretir", async () => {

@@ -23,8 +23,8 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
   {
     key: "mechanics",
     title: "Mekanik",
-    description: "Hareketten momentuma, altı etkileşimli deney.",
-    detail: "6 deney açık",
+    description: "Hareketten torka, yedi etkileşimli deney.",
+    detail: "7 deney açık",
     visual: "portal-visual-mechanics",
     available: true,
   },
@@ -220,7 +220,7 @@ function HomeView({
           </div>
           <div className="portal-hero-notes">
             <span>
-              <b>06</b>
+              <b>07</b>
               çalışan mekanik deneyi
             </span>
             <span>

@@ -33,6 +33,7 @@ dosya yolları kullandığından bir alt klasörde de çalışabilir.
 - İki boyutta hareket
 - İki boyutlu çarpışmalar
 - Balistik sarkaç
+- Dönme dinamiği ve tork
 
 Mekanik deneylerinde öğrenciler düzenekleri kurabilir, ölçüm alabilir, grafikleri
 inceleyebilir ve kanıta dayalı kısa deney raporlarını yazabilir.
