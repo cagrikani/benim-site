@@ -16286,8 +16286,28 @@ footer > a {
   font-size: 8px;
 }
 
+.optics-live-color {
+  display: flex !important;
+  align-items: center;
+  gap: 5px;
+}
+
+.optics-live-color i,
+.optics-table-color {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  margin-right: 5px;
+  border: 1px solid rgba(21, 52, 69, 0.22);
+  border-radius: 50%;
+  box-shadow: 0 0 7px currentColor;
+  vertical-align: -1px;
+}
+
 .optics-live-values button,
 .optics-angle-options button,
+.optics-color-options button,
 .optics-action-card button,
 .optics-analysis-prompt button {
   border: 1px solid #cbdedb;
@@ -16307,6 +16327,7 @@ footer > a {
 
 .optics-live-values button:disabled,
 .optics-angle-options button:disabled,
+.optics-color-options button:disabled,
 .optics-action-card button:disabled {
   cursor: not-allowed;
   opacity: 0.43;
@@ -16476,8 +16497,8 @@ footer > a {
 }
 
 .optics-laser.on .laser-aperture {
-  background: #ff4a3c;
-  box-shadow: 5px 0 14px #ff4a3c;
+  background: var(--optics-beam-color);
+  box-shadow: 5px 0 14px var(--optics-beam-color);
 }
 
 .laser-switch {
@@ -16607,6 +16628,13 @@ footer > a {
   z-index: 13;
   width: 75px;
   height: 267px;
+  transition: top 350ms ease, right 350ms ease, left 350ms ease;
+}
+
+.optics-screen.return-screen {
+  top: 138px;
+  right: auto;
+  left: 22%;
 }
 
 .optics-screen i {
@@ -16645,16 +16673,30 @@ footer > a {
   height: 10px;
   border: 2px solid white;
   border-radius: 50%;
-  background: #ff3f32;
+  background: var(--optics-beam-color);
   box-shadow:
-    0 0 5px 2px #ff4538,
-    0 0 17px 5px rgba(255, 58, 47, 0.5);
+    0 0 5px 2px var(--optics-beam-color),
+    0 0 17px 5px var(--optics-beam-glow);
   opacity: 0;
   transform: translateY(-50%);
 }
 
 .screen-hit.visible {
   opacity: 1;
+}
+
+.screen-memory-hit {
+  top: var(--memory-hit);
+  left: 34px;
+  z-index: 3;
+  width: 7px;
+  height: 7px;
+  border: 1px solid white;
+  border-radius: 50%;
+  background: var(--memory-color);
+  box-shadow: 0 0 5px var(--memory-color);
+  opacity: 0.78;
+  transform: translateY(-50%);
 }
 
 .screen-post {
@@ -16706,7 +16748,7 @@ footer > a {
   box-shadow:
     inset 7px 0 8px rgba(255, 255, 255, 0.68),
     0 7px 9px rgba(34, 80, 91, 0.18);
-  transform: rotate(calc(90deg + var(--optics-table-angle)));
+  transform: rotate(0deg);
 }
 
 .optics-slab > b {
@@ -16728,20 +16770,20 @@ footer > a {
   display: block;
   width: 100%;
   height: 100%;
-  clip-path: polygon(6% 50%, 92% 3%, 92% 97%);
+  clip-path: polygon(50% 2%, 96% 94%, 4% 94%);
   background:
     linear-gradient(125deg, rgba(255, 255, 255, 0.89), rgba(113, 220, 234, 0.3) 42%, rgba(43, 135, 163, 0.57));
   filter:
     drop-shadow(1px 0 0 #2d8197)
     drop-shadow(-1px 0 0 #2d8197)
     drop-shadow(0 6px 6px rgba(30, 73, 82, 0.24));
-  transform: rotate(var(--optics-table-angle));
+  transform: rotate(0deg);
 }
 
 .optics-equilateral-prism > b {
   position: absolute;
-  top: 49px;
-  left: 63px;
+  top: 72px;
+  left: 55px;
   color: #276e81;
   font-size: 8px;
 }
@@ -16763,7 +16805,7 @@ footer > a {
     drop-shadow(1px 0 0 #28798f)
     drop-shadow(-1px 0 0 #28798f)
     drop-shadow(0 7px 7px rgba(31, 73, 81, 0.24));
-  transform: rotate(var(--optics-table-angle));
+  transform: rotate(0deg);
 }
 
 .optics-right-prism > b {
@@ -16772,6 +16814,10 @@ footer > a {
   left: 30px;
   color: #276e81;
   font-size: 8px;
+}
+
+.optics-apparatus.mode-total-reflection .optics-laser {
+  top: 227px;
 }
 
 .optics-sample-tray {
@@ -16992,6 +17038,41 @@ footer > a {
   font-size: 12px;
 }
 
+.optics-setting-card > b.optics-angle-title {
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px solid #dce7e4;
+}
+
+.optics-color-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.optics-color-options button {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.optics-color-options button i {
+  width: 10px;
+  height: 10px;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(33, 65, 76, 0.2);
+}
+
+.optics-color-options button.selected {
+  border-color: #173f59;
+  background: #173f59;
+  color: white;
+}
+
 .optics-angle-options {
   display: flex;
   flex-wrap: wrap;
@@ -17088,7 +17169,7 @@ footer > a {
 
 .optics-data-table {
   width: 100%;
-  min-width: 720px;
+  min-width: 590px;
   border-collapse: collapse;
   color: #4c666b;
   font-size: 8px;
@@ -17157,7 +17238,7 @@ footer > a {
 
 .optics-analysis-grid article {
   display: grid;
-  min-height: 150px;
+  min-height: 128px;
   align-content: start;
   padding: 13px;
   border: 1px solid #d6e3df;

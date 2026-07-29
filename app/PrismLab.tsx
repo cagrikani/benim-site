@@ -4,7 +4,6 @@ import {
   type CSSProperties,
   type DragEvent as ReactDragEvent,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -18,15 +17,18 @@ type ApparatusKind =
   | "equilateral-prism"
   | "right-prism";
 type ExperimentMode = "refraction" | "deviation" | "total-reflection";
+type LightColorKind = "red" | "green" | "blue";
 type RunState = "ready" | "running" | "complete";
 
 type OpticsRecord = {
   id: number;
   mode: ExperimentMode;
+  color: LightColorKind;
+  colorLabel: string;
+  colorHex: string;
+  wavelength: number;
   incidence: number;
   refraction: number;
-  secondInternalAngle: number;
-  exitAngle: number;
   deviation: number;
   displacement: number;
   refractiveIndex: number;
@@ -34,10 +36,41 @@ type OpticsRecord = {
   totalReflection: boolean;
 };
 
-const REFRACTIVE_INDEX = 1.49;
 const SLAB_THICKNESS_CM = 1.5;
 const PRISM_APEX_ANGLE = 60;
 const MIME = "application/x-optics-equipment";
+const LIGHT_COLORS: Record<
+  LightColorKind,
+  {
+    label: string;
+    wavelength: number;
+    refractiveIndex: number;
+    hex: string;
+    glow: string;
+  }
+> = {
+  red: {
+    label: "Kırmızı",
+    wavelength: 656.3,
+    refractiveIndex: 1.51432,
+    hex: "#ff3d32",
+    glow: "rgba(255, 61, 50, 0.68)",
+  },
+  green: {
+    label: "Yeşil",
+    wavelength: 546.1,
+    refractiveIndex: 1.51872,
+    hex: "#36d878",
+    glow: "rgba(54, 216, 120, 0.68)",
+  },
+  blue: {
+    label: "Mavi",
+    wavelength: 486.1,
+    refractiveIndex: 1.52238,
+    hex: "#3f7cff",
+    glow: "rgba(63, 124, 255, 0.7)",
+  },
+};
 const APPARATUS: Array<{
   kind: ApparatusKind;
   shortName: string;
@@ -65,8 +98,8 @@ const APPARATUS: Array<{
   },
   {
     kind: "slab",
-    shortName: "Pleksiglas",
-    name: "1,50 cm kalınlıklı paralel yüzlü pleksiglas",
+    shortName: "Cam blok",
+    name: "1,50 cm kalınlıklı paralel yüzlü cam blok",
   },
   {
     kind: "equilateral-prism",
@@ -144,6 +177,42 @@ function drawProgressivePath(
   context.stroke();
 }
 
+function pointFromElement(
+  element: Element | null,
+  canvasRect: DOMRect,
+  horizontal: number,
+  vertical: number,
+) {
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  return {
+    x: rect.left - canvasRect.left + rect.width * horizontal,
+    y: rect.top - canvasRect.top + rect.height * vertical,
+  };
+}
+
+function drawContact(
+  context: CanvasRenderingContext2D,
+  point: { x: number; y: number },
+  color: string,
+  label: string,
+  labelOffsetY: number,
+) {
+  context.save();
+  context.beginPath();
+  context.arc(point.x, point.y, 5, 0, Math.PI * 2);
+  context.fillStyle = "#ffffff";
+  context.fill();
+  context.lineWidth = 2.4;
+  context.strokeStyle = color;
+  context.stroke();
+  context.font = "800 9px Arial";
+  context.fillStyle = "#324f56";
+  context.textAlign = "center";
+  context.fillText(label, point.x, point.y + labelOffsetY);
+  context.restore();
+}
+
 function OpticsRayCanvas({
   mode,
   progress,
@@ -155,6 +224,7 @@ function OpticsRayCanvas({
   displacement,
   internalAngle,
   totalReflection,
+  lightColor,
 }: {
   mode: ExperimentMode;
   progress: number;
@@ -166,122 +236,195 @@ function OpticsRayCanvas({
   displacement: number;
   internalAngle: number;
   totalReflection: boolean;
+  lightColor: (typeof LIGHT_COLORS)[LightColorKind];
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const width = Math.max(rect.width, 420);
-    const height = Math.max(rect.height, 420);
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.clearRect(0, 0, width, height);
+    let frame = 0;
 
-    const center = { x: width * 0.56, y: height * 0.44 };
-    const laser = { x: width * 0.155, y: center.y };
-    const screenX = width * 0.91;
-    const visibleProgress = laserOn ? (running ? progress : 1) : 0;
+    const draw = () => {
+      const rect = canvas.getBoundingClientRect();
+      const width = Math.max(rect.width, 320);
+      const height = Math.max(rect.height, 420);
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, width, height);
 
-    if (laserOn) {
-      context.save();
-      context.setLineDash([7, 6]);
-      context.lineWidth = 1;
-      context.strokeStyle = "rgba(49, 89, 94, 0.48)";
-      context.beginPath();
-      context.moveTo(center.x - 115, center.y);
-      context.lineTo(center.x + 115, center.y);
-      context.stroke();
-      context.restore();
-    }
+      const parent = canvas.parentElement;
+      const laser =
+        pointFromElement(parent?.querySelector(".laser-aperture") ?? null, rect, 1, 0.5) ??
+        { x: width * 0.16, y: height * 0.44 };
+      const screen =
+        pointFromElement(parent?.querySelector(".screen-hit") ?? null, rect, 0.5, 0.5) ??
+        { x: width * 0.93, y: height * 0.46 };
+      const visibleProgress = laserOn ? (running ? progress : 1) : 0;
+      let points: Array<{ x: number; y: number }> = [laser];
+      let labelCenter = { x: width * 0.56, y: height * 0.44 };
+      let contacts: Array<{
+        point: { x: number; y: number };
+        label: string;
+        offset: number;
+      }> = [];
 
-    let points: Array<{ x: number; y: number }> = [laser];
-    if (mode === "refraction") {
-      const lateralShift = clamp(displacement * 28, 0, 30);
-      points = [
-        laser,
-        { x: center.x - 30, y: center.y },
-        {
-          x: center.x + 30,
-          y: center.y + lateralShift,
-        },
-        { x: screenX, y: center.y + lateralShift },
-      ];
-    } else if (mode === "deviation") {
-      const prismEntry = { x: center.x - 40, y: center.y };
-      const prismExit = {
-        x: center.x + 30,
-        y: center.y + 18 + (incidence - refraction) * 0.38,
-      };
-      const targetX = width * 0.88;
-      const targetY = clamp(
-        prismExit.y + Math.tan(toRadians(deviation)) * (targetX - prismExit.x),
-        height * 0.52,
-        height * 0.91,
-      );
-      points = [laser, prismEntry, prismExit, { x: targetX, y: targetY }];
-    } else if (totalReflection) {
-      points = [
-        laser,
-        { x: center.x - 43, y: center.y },
-        { x: center.x + 7, y: center.y },
-        { x: center.x + 38, y: center.y - 45 },
-        { x: center.x + 3, y: center.y - 82 },
-        { x: width * 0.18, y: center.y - 82 },
-      ];
-    } else {
-      const leakAngle = clamp(internalAngle - 18, 14, 34);
-      points = [
-        laser,
-        { x: center.x - 43, y: center.y },
-        { x: center.x + 5, y: center.y },
-        {
-          x: width * 0.78,
-          y: center.y - Math.tan(toRadians(leakAngle)) * width * 0.2,
-        },
-      ];
-    }
-
-    if (visibleProgress > 0) {
-      context.save();
-      context.lineCap = "round";
-      context.lineJoin = "round";
-      context.shadowColor = "rgba(255, 40, 32, 0.78)";
-      context.shadowBlur = 13;
-      context.lineWidth = 8;
-      context.strokeStyle = "rgba(255, 68, 52, 0.18)";
-      drawProgressivePath(context, points, visibleProgress);
-      context.shadowBlur = 3;
-      context.lineWidth = 2.6;
-      context.strokeStyle = "#ff3d2f";
-      drawProgressivePath(context, points, visibleProgress);
-      context.restore();
-    }
-
-    if (laserOn && mode !== "total-reflection") {
-      context.save();
-      context.font = "700 9px Arial";
-      context.fillStyle = "#526b70";
-      context.textAlign = "center";
       if (mode === "refraction") {
-        context.fillText(`θ₁ = ${format(incidence, 0)}°`, center.x - 73, center.y - 20);
-        context.fillText(`θ₂ = ${format(refraction, 1)}°`, center.x + 5, center.y + 43);
+        const slab = parent?.querySelector(".optics-slab i") ?? null;
+        const entry =
+          pointFromElement(slab, rect, 0.02, 0.42) ?? {
+            x: width * 0.545,
+            y: laser.y,
+          };
+        const exit =
+          pointFromElement(slab, rect, 0.98, 0.6) ?? {
+            x: width * 0.575,
+            y: laser.y + displacement * 22,
+          };
+        entry.y = laser.y;
+        exit.y = laser.y + clamp(displacement * 24, 0, 28);
+        points = [laser, entry, exit, screen];
+        contacts = [
+          { point: entry, label: "1. kırılma", offset: -15 },
+          { point: exit, label: "2. kırılma", offset: 19 },
+        ];
+      } else if (mode === "deviation") {
+        const prism = parent?.querySelector(".optics-equilateral-prism i") ?? null;
+        const prismCenter =
+          pointFromElement(prism, rect, 0.5, 0.5) ?? {
+            x: width * 0.56,
+            y: height * 0.44,
+          };
+        labelCenter = prismCenter;
+        const entry =
+          pointFromElement(prism, rect, 0.25, 0.53) ?? {
+            x: prismCenter.x - 42,
+            y: laser.y,
+          };
+        const exit =
+          pointFromElement(prism, rect, 0.75, 0.71) ?? {
+            x: prismCenter.x + 42,
+            y: laser.y + 26,
+          };
+        entry.y = laser.y;
+        points = [laser, entry, exit, screen];
+        contacts = [
+          { point: entry, label: "girişte kırılma", offset: -15 },
+          { point: exit, label: "çıkışta kırılma", offset: 20 },
+        ];
       } else {
-        context.fillText(`δ = ${format(deviation, 1)}°`, width * 0.75, height * 0.69);
+        const prism = parent?.querySelector(".optics-right-prism i") ?? null;
+        const prismCenter =
+          pointFromElement(prism, rect, 0.5, 0.5) ?? {
+            x: width * 0.56,
+            y: height * 0.44,
+          };
+        labelCenter = prismCenter;
+        const entry =
+          pointFromElement(prism, rect, 0.06, 0.68) ?? {
+            x: prismCenter.x - 56,
+            y: prismCenter.y + 22,
+          };
+        const firstReflection =
+          pointFromElement(prism, rect, 0.64, 0.68) ?? {
+            x: prismCenter.x + 18,
+            y: prismCenter.y + 22,
+          };
+        const secondReflection =
+          pointFromElement(prism, rect, 0.64, 0.32) ?? {
+            x: prismCenter.x + 18,
+            y: prismCenter.y - 22,
+          };
+        const exit =
+          pointFromElement(prism, rect, 0.06, 0.32) ?? {
+            x: prismCenter.x - 56,
+            y: prismCenter.y - 22,
+          };
+        if (totalReflection) {
+          points = [laser, entry, firstReflection, secondReflection, exit, screen];
+          contacts = [
+            { point: firstReflection, label: "tam yansıma 1", offset: 19 },
+            { point: secondReflection, label: "tam yansıma 2", offset: -15 },
+          ];
+        } else {
+          points = [laser, entry, firstReflection, screen];
+          contacts = [
+            { point: firstReflection, label: "ışın dışarı çıktı", offset: 19 },
+          ];
+        }
       }
-      context.restore();
-    }
+
+      if (laserOn) {
+        context.save();
+        context.setLineDash([7, 6]);
+        context.lineWidth = 1;
+        context.strokeStyle = "rgba(49, 89, 94, 0.42)";
+        context.beginPath();
+        context.moveTo(laser.x, laser.y);
+        context.lineTo(width * 0.95, laser.y);
+        context.stroke();
+        context.restore();
+      }
+
+      if (visibleProgress > 0) {
+        context.save();
+        context.lineCap = "round";
+        context.lineJoin = "round";
+        context.shadowColor = lightColor.glow;
+        context.shadowBlur = 14;
+        context.lineWidth = 9;
+        context.strokeStyle = lightColor.glow.replace("0.68", "0.2").replace("0.7", "0.2");
+        drawProgressivePath(context, points, visibleProgress);
+        context.shadowBlur = 4;
+        context.lineWidth = 3;
+        context.strokeStyle = lightColor.hex;
+        drawProgressivePath(context, points, visibleProgress);
+        context.restore();
+      }
+
+      if (laserOn && visibleProgress > 0.7) {
+        contacts.forEach(({ point, label, offset }) =>
+          drawContact(context, point, lightColor.hex, label, offset),
+        );
+        context.save();
+        context.font = "800 9px Arial";
+        context.fillStyle = "#405f65";
+        context.textAlign = "center";
+        if (mode === "refraction") {
+          context.fillText(`kırılma ${format(refraction, 1)}°`, width * 0.66, height * 0.38);
+        } else if (mode === "deviation") {
+          context.fillText(`sapma ${format(deviation, 1)}°`, width * 0.77, screen.y - 13);
+        } else {
+          context.fillText(
+            totalReflection
+              ? `iki tam yansıma · ${format(internalAngle, 0)}°`
+              : `${format(internalAngle, 0)}° · ışın prizmadan çıkar`,
+            labelCenter.x,
+            height * 0.19,
+          );
+        }
+        context.restore();
+      }
+    };
+
+    frame = window.requestAnimationFrame(draw);
+    const observer = new ResizeObserver(draw);
+    observer.observe(canvas);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [
     deviation,
     displacement,
     incidence,
     internalAngle,
     laserOn,
+    lightColor,
     mode,
     progress,
     refraction,
@@ -305,6 +448,8 @@ export default function PrismLab() {
   const [installed, setInstalled] = useState<ApparatusKind[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [mode, setMode] = useState<ExperimentMode>("refraction");
+  const [lightColorKind, setLightColorKind] =
+    useState<LightColorKind>("red");
   const [incidence, setIncidence] = useState(30);
   const [internalAngle, setInternalAngle] = useState(35);
   const [laserOn, setLaserOn] = useState(false);
@@ -318,13 +463,13 @@ export default function PrismLab() {
   const [records, setRecords] = useState<OpticsRecord[]>([]);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [report, setReport] = useState({
-    refraction: "",
-    deviation: "",
-    reflection: "",
-    evidence: "",
+    color: "",
+    path: "",
     conclusion: "",
   });
 
+  const lightColor = LIGHT_COLORS[lightColorKind];
+  const refractiveIndex = lightColor.refractiveIndex;
   const setupComplete = installed.length === SETUP_ORDER.length;
   const nextSetup =
     SETUP_ORDER.find((kind) => !installed.includes(kind)) ?? null;
@@ -333,7 +478,7 @@ export default function PrismLab() {
       ? 0
       : toDegrees(
           Math.asin(
-            clamp(Math.sin(toRadians(incidence)) / REFRACTIVE_INDEX, -1, 1),
+            clamp(Math.sin(toRadians(incidence)) / refractiveIndex, -1, 1),
           ),
         );
   const displacement =
@@ -346,7 +491,7 @@ export default function PrismLab() {
     mode === "deviation" ? PRISM_APEX_ANGLE - refractionAngle : 0;
   const exitArgument =
     mode === "deviation"
-      ? REFRACTIVE_INDEX * Math.sin(toRadians(secondInternalAngle))
+      ? refractiveIndex * Math.sin(toRadians(secondInternalAngle))
       : 0;
   const exitAngle =
     mode === "deviation" && Math.abs(exitArgument) <= 1
@@ -354,42 +499,18 @@ export default function PrismLab() {
       : 0;
   const deviation =
     mode === "deviation" ? incidence + exitAngle - PRISM_APEX_ANGLE : 0;
-  const criticalAngle = toDegrees(Math.asin(1 / REFRACTIVE_INDEX));
+  const criticalAngle = toDegrees(Math.asin(1 / refractiveIndex));
   const totalReflection =
     mode === "total-reflection" && internalAngle >= criticalAngle;
   const refractiveIndexMeasured =
     incidence === 0 || refractionAngle === 0
-      ? REFRACTIVE_INDEX
+      ? refractiveIndex
       : Math.sin(toRadians(incidence)) / Math.sin(toRadians(refractionAngle));
   const latest =
-    [...records].reverse().find((record) => record.mode === mode) ?? null;
-
-  const completion = useMemo(() => {
-    const refraction = new Set(
-      records
-        .filter((record) => record.mode === "refraction")
-        .map((record) => record.incidence),
-    ).size;
-    const deviationCount = new Set(
-      records
-        .filter((record) => record.mode === "deviation")
-        .map((record) => record.incidence),
-    ).size;
-    const reflection = new Set(
-      records
-        .filter((record) => record.mode === "total-reflection")
-        .map((record) => record.internalAngle),
-    ).size;
-    return {
-      refraction: Math.min(refraction, REFRACTION_ANGLES.length),
-      deviation: Math.min(deviationCount, DEVIATION_ANGLES.length),
-      reflection: Math.min(reflection, INTERNAL_ANGLES.length),
-      total:
-        Math.min(refraction, REFRACTION_ANGLES.length) +
-        Math.min(deviationCount, DEVIATION_ANGLES.length) +
-        Math.min(reflection, INTERNAL_ANGLES.length),
-    };
-  }, [records]);
+    [...records]
+      .reverse()
+      .find((record) => record.mode === mode && record.color === lightColorKind) ??
+    null;
 
   const addEquipment = (kind: ApparatusKind) => {
     if (runState === "running" || installed.includes(kind)) return;
@@ -429,7 +550,7 @@ export default function PrismLab() {
     setHypothesis("");
     if (nextMode === "refraction") {
       setIncidence(30);
-      setMessage("Pleksiglas levha seçildi. Gelme açısı için bir hipotez yaz.");
+      setMessage("Cam blok seçildi. Gelme açısı için bir hipotez yaz.");
     } else if (nextMode === "deviation") {
       setIncidence(40);
       setMessage("60° prizma seçildi. Işının izleyeceği yolu tahmin et.");
@@ -437,6 +558,17 @@ export default function PrismLab() {
       setInternalAngle(35);
       setMessage("Dik üçgen prizma seçildi. Tam yansımanın başlayacağı açıyı tahmin et.");
     }
+  };
+
+  const selectLightColor = (nextColor: LightColorKind) => {
+    if (runState === "running") return;
+    setLightColorKind(nextColor);
+    setProgress(0);
+    setRunState("ready");
+    setShowAnalysis(false);
+    setMessage(
+      `${LIGHT_COLORS[nextColor].label} ışık seçildi. Aynı açıyı farklı renklerle ölçüp ekrandaki izi karşılaştır.`,
+    );
   };
 
   const resetApparatus = () => {
@@ -511,10 +643,12 @@ export default function PrismLab() {
       const record: OpticsRecord = {
         id: nextIdRef.current,
         mode,
+        color: lightColorKind,
+        colorLabel: lightColor.label,
+        colorHex: lightColor.hex,
+        wavelength: lightColor.wavelength,
         incidence,
         refraction: Number(refractionAngle.toFixed(2)),
-        secondInternalAngle: Number(secondInternalAngle.toFixed(2)),
-        exitAngle: Number(exitAngle.toFixed(2)),
         deviation: Number(deviation.toFixed(2)),
         displacement: Number(displacement.toFixed(3)),
         refractiveIndex: Number(refractiveIndexMeasured.toFixed(3)),
@@ -525,20 +659,28 @@ export default function PrismLab() {
       setRecords((current) => {
         const withoutSameSetting = current.filter((item) =>
           mode === "total-reflection"
-            ? !(item.mode === mode && item.internalAngle === internalAngle)
-            : !(item.mode === mode && item.incidence === incidence),
+            ? !(
+                item.mode === mode &&
+                item.internalAngle === internalAngle &&
+                item.color === lightColorKind
+              )
+            : !(
+                item.mode === mode &&
+                item.incidence === incidence &&
+                item.color === lightColorKind
+              ),
         );
         return [...withoutSameSetting, record];
       });
       setRunState("complete");
       setMessage(
         mode === "refraction"
-          ? `Ölçüm tamam: kırılma açısı ${format(refractionAngle, 1)}°, ekrandaki kayma ${format(displacement, 2)} cm.`
+          ? `${lightColor.label} ışık: kırılma ${format(refractionAngle, 1)}°, ekrandaki kayma ${format(displacement, 2)} cm.`
           : mode === "deviation"
-            ? `Ölçüm tamam: prizmadan çıkan ışının sapma açısı ${format(deviation, 1)}°.`
+            ? `${lightColor.label} ışık prizmadan çıktı ve ekrana düştü. Sapma ${format(deviation, 1)}°.`
             : totalReflection
-              ? "Tam yansıma gözlendi; çıkan ışın gelen ışına paralel ve ters yönlü."
-              : "Işın ikinci yüzeyden dışarı çıktı; bu açıda tam yansıma oluşmadı.",
+              ? `${lightColor.label} ışık iki kez tam yansıdı ve geri dönüş ekranına ulaştı.`
+              : `${lightColor.label} ışık prizmadan çıktı ve sağdaki ekrana ulaştı.`,
       );
     };
     animationRef.current = requestAnimationFrame(animate);
@@ -551,6 +693,8 @@ export default function PrismLab() {
     exitAngle,
     incidence,
     internalAngle,
+    lightColor,
+    lightColorKind,
     mode,
     refractiveIndexMeasured,
     refractionAngle,
@@ -572,13 +716,21 @@ export default function PrismLab() {
         ? 50 + clamp(deviation * 0.66, 0, 34)
         : totalReflection
           ? 31
-          : 20;
+          : 62;
   const stageStyle = {
     "--optics-table-angle": `${mode === "total-reflection" ? internalAngle - 45 : incidence}deg`,
     "--optics-screen-hit": `${screenHit}%`,
+    "--optics-beam-color": lightColor.hex,
+    "--optics-beam-glow": lightColor.glow,
   } as CSSProperties;
 
   const modeRecords = records.filter((record) => record.mode === mode);
+  const currentSettingRecords = modeRecords.filter((record) =>
+    mode === "total-reflection"
+      ? record.internalAngle === internalAngle &&
+        record.totalReflection === totalReflection
+      : record.incidence === incidence,
+  );
 
   return (
     <section className="prism-lab-section" id="kirilma-prizma-deneyi">
@@ -587,8 +739,8 @@ export default function PrismLab() {
           <span>DALGALAR - OPTİK · DENEY 1</span>
           <h1>Kırılma ve prizmada ışığın yolu</h1>
           <p>
-            Optik rayı kendin kur; pleksiglas levhada kırılmayı, 60° prizmada
-            sapmayı ve dik üçgen prizmada tam yansımayı ölçerek karşılaştır.
+            Optik rayı kendin kur; cam blokta kırılmayı, 60° prizmada sapmayı
+            ve dik üçgen prizmada tam yansımayı farklı ışık renkleriyle karşılaştır.
           </p>
         </div>
         <aside>
@@ -667,20 +819,17 @@ export default function PrismLab() {
                 <b>{mode === "total-reflection" ? internalAngle : incidence}°</b>
               </span>
               <span>
-                <small>{mode === "deviation" ? "Çıkış" : mode === "refraction" ? "Kırılma" : "Sınır"}</small>
-                <b>
-                  {mode === "deviation"
-                    ? `${format(exitAngle, 1)}°`
-                    : mode === "refraction"
-                      ? `${format(refractionAngle, 1)}°`
-                      : `${format(criticalAngle, 1)}°`}
+                <small>Işık rengi</small>
+                <b className="optics-live-color">
+                  <i style={{ background: lightColor.hex }} />
+                  {lightColor.label}
                 </b>
               </span>
               <span>
-                <small>{mode === "refraction" ? "Kayma x" : mode === "deviation" ? "Sapma δ" : "Sonuç"}</small>
+                <small>{mode === "refraction" ? "Kırılma" : mode === "deviation" ? "Sapma" : "Sonuç"}</small>
                 <b>
                   {mode === "refraction"
-                    ? `${format(displacement, 2)} cm`
+                    ? `${format(refractionAngle, 1)}°`
                     : mode === "deviation"
                       ? `${format(deviation, 1)}°`
                       : totalReflection
@@ -694,7 +843,7 @@ export default function PrismLab() {
             </div>
           </div>
 
-          <div className="optics-apparatus" style={stageStyle}>
+          <div className={`optics-apparatus mode-${mode}`} style={stageStyle}>
             <div className="optics-wall-label">OPTİK LABORATUVARI · TEK RENKLİ IŞIK</div>
             <div className="optics-bench">
               <i className="optics-bench-top" />
@@ -734,13 +883,42 @@ export default function PrismLab() {
             )}
 
             {installed.includes("screen") && (
-              <div className="optics-screen">
+              <div
+                className={`optics-screen ${mode === "total-reflection" && totalReflection ? "return-screen" : ""}`}
+              >
                 <i className="screen-face" />
                 <i className="screen-grid" />
+                {currentSettingRecords.map((record) => {
+                  const rememberedHit =
+                    mode === "refraction"
+                      ? 48 + clamp(record.displacement * 4, 0, 9)
+                      : mode === "deviation"
+                        ? 50 + clamp(record.deviation * 0.66, 0, 34)
+                        : record.totalReflection
+                          ? 31
+                          : 62;
+                  return (
+                    <i
+                      key={`${record.mode}-${record.color}-${record.id}`}
+                      className="screen-memory-hit"
+                      title={`${record.colorLabel} ışık izi`}
+                      style={
+                        {
+                          "--memory-hit": `${rememberedHit}%`,
+                          "--memory-color": record.colorHex,
+                        } as CSSProperties
+                      }
+                    />
+                  );
+                })}
                 <i className={`screen-hit ${laserOn ? "visible" : ""}`} />
                 <i className="screen-post" />
                 <i className="screen-base" />
-                <b>EKRAN</b>
+                <b>
+                  {mode === "total-reflection" && totalReflection
+                    ? "GERİ DÖNÜŞ EKRANI"
+                    : "EKRAN"}
+                </b>
               </div>
             )}
 
@@ -749,7 +927,7 @@ export default function PrismLab() {
                 {mode === "refraction" && (
                   <div className="optics-slab">
                     <i />
-                    <b>PLEKSİGLAS</b>
+                    <b>CAM BLOK</b>
                   </div>
                 )}
                 {mode === "deviation" && (
@@ -788,6 +966,7 @@ export default function PrismLab() {
               displacement={displacement}
               internalAngle={internalAngle}
               totalReflection={totalReflection}
+              lightColor={lightColor}
             />
 
             {!setupComplete && (
@@ -812,9 +991,9 @@ export default function PrismLab() {
           onClick={() => selectMode("refraction")}
         >
           <span>A</span>
-          <b>Pleksiglasta kırılma</b>
-          <small>θ₁, θ₂, kayma ve kırılma indisi</small>
-          <em>{completion.refraction}/{REFRACTION_ANGLES.length} ölçüm</em>
+          <b>Cam blokta kırılma</b>
+          <small>Işığın ortam değiştirirken yön değiştirmesi</small>
+          <em>{records.filter((record) => record.mode === "refraction").length} kayıt</em>
         </button>
         <button
           type="button"
@@ -823,8 +1002,8 @@ export default function PrismLab() {
         >
           <span>B</span>
           <b>Prizmada sapma</b>
-          <small>60° prizmada ışın yolu ve δ</small>
-          <em>{completion.deviation}/{DEVIATION_ANGLES.length} ölçüm</em>
+          <small>Işının iki yüzeyde kırılıp ekrana ulaşması</small>
+          <em>{records.filter((record) => record.mode === "deviation").length} kayıt</em>
         </button>
         <button
           type="button"
@@ -833,8 +1012,8 @@ export default function PrismLab() {
         >
           <span>C</span>
           <b>Prizmada tam yansıma</b>
-          <small>Sınır açısının iki yanında gözlem</small>
-          <em>{completion.reflection}/{INTERNAL_ANGLES.length} ölçüm</em>
+          <small>Prizma içindeki iki yansımayı gözleme</small>
+          <em>{records.filter((record) => record.mode === "total-reflection").length} kayıt</em>
         </button>
       </section>
 
@@ -858,8 +1037,27 @@ export default function PrismLab() {
         </div>
 
         <div className="optics-setting-card">
-          <small>DEĞİŞKEN</small>
-          <b>{mode === "total-reflection" ? "İç gelme açısı" : "Gelme açısı"}</b>
+          <small>DEĞİŞKENLER</small>
+          <b>Işık rengi</b>
+          <div className="optics-color-options" aria-label="Işık rengi seçimi">
+            {(Object.entries(LIGHT_COLORS) as Array<
+              [LightColorKind, (typeof LIGHT_COLORS)[LightColorKind]]
+            >).map(([kind, color]) => (
+              <button
+                key={kind}
+                type="button"
+                className={lightColorKind === kind ? "selected" : ""}
+                onClick={() => selectLightColor(kind)}
+                disabled={runState === "running"}
+              >
+                <i style={{ background: color.hex }} />
+                {color.label}
+              </button>
+            ))}
+          </div>
+          <b className="optics-angle-title">
+            {mode === "total-reflection" ? "İç gelme açısı" : "Gelme açısı"}
+          </b>
           <div className="optics-angle-options">
             {(mode === "refraction"
               ? REFRACTION_ANGLES
@@ -922,16 +1120,16 @@ export default function PrismLab() {
             <small>DENEY GÜNLÜĞÜ</small>
             <h2>
               {mode === "refraction"
-                ? "Pleksiglas levha ölçümleri"
+                ? "Cam blok gözlemleri"
                 : mode === "deviation"
-                  ? "60° prizma ölçümleri"
+                  ? "60° prizma gözlemleri"
                   : "Tam yansıma gözlemleri"}
             </h2>
-            <p>Her ölçüm aynı ideal optik düzeneğin çözünürlüğüyle kaydedilir.</p>
+            <p>Aynı açıyı farklı renklerle deneyerek sonuçları karşılaştır.</p>
           </div>
-          <span className={completion.total === 14 ? "complete" : ""}>
-            <b>{completion.total}/14</b>
-            temel ölçüm
+          <span>
+            <b>{modeRecords.length}</b>
+            kayıt
           </span>
         </div>
 
@@ -940,26 +1138,22 @@ export default function PrismLab() {
             <table className="optics-data-table">
               <thead>
                 <tr>
-                  <th>Deneme</th>
-                  <th>d</th>
-                  <th>Gelme θ₁</th>
-                  <th>Kırılma θ₂</th>
-                  <th>Ekran kayması x</th>
-                  <th>n pleksiglas</th>
+                  <th>Işık rengi</th>
+                  <th>Gelme açısı</th>
+                  <th>Kırılma açısı</th>
+                  <th>Ekrandaki gözlem</th>
                 </tr>
               </thead>
               <tbody>
                 {modeRecords.length === 0 ? (
-                  <tr><td colSpan={6}>İlk ölçüm tamamlandığında veriler burada görünecek.</td></tr>
+                  <tr><td colSpan={4}>İlk ışını gönderdiğinde gözlemin burada görünecek.</td></tr>
                 ) : (
                   modeRecords.map((record) => (
                     <tr key={record.id}>
-                      <td>{record.id}</td>
-                      <td>{format(SLAB_THICKNESS_CM, 2)} cm</td>
+                      <td><i className="optics-table-color" style={{ background: record.colorHex }} />{record.colorLabel}</td>
                       <td>{format(record.incidence, 0)}°</td>
                       <td>{format(record.refraction, 1)}°</td>
-                      <td>{format(record.displacement, 2)} cm</td>
-                      <td>{format(record.refractiveIndex, 2)}</td>
+                      <td>{format(record.displacement, 2)} cm kayarak ekrana ulaştı</td>
                     </tr>
                   ))
                 )}
@@ -970,26 +1164,22 @@ export default function PrismLab() {
             <table className="optics-data-table">
               <thead>
                 <tr>
-                  <th>Deneme</th>
-                  <th>Tepe açısı A</th>
-                  <th>Gelme θ₁</th>
-                  <th>İç açılar r₁ / r₂</th>
-                  <th>Çıkış θ₄</th>
-                  <th>Sapma δ</th>
+                  <th>Işık rengi</th>
+                  <th>Gelme açısı</th>
+                  <th>Sapma açısı</th>
+                  <th>Ekrandaki gözlem</th>
                 </tr>
               </thead>
               <tbody>
                 {modeRecords.length === 0 ? (
-                  <tr><td colSpan={6}>İlk ölçüm tamamlandığında veriler burada görünecek.</td></tr>
+                  <tr><td colSpan={4}>İlk ışını gönderdiğinde gözlemin burada görünecek.</td></tr>
                 ) : (
                   modeRecords.map((record) => (
                     <tr key={record.id}>
-                      <td>{record.id}</td>
-                      <td>{PRISM_APEX_ANGLE}°</td>
+                      <td><i className="optics-table-color" style={{ background: record.colorHex }} />{record.colorLabel}</td>
                       <td>{format(record.incidence, 0)}°</td>
-                      <td>{format(record.refraction, 1)}° / {format(record.secondInternalAngle, 1)}°</td>
-                      <td>{format(record.exitAngle, 1)}°</td>
                       <td>{format(record.deviation, 1)}°</td>
+                      <td>Prizmadan çıktı ve ekrana düştü</td>
                     </tr>
                   ))
                 )}
@@ -1000,24 +1190,22 @@ export default function PrismLab() {
             <table className="optics-data-table">
               <thead>
                 <tr>
-                  <th>Deneme</th>
+                  <th>Işık rengi</th>
                   <th>İç gelme açısı</th>
-                  <th>Sınır açısı</th>
                   <th>Gözlem</th>
-                  <th>Çıkan ışının yönü</th>
+                  <th>Ekrandaki sonuç</th>
                 </tr>
               </thead>
               <tbody>
                 {modeRecords.length === 0 ? (
-                  <tr><td colSpan={5}>İlk gözlem tamamlandığında veriler burada görünecek.</td></tr>
+                  <tr><td colSpan={4}>İlk ışını gönderdiğinde gözlemin burada görünecek.</td></tr>
                 ) : (
                   modeRecords.map((record) => (
                     <tr key={record.id}>
-                      <td>{record.id}</td>
+                      <td><i className="optics-table-color" style={{ background: record.colorHex }} />{record.colorLabel}</td>
                       <td>{format(record.internalAngle, 0)}°</td>
-                      <td>{format(criticalAngle, 1)}°</td>
-                      <td>{record.totalReflection ? "Tam yansıma" : "Kırılarak dışarı çıktı"}</td>
-                      <td>{record.totalReflection ? "Gelen ışına paralel, ters yönlü" : "Prizma dışına yöneldi"}</td>
+                      <td>{record.totalReflection ? "Prizma içinde iki tam yansıma" : "Işın prizmadan çıktı"}</td>
+                      <td>{record.totalReflection ? "Geri dönüş ekranına ulaştı" : "Sağdaki ekrana ulaştı"}</td>
                     </tr>
                   ))
                 )}
@@ -1031,11 +1219,11 @@ export default function PrismLab() {
         <section className="optics-analysis-prompt">
           <div>
             <small>ÖLÇÜM TAMAMLANDI</small>
-            <h2>Hipotezini ışın yolu ve verilerle karşılaştır</h2>
-            <p>İşlemsel model yalnızca ölçümden sonra açılır.</p>
+            <h2>Işının izlediği yolu gözleminle karşılaştır</h2>
+            <p>Kısa özet yalnızca ölçümden sonra açılır.</p>
           </div>
           <button type="button" onClick={() => setShowAnalysis((current) => !current)}>
-            {showAnalysis ? "Analizi kapat" : "İşlemsel analizi göster"} →
+            {showAnalysis ? "Özeti kapat" : "Gözlem özetini göster"} →
           </button>
         </section>
       )}
@@ -1044,81 +1232,66 @@ export default function PrismLab() {
         <section className="optics-analysis">
           <div className="optics-analysis-heading">
             <div>
-              <small>SON ÖLÇÜM · KANIT</small>
-              <h2>
-                {latest.mode === "refraction"
-                  ? "Pleksiglasın kırılma indisi"
-                  : latest.mode === "deviation"
-                    ? "Prizmanın oluşturduğu sapma"
-                    : "Tam yansıma koşulu"}
-              </h2>
+              <small>SON GÖZLEM</small>
+              <h2>{latest.colorLabel} ışığın izlediği yol</h2>
             </div>
-            <span>Yapay rastgele sapma yoktur.</span>
+            <span>Işın her yüzey temasında yön değiştirir.</span>
           </div>
           <div className="optics-analysis-grid">
             {latest.mode === "refraction" && (
               <>
                 <article>
-                  <b>1 · Ölçülen açılar</b>
-                  <p>θ₁ = {format(latest.incidence, 0)}°</p>
-                  <code>θ₂ = {format(latest.refraction, 1)}°</code>
-                  <small>Işın, havadan pleksiglasa geçerken normale yaklaşır.</small>
+                  <b>1 · Giriş yüzeyi</b>
+                  <p>{format(latest.incidence, 0)}° → {format(latest.refraction, 1)}°</p>
+                  <small>Işın cam bloğa girerken normale yaklaştı.</small>
                 </article>
                 <article>
-                  <b>2 · Kırılma indisi</b>
-                  <p>n = sinθ₁ / sinθ₂</p>
-                  <code>n = {format(latest.refractiveIndex, 3)}</code>
-                  <small>0° ölçümünde doğrultu değişmez; ortam değeri korunur.</small>
+                  <b>2 · Çıkış yüzeyi</b>
+                  <p>İkinci kez kırıldı</p>
+                  <small>Işın camdan havaya çıkarken yeniden yön değiştirdi.</small>
                 </article>
                 <article>
-                  <b>3 · Paralel yüzlü levha</b>
-                  <p>x = {format(latest.displacement, 2)} cm</p>
-                  <code>d = {format(SLAB_THICKNESS_CM, 2)} cm</code>
-                  <small>Çıkan ışın gelen ışına paralel, fakat yanal olarak kaymıştır.</small>
+                  <b>3 · Ekran</b>
+                  <p>{format(latest.displacement, 2)} cm kayma</p>
+                  <small>Çıkan ışın ekrandaki renkli noktaya ulaştı.</small>
                 </article>
               </>
             )}
             {latest.mode === "deviation" && (
               <>
                 <article>
-                  <b>1 · Prizma içindeki açılar</b>
-                  <p>r₁ + r₂ = A</p>
-                  <code>{format(latest.refraction, 1)}° + {format(latest.secondInternalAngle, 1)}° = 60°</code>
-                  <small>Işın iki farklı yüzeyde kırılır.</small>
+                  <b>1 · Prizmaya giriş</b>
+                  <p>İlk kırılma</p>
+                  <small>Işın ilk prizma yüzeyinde yön değiştirdi.</small>
                 </article>
                 <article>
-                  <b>2 · Çıkış açısı</b>
-                  <p>θ₄ = {format(latest.exitAngle, 1)}°</p>
-                  <code>A = 60°</code>
-                  <small>İkinci yüzeyde camdan havaya geçiş gerçekleşir.</small>
+                  <b>2 · Prizmadan çıkış</b>
+                  <p>İkinci kırılma</p>
+                  <small>Işın ikinci yüzeyden geçerek ekrana yöneldi.</small>
                 </article>
                 <article>
-                  <b>3 · Sapma açısı</b>
-                  <p>δ = θ₁ + θ₄ − A</p>
-                  <code>δ = {format(latest.deviation, 1)}°</code>
-                  <small>Gelen ve çıkan ışın doğrultuları arasındaki farktır.</small>
+                  <b>3 · Ekran</b>
+                  <p>{format(latest.deviation, 1)}° sapma</p>
+                  <small>{latest.colorLabel} ışığın renkli izi ekranda görüldü.</small>
                 </article>
               </>
             )}
             {latest.mode === "total-reflection" && (
               <>
                 <article>
-                  <b>1 · Camın sınır açısı</b>
-                  <p>θₛ = sin⁻¹(1/n)</p>
-                  <code>θₛ = {format(criticalAngle, 1)}°</code>
-                  <small>Işık camdan havaya geçmeye çalışmaktadır.</small>
+                  <b>1 · Seçilen açı</b>
+                  <p>{format(latest.internalAngle, 0)}°</p>
+                  <small>Işının prizma içindeki yüzeye geliş açısıdır.</small>
                 </article>
                 <article>
-                  <b>2 · Seçilen iç açı</b>
-                  <p>θ = {format(latest.internalAngle, 0)}°</p>
-                  <code>{latest.internalAngle >= criticalAngle ? "θ ≥ θₛ" : "θ < θₛ"}</code>
-                  <small>Sınır açısıyla doğrudan karşılaştırılır.</small>
+                  <b>2 · Prizma içindeki yol</b>
+                  <p>{latest.totalReflection ? "İki tam yansıma" : "Dışarı çıkış"}</p>
+                  <small>{latest.totalReflection ? "İki temas noktası ışın üzerinde gösterildi." : "Işın ilk yüzeyden dışarı çıktı."}</small>
                 </article>
                 <article>
-                  <b>3 · Gözlenen yol</b>
-                  <p>{latest.totalReflection ? "Tam yansıma" : "Kırılma"}</p>
-                  <code>{latest.totalReflection ? "Işın prizma içinde kaldı." : "Işın prizmadan çıktı."}</code>
-                  <small>{latest.totalReflection ? "İki yansımadan sonra ışın ters yönde ilerledi." : "İç açı sınır açısından küçüktür."}</small>
+                  <b>3 · Ekran</b>
+                  <p>{latest.totalReflection ? "Geri dönüş ekranı" : "Sağ ekran"}</p>
+                  <small>Işın yolu ekran üzerindeki renkli noktada sonlandı.</small>
                 </article>
               </>
             )}
@@ -1130,45 +1303,29 @@ export default function PrismLab() {
         <div className="optics-report-heading">
           <div>
             <small>KISA DENEY RAPORU</small>
-            <h2>Hipotezini kanıtla veya değiştir</h2>
+            <h2>Gözlediğini kendi cümlelerinle açıkla</h2>
           </div>
-          <span>Her yorumunda deney günlüğünden en az iki ölçüm kullan.</span>
+          <span>Kısa ve gözleme dayalı yanıtlar yeterlidir.</span>
         </div>
         <div className="optics-report-grid">
           <label>
-            <span>Gelme açısı arttığında kırılma açısı ve ekrandaki kayma nasıl değişti?</span>
+            <span>Aynı açıda kırmızı, yeşil ve mavi ışığın ekrandaki yerleri aynı mıydı?</span>
             <textarea
               rows={4}
-              value={report.refraction}
-              onChange={(event) => setReport({ ...report, refraction: event.target.value })}
+              value={report.color}
+              onChange={(event) => setReport({ ...report, color: event.target.value })}
             />
           </label>
           <label>
-            <span>60° prizmada gelen ışın ile çıkan ışının doğrultuları arasında nasıl bir ilişki gözledin?</span>
+            <span>Işın prizmaya girdiğinde, çıktığında ve tam yansıma yaptığında nasıl bir yol izledi?</span>
             <textarea
               rows={4}
-              value={report.deviation}
-              onChange={(event) => setReport({ ...report, deviation: event.target.value })}
-            />
-          </label>
-          <label>
-            <span>Tam yansıma hangi koşulda başladı? Sınır açısının iki yanındaki ölçümleri karşılaştır.</span>
-            <textarea
-              rows={4}
-              value={report.reflection}
-              onChange={(event) => setReport({ ...report, reflection: event.target.value })}
-            />
-          </label>
-          <label>
-            <span>Başlangıç hipotezlerinden hangileri verilerle desteklendi, hangilerini değiştirdin?</span>
-            <textarea
-              rows={4}
-              value={report.evidence}
-              onChange={(event) => setReport({ ...report, evidence: event.target.value })}
+              value={report.path}
+              onChange={(event) => setReport({ ...report, path: event.target.value })}
             />
           </label>
           <label className="wide">
-            <span>Sonuç: Kırılma yasalarının prizmadaki ışın yolunu açıklayıp açıklamadığını kendi cümlelerinle değerlendir.</span>
+            <span>Sonuç: Işığın rengi ve geliş açısı ışının yolunu nasıl etkiledi?</span>
             <textarea
               rows={5}
               value={report.conclusion}
