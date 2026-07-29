@@ -177,30 +177,210 @@ function drawProgressivePath(
   context.stroke();
 }
 
-function pointFromElement(
-  element: Element | null,
-  canvasRect: DOMRect,
-  horizontal: number,
-  vertical: number,
-) {
-  if (!element) return null;
-  const rect = element.getBoundingClientRect();
+type RayPoint = { x: number; y: number };
+type SurfaceContact = {
+  point: RayPoint;
+  normal: RayPoint;
+  label: string;
+  labelOffset: number;
+};
+
+function addPoint(first: RayPoint, second: RayPoint) {
+  return { x: first.x + second.x, y: first.y + second.y };
+}
+
+function subtractPoint(first: RayPoint, second: RayPoint) {
+  return { x: first.x - second.x, y: first.y - second.y };
+}
+
+function scalePoint(point: RayPoint, amount: number) {
+  return { x: point.x * amount, y: point.y * amount };
+}
+
+function dotPoint(first: RayPoint, second: RayPoint) {
+  return first.x * second.x + first.y * second.y;
+}
+
+function crossPoint(first: RayPoint, second: RayPoint) {
+  return first.x * second.y - first.y * second.x;
+}
+
+function normalizePoint(point: RayPoint) {
+  const length = Math.hypot(point.x, point.y);
+  return length === 0
+    ? { x: 0, y: 0 }
+    : { x: point.x / length, y: point.y / length };
+}
+
+function rotatePoint(point: RayPoint, angle: number) {
+  const cosine = Math.cos(angle);
+  const sine = Math.sin(angle);
   return {
-    x: rect.left - canvasRect.left + rect.width * horizontal,
-    y: rect.top - canvasRect.top + rect.height * vertical,
+    x: point.x * cosine - point.y * sine,
+    y: point.x * sine + point.y * cosine,
   };
 }
 
-function drawContact(
-  context: CanvasRenderingContext2D,
-  point: { x: number; y: number },
-  color: string,
-  label: string,
-  labelOffsetY: number,
+function rayPolygonIntersection(
+  origin: RayPoint,
+  direction: RayPoint,
+  vertices: RayPoint[],
 ) {
+  let nearest:
+    | {
+        point: RayPoint;
+        edgeIndex: number;
+        distance: number;
+      }
+    | null = null;
+
+  vertices.forEach((start, edgeIndex) => {
+    const end = vertices[(edgeIndex + 1) % vertices.length];
+    const edge = subtractPoint(end, start);
+    const denominator = crossPoint(direction, edge);
+    if (Math.abs(denominator) < 0.00001) return;
+    const fromOrigin = subtractPoint(start, origin);
+    const distance = crossPoint(fromOrigin, edge) / denominator;
+    const edgePosition = crossPoint(fromOrigin, direction) / denominator;
+    if (
+      distance > 0.8 &&
+      edgePosition >= -0.001 &&
+      edgePosition <= 1.001 &&
+      (!nearest || distance < nearest.distance)
+    ) {
+      nearest = {
+        point: addPoint(origin, scalePoint(direction, distance)),
+        edgeIndex,
+        distance,
+      };
+    }
+  });
+
+  return nearest;
+}
+
+function polygonCenter(vertices: RayPoint[]) {
+  return vertices.reduce(
+    (center, point) => addPoint(center, scalePoint(point, 1 / vertices.length)),
+    { x: 0, y: 0 },
+  );
+}
+
+function edgeOutwardNormal(vertices: RayPoint[], edgeIndex: number) {
+  const start = vertices[edgeIndex];
+  const end = vertices[(edgeIndex + 1) % vertices.length];
+  const edge = subtractPoint(end, start);
+  const midpoint = scalePoint(addPoint(start, end), 0.5);
+  const center = polygonCenter(vertices);
+  let normal = normalizePoint({ x: edge.y, y: -edge.x });
+  if (dotPoint(normal, subtractPoint(midpoint, center)) < 0) {
+    normal = scalePoint(normal, -1);
+  }
+  return normal;
+}
+
+function refractRay(
+  incident: RayPoint,
+  surfaceNormal: RayPoint,
+  firstIndex: number,
+  secondIndex: number,
+) {
+  const ray = normalizePoint(incident);
+  let normal = normalizePoint(surfaceNormal);
+  if (dotPoint(ray, normal) > 0) normal = scalePoint(normal, -1);
+  const indexRatio = firstIndex / secondIndex;
+  const cosine = -dotPoint(normal, ray);
+  const discriminant =
+    1 - indexRatio * indexRatio * (1 - cosine * cosine);
+  if (discriminant < 0) return null;
+  return normalizePoint(
+    addPoint(
+      scalePoint(ray, indexRatio),
+      scalePoint(normal, indexRatio * cosine - Math.sqrt(discriminant)),
+    ),
+  );
+}
+
+function reflectRay(incident: RayPoint, surfaceNormal: RayPoint) {
+  const ray = normalizePoint(incident);
+  const normal = normalizePoint(surfaceNormal);
+  return normalizePoint(
+    subtractPoint(ray, scalePoint(normal, 2 * dotPoint(ray, normal))),
+  );
+}
+
+function elementCenter(element: Element | null, canvasRect: DOMRect) {
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  return {
+    center: {
+      x: rect.left - canvasRect.left + rect.width / 2,
+      y: rect.top - canvasRect.top + rect.height / 2,
+    },
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function samplePolygon(
+  parent: HTMLElement | null,
+  canvasRect: DOMRect,
+  mode: ExperimentMode,
+  rotationDegrees: number,
+) {
+  const selector =
+    mode === "refraction"
+      ? ".optics-slab"
+      : mode === "deviation"
+        ? ".optics-equilateral-prism"
+        : ".optics-right-prism";
+  const sample = elementCenter(parent?.querySelector(selector) ?? null, canvasRect);
+  if (!sample) return [];
+  const halfWidth = sample.width / 2;
+  const halfHeight = sample.height / 2;
+  const localVertices =
+    mode === "refraction"
+      ? [
+          { x: -halfWidth, y: -halfHeight },
+          { x: halfWidth, y: -halfHeight },
+          { x: halfWidth, y: halfHeight },
+          { x: -halfWidth, y: halfHeight },
+        ]
+      : mode === "deviation"
+        ? [
+            { x: 0, y: -halfHeight * 0.96 },
+            { x: halfWidth * 0.92, y: halfHeight * 0.88 },
+            { x: -halfWidth * 0.92, y: halfHeight * 0.88 },
+          ]
+        : [
+            { x: -halfHeight * 0.45, y: -halfHeight * 0.9 },
+            { x: halfHeight * 0.45, y: 0 },
+            { x: -halfHeight * 0.45, y: halfHeight * 0.9 },
+          ];
+  const rotation = toRadians(rotationDegrees);
+  return localVertices.map((point) =>
+    addPoint(sample.center, rotatePoint(point, rotation)),
+  );
+}
+
+function drawSurfaceContact(
+  context: CanvasRenderingContext2D,
+  contact: SurfaceContact,
+  color: string,
+) {
+  const normalStart = addPoint(contact.point, scalePoint(contact.normal, -23));
+  const normalEnd = addPoint(contact.point, scalePoint(contact.normal, 23));
   context.save();
+  context.setLineDash([4, 4]);
+  context.lineWidth = 1;
+  context.strokeStyle = "rgba(42, 76, 83, 0.62)";
   context.beginPath();
-  context.arc(point.x, point.y, 5, 0, Math.PI * 2);
+  context.moveTo(normalStart.x, normalStart.y);
+  context.lineTo(normalEnd.x, normalEnd.y);
+  context.stroke();
+  context.setLineDash([]);
+  context.beginPath();
+  context.arc(contact.point.x, contact.point.y, 5, 0, Math.PI * 2);
   context.fillStyle = "#ffffff";
   context.fill();
   context.lineWidth = 2.4;
@@ -209,7 +389,11 @@ function drawContact(
   context.font = "800 9px Arial";
   context.fillStyle = "#324f56";
   context.textAlign = "center";
-  context.fillText(label, point.x, point.y + labelOffsetY);
+  context.fillText(
+    contact.label,
+    contact.point.x,
+    contact.point.y + contact.labelOffset,
+  );
   context.restore();
 }
 
@@ -225,6 +409,8 @@ function OpticsRayCanvas({
   internalAngle,
   totalReflection,
   lightColor,
+  refractiveIndex,
+  sampleRotation,
 }: {
   mode: ExperimentMode;
   progress: number;
@@ -237,6 +423,8 @@ function OpticsRayCanvas({
   internalAngle: number;
   totalReflection: boolean;
   lightColor: (typeof LIGHT_COLORS)[LightColorKind];
+  refractiveIndex: number;
+  sampleRotation: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -258,104 +446,122 @@ function OpticsRayCanvas({
       context.clearRect(0, 0, width, height);
 
       const parent = canvas.parentElement;
-      const laser =
-        pointFromElement(parent?.querySelector(".laser-aperture") ?? null, rect, 1, 0.5) ??
-        { x: width * 0.16, y: height * 0.44 };
-      const screen =
-        pointFromElement(parent?.querySelector(".screen-hit") ?? null, rect, 0.5, 0.5) ??
-        { x: width * 0.93, y: height * 0.46 };
+      const laserElement = parent?.querySelector(".laser-aperture") ?? null;
+      const laserRect = laserElement?.getBoundingClientRect();
+      const laser = laserRect
+        ? {
+            x: laserRect.right - rect.left,
+            y: laserRect.top - rect.top + laserRect.height / 2,
+          }
+        : { x: width * 0.16, y: height * 0.44 };
+      const screenElement = parent?.querySelector(".screen-face") ?? null;
+      const screenRect = screenElement?.getBoundingClientRect();
       const visibleProgress = laserOn ? (running ? progress : 1) : 0;
-      let points: Array<{ x: number; y: number }> = [laser];
-      let labelCenter = { x: width * 0.56, y: height * 0.44 };
-      let contacts: Array<{
-        point: { x: number; y: number };
-        label: string;
-        offset: number;
-      }> = [];
+      const vertices = samplePolygon(parent, rect, mode, sampleRotation);
+      const points: RayPoint[] = [laser];
+      const contacts: SurfaceContact[] = [];
+      let rayDirection: RayPoint = { x: 1, y: 0 };
+      let rayOrigin = laser;
+      let exitedPrism = false;
+      let reflectedCount = 0;
+      const entryHit = rayPolygonIntersection(rayOrigin, rayDirection, vertices);
 
-      if (mode === "refraction") {
-        const slab = parent?.querySelector(".optics-slab i") ?? null;
-        const entry =
-          pointFromElement(slab, rect, 0.02, 0.42) ?? {
-            x: width * 0.545,
-            y: laser.y,
-          };
-        const exit =
-          pointFromElement(slab, rect, 0.98, 0.6) ?? {
-            x: width * 0.575,
-            y: laser.y + displacement * 22,
-          };
-        entry.y = laser.y;
-        exit.y = laser.y + clamp(displacement * 24, 0, 28);
-        points = [laser, entry, exit, screen];
-        contacts = [
-          { point: entry, label: "1. kırılma", offset: -15 },
-          { point: exit, label: "2. kırılma", offset: 19 },
-        ];
-      } else if (mode === "deviation") {
-        const prism = parent?.querySelector(".optics-equilateral-prism i") ?? null;
-        const prismCenter =
-          pointFromElement(prism, rect, 0.5, 0.5) ?? {
-            x: width * 0.56,
-            y: height * 0.44,
-          };
-        labelCenter = prismCenter;
-        const entry =
-          pointFromElement(prism, rect, 0.25, 0.53) ?? {
-            x: prismCenter.x - 42,
-            y: laser.y,
-          };
-        const exit =
-          pointFromElement(prism, rect, 0.75, 0.71) ?? {
-            x: prismCenter.x + 42,
-            y: laser.y + 26,
-          };
-        entry.y = laser.y;
-        points = [laser, entry, exit, screen];
-        contacts = [
-          { point: entry, label: "girişte kırılma", offset: -15 },
-          { point: exit, label: "çıkışta kırılma", offset: 20 },
-        ];
-      } else {
-        const prism = parent?.querySelector(".optics-right-prism i") ?? null;
-        const prismCenter =
-          pointFromElement(prism, rect, 0.5, 0.5) ?? {
-            x: width * 0.56,
-            y: height * 0.44,
-          };
-        labelCenter = prismCenter;
-        const entry =
-          pointFromElement(prism, rect, 0.06, 0.68) ?? {
-            x: prismCenter.x - 56,
-            y: prismCenter.y + 22,
-          };
-        const firstReflection =
-          pointFromElement(prism, rect, 0.64, 0.68) ?? {
-            x: prismCenter.x + 18,
-            y: prismCenter.y + 22,
-          };
-        const secondReflection =
-          pointFromElement(prism, rect, 0.64, 0.32) ?? {
-            x: prismCenter.x + 18,
-            y: prismCenter.y - 22,
-          };
-        const exit =
-          pointFromElement(prism, rect, 0.06, 0.32) ?? {
-            x: prismCenter.x - 56,
-            y: prismCenter.y - 22,
-          };
-        if (totalReflection) {
-          points = [laser, entry, firstReflection, secondReflection, exit, screen];
-          contacts = [
-            { point: firstReflection, label: "tam yansıma 1", offset: 19 },
-            { point: secondReflection, label: "tam yansıma 2", offset: -15 },
-          ];
-        } else {
-          points = [laser, entry, firstReflection, screen];
-          contacts = [
-            { point: firstReflection, label: "ışın dışarı çıktı", offset: 19 },
-          ];
+      if (entryHit) {
+        points.push(entryHit.point);
+        const entryNormal = edgeOutwardNormal(vertices, entryHit.edgeIndex);
+        contacts.push({
+          point: entryHit.point,
+          normal: entryNormal,
+          label: mode === "total-reflection" ? "giriş" : "girişte kırılma",
+          labelOffset: -16,
+        });
+        const insideDirection = refractRay(
+          rayDirection,
+          entryNormal,
+          1,
+          refractiveIndex,
+        );
+        if (insideDirection) {
+          rayDirection = insideDirection;
+          rayOrigin = addPoint(entryHit.point, scalePoint(rayDirection, 1.5));
+          for (let interaction = 0; interaction < 5; interaction += 1) {
+            const nextHit = rayPolygonIntersection(
+              rayOrigin,
+              rayDirection,
+              vertices,
+            );
+            if (!nextHit) break;
+            points.push(nextHit.point);
+            const outwardNormal = edgeOutwardNormal(
+              vertices,
+              nextHit.edgeIndex,
+            );
+            const outsideDirection = refractRay(
+              rayDirection,
+              scalePoint(outwardNormal, -1),
+              refractiveIndex,
+              1,
+            );
+            if (outsideDirection) {
+              contacts.push({
+                point: nextHit.point,
+                normal: outwardNormal,
+                label: mode === "total-reflection" ? "çıkış" : "çıkışta kırılma",
+                labelOffset: 19,
+              });
+              rayDirection = outsideDirection;
+              rayOrigin = nextHit.point;
+              exitedPrism = true;
+              break;
+            }
+            reflectedCount += 1;
+            contacts.push({
+              point: nextHit.point,
+              normal: outwardNormal,
+              label:
+                mode === "total-reflection"
+                  ? `TY ${reflectedCount}`
+                  : `tam yansıma ${reflectedCount}`,
+              labelOffset: reflectedCount % 2 === 0 ? -16 : 20,
+            });
+            rayDirection = reflectRay(rayDirection, outwardNormal);
+            rayOrigin = addPoint(nextHit.point, scalePoint(rayDirection, 1.5));
+          }
         }
+      }
+
+      let reachedScreen = false;
+      let screenPoint: RayPoint | null = null;
+      if (exitedPrism && screenRect && Math.abs(rayDirection.x) > 0.0001) {
+        const screenLeft = screenRect.left - rect.left;
+        const screenRight = screenRect.right - rect.left;
+        const screenX = rayDirection.x >= 0 ? screenLeft : screenRight;
+        const screenDistance = (screenX - rayOrigin.x) / rayDirection.x;
+        const candidate = addPoint(
+          rayOrigin,
+          scalePoint(rayDirection, screenDistance),
+        );
+        const screenTop = screenRect.top - rect.top + 3;
+        const screenBottom = screenRect.bottom - rect.top - 3;
+        if (
+          screenDistance > 0 &&
+          candidate.y >= screenTop &&
+          candidate.y <= screenBottom
+        ) {
+          screenPoint = candidate;
+          reachedScreen = true;
+          points.push(candidate);
+        }
+      }
+
+      if (exitedPrism && !reachedScreen) {
+        const distanceToEdge =
+          rayDirection.x >= 0
+            ? (width - rayOrigin.x - 10) / Math.max(rayDirection.x, 0.001)
+            : (10 - rayOrigin.x) / Math.min(rayDirection.x, -0.001);
+        points.push(
+          addPoint(rayOrigin, scalePoint(rayDirection, distanceToEdge)),
+        );
       }
 
       if (laserOn) {
@@ -387,9 +593,23 @@ function OpticsRayCanvas({
       }
 
       if (laserOn && visibleProgress > 0.7) {
-        contacts.forEach(({ point, label, offset }) =>
-          drawContact(context, point, lightColor.hex, label, offset),
+        contacts.forEach((contact) =>
+          drawSurfaceContact(context, contact, lightColor.hex),
         );
+        if (screenPoint) {
+          context.save();
+          context.beginPath();
+          context.arc(screenPoint.x, screenPoint.y, 7, 0, Math.PI * 2);
+          context.fillStyle = lightColor.hex;
+          context.shadowColor = lightColor.glow;
+          context.shadowBlur = 17;
+          context.fill();
+          context.font = "800 9px Arial";
+          context.fillStyle = "#324f56";
+          context.textAlign = "center";
+          context.fillText("ekrana ulaştı", screenPoint.x, screenPoint.y - 14);
+          context.restore();
+        }
         context.save();
         context.font = "800 9px Arial";
         context.fillStyle = "#405f65";
@@ -397,13 +617,17 @@ function OpticsRayCanvas({
         if (mode === "refraction") {
           context.fillText(`kırılma ${format(refraction, 1)}°`, width * 0.66, height * 0.38);
         } else if (mode === "deviation") {
-          context.fillText(`sapma ${format(deviation, 1)}°`, width * 0.77, screen.y - 13);
+          context.fillText(
+            `sapma ${format(deviation, 1)}°`,
+            width * 0.75,
+            height * 0.22,
+          );
         } else {
           context.fillText(
-            totalReflection
+            reflectedCount >= 2 && totalReflection
               ? `iki tam yansıma · ${format(internalAngle, 0)}°`
               : `${format(internalAngle, 0)}° · ışın prizmadan çıkar`,
-            labelCenter.x,
+            width * 0.56,
             height * 0.19,
           );
         }
@@ -427,8 +651,10 @@ function OpticsRayCanvas({
     lightColor,
     mode,
     progress,
+    refractiveIndex,
     refraction,
     running,
+    sampleRotation,
     totalReflection,
   ]);
 
@@ -709,28 +935,29 @@ export default function PrismLab() {
       : mode === "deviation"
         ? "equilateral-prism"
         : "right-prism";
-  const screenHit =
+  const rightPrismRotation = toDegrees(
+    Math.asin(
+      clamp(
+        refractiveIndex * Math.sin(toRadians(internalAngle - 45)),
+        -1,
+        1,
+      ),
+    ),
+  );
+  const sampleRotation =
     mode === "refraction"
-      ? 48 + clamp(displacement * 4, 0, 9)
+      ? incidence
       : mode === "deviation"
-        ? 50 + clamp(deviation * 0.66, 0, 34)
-        : totalReflection
-          ? 31
-          : 62;
+        ? incidence - 30
+        : rightPrismRotation;
   const stageStyle = {
-    "--optics-table-angle": `${mode === "total-reflection" ? internalAngle - 45 : incidence}deg`,
-    "--optics-screen-hit": `${screenHit}%`,
+    "--optics-table-angle": `${sampleRotation}deg`,
+    "--optics-sample-angle": `${sampleRotation}deg`,
     "--optics-beam-color": lightColor.hex,
     "--optics-beam-glow": lightColor.glow,
   } as CSSProperties;
 
   const modeRecords = records.filter((record) => record.mode === mode);
-  const currentSettingRecords = modeRecords.filter((record) =>
-    mode === "total-reflection"
-      ? record.internalAngle === internalAngle &&
-        record.totalReflection === totalReflection
-      : record.incidence === incidence,
-  );
 
   return (
     <section className="prism-lab-section" id="kirilma-prizma-deneyi">
@@ -888,30 +1115,6 @@ export default function PrismLab() {
               >
                 <i className="screen-face" />
                 <i className="screen-grid" />
-                {currentSettingRecords.map((record) => {
-                  const rememberedHit =
-                    mode === "refraction"
-                      ? 48 + clamp(record.displacement * 4, 0, 9)
-                      : mode === "deviation"
-                        ? 50 + clamp(record.deviation * 0.66, 0, 34)
-                        : record.totalReflection
-                          ? 31
-                          : 62;
-                  return (
-                    <i
-                      key={`${record.mode}-${record.color}-${record.id}`}
-                      className="screen-memory-hit"
-                      title={`${record.colorLabel} ışık izi`}
-                      style={
-                        {
-                          "--memory-hit": `${rememberedHit}%`,
-                          "--memory-color": record.colorHex,
-                        } as CSSProperties
-                      }
-                    />
-                  );
-                })}
-                <i className={`screen-hit ${laserOn ? "visible" : ""}`} />
                 <i className="screen-post" />
                 <i className="screen-base" />
                 <b>
@@ -967,6 +1170,8 @@ export default function PrismLab() {
               internalAngle={internalAngle}
               totalReflection={totalReflection}
               lightColor={lightColor}
+              refractiveIndex={refractiveIndex}
+              sampleRotation={sampleRotation}
             />
 
             {!setupComplete && (

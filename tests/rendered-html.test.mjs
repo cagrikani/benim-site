@@ -189,8 +189,11 @@ test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla s
   assert.match(page, /Işık rengi/);
   assert.match(page, /Ekrandaki gözlem/);
   assert.match(page, /Gözlem özetini göster/);
-  assert.match(page, /tam yansıma 1/);
-  assert.match(page, /tam yansıma 2/);
+  assert.match(page, /rayPolygonIntersection/);
+  assert.match(page, /refractRay/);
+  assert.match(page, /reflectRay/);
+  assert.match(page, /TY \$\{reflectedCount\}/);
+  assert.match(page, /--optics-sample-angle/);
   assert.match(page, /GERİ DÖNÜŞ EKRANI/);
   assert.doesNotMatch(page, /İç açılar r₁ \/ r₂/);
   assert.doesNotMatch(page, /n pleksiglas/);
@@ -210,8 +213,8 @@ test("optik düzeneği gerçekçi ray, lazer, açı tablası, ekran ve cam elema
   assert.match(css, /\.optics-rotary-table\s*\{/);
   assert.match(css, /\.optics-degree-ring\s*\{/);
   assert.match(css, /\.optics-screen\s*\{/);
-  assert.match(css, /\.screen-hit\s*\{/);
-  assert.match(css, /\.screen-memory-hit\s*\{/);
+  assert.match(css, /\.screen-face\s*\{/);
+  assert.match(css, /transform:\s*rotate\(var\(--optics-table-angle\)\)/);
   assert.match(css, /\.optics-screen\.return-screen\s*\{/);
   assert.match(css, /\.optics-color-options\s*\{/);
   assert.match(css, /\.optics-slab,/);

@@ -47,3 +47,5 @@ inceleyebilir ve kanıta dayalı kısa deney raporlarını yazabilir.
 Optik deneyinde öğrenciler optik rayı sürükleyerek kurabilir, ışın yoluna ilişkin
 hipotez oluşturabilir; kırmızı, yeşil ve mavi ışığı karşılaştırabilir; iki
 kırılma veya iki tam yansıma sonrasında ışının ekrana ulaştığını gözleyebilir.
+Optik tabla çevrildiğinde cam eleman aynı eksende döner; ışın yolu, dönen
+yüzeylerle kesişim ve Snell yasası kullanılarak yeniden hesaplanır.

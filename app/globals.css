@@ -16575,9 +16575,18 @@ footer > a {
   border: 5px solid #526a70;
   border-radius: 50%;
   background:
+    linear-gradient(
+      90deg,
+      transparent 0 47%,
+      rgba(97, 211, 194, 0.2) 47.5% 52.5%,
+      transparent 53% 100%
+    ),
     radial-gradient(circle, #e7eeec 0 5px, transparent 6px),
     radial-gradient(circle at 43% 35%, #647a80, #273f47 72%);
   box-shadow: inset 0 6px 12px rgba(255, 255, 255, 0.11);
+  transform: rotate(var(--optics-table-angle));
+  transform-origin: center;
+  transition: transform 260ms ease;
 }
 
 .optics-zero-line {
@@ -16589,6 +16598,8 @@ footer > a {
   background: #ff715a;
   box-shadow: 0 0 5px rgba(255, 113, 90, 0.45);
   transform: rotate(var(--optics-table-angle));
+  transform-origin: center;
+  transition: transform 260ms ease;
 }
 
 .optics-rotary-table.calibrated .optics-zero-line {
@@ -16623,16 +16634,16 @@ footer > a {
 
 .optics-screen {
   position: absolute;
-  top: 132px;
-  right: 3.2%;
+  top: 86px;
+  right: 24%;
   z-index: 13;
   width: 75px;
-  height: 267px;
+  height: 345px;
   transition: top 350ms ease, right 350ms ease, left 350ms ease;
 }
 
 .optics-screen.return-screen {
-  top: 138px;
+  top: 103px;
   right: auto;
   left: 22%;
 }
@@ -16646,7 +16657,7 @@ footer > a {
   top: 0;
   left: 15px;
   width: 45px;
-  height: 224px;
+  height: 300px;
   border: 5px solid #4b6267;
   border-radius: 4px;
   background: #f7faf9;
@@ -16659,48 +16670,14 @@ footer > a {
   top: 7px;
   left: 22px;
   width: 31px;
-  height: 210px;
+  height: 286px;
   background:
     repeating-linear-gradient(0deg, transparent 0 9px, rgba(63, 92, 96, 0.16) 10px 11px),
     linear-gradient(90deg, transparent 48%, rgba(63, 92, 96, 0.33) 49% 52%, transparent 53%);
 }
 
-.screen-hit {
-  top: var(--optics-screen-hit);
-  left: 32px;
-  z-index: 4;
-  width: 10px;
-  height: 10px;
-  border: 2px solid white;
-  border-radius: 50%;
-  background: var(--optics-beam-color);
-  box-shadow:
-    0 0 5px 2px var(--optics-beam-color),
-    0 0 17px 5px var(--optics-beam-glow);
-  opacity: 0;
-  transform: translateY(-50%);
-}
-
-.screen-hit.visible {
-  opacity: 1;
-}
-
-.screen-memory-hit {
-  top: var(--memory-hit);
-  left: 34px;
-  z-index: 3;
-  width: 7px;
-  height: 7px;
-  border: 1px solid white;
-  border-radius: 50%;
-  background: var(--memory-color);
-  box-shadow: 0 0 5px var(--memory-color);
-  opacity: 0.78;
-  transform: translateY(-50%);
-}
-
 .screen-post {
-  top: 220px;
+  top: 296px;
   left: 34px;
   width: 8px;
   height: 32px;
@@ -16719,7 +16696,7 @@ footer > a {
 
 .optics-screen > b {
   position: absolute;
-  top: 232px;
+  top: 311px;
   right: 0;
   left: 0;
   color: #50686d;
@@ -16737,10 +16714,15 @@ footer > a {
   transform: translateX(-50%);
 }
 
-.optics-slab i {
-  display: block;
+.optics-slab {
   width: 31px;
   height: 126px;
+}
+
+.optics-slab i {
+  display: block;
+  width: 100%;
+  height: 100%;
   border: 4px solid rgba(38, 111, 133, 0.82);
   border-radius: 3px;
   background:
@@ -16748,7 +16730,9 @@ footer > a {
   box-shadow:
     inset 7px 0 8px rgba(255, 255, 255, 0.68),
     0 7px 9px rgba(34, 80, 91, 0.18);
-  transform: rotate(0deg);
+  transform: rotate(var(--optics-sample-angle));
+  transform-origin: center;
+  transition: transform 260ms ease;
 }
 
 .optics-slab > b {
@@ -16777,7 +16761,9 @@ footer > a {
     drop-shadow(1px 0 0 #2d8197)
     drop-shadow(-1px 0 0 #2d8197)
     drop-shadow(0 6px 6px rgba(30, 73, 82, 0.24));
-  transform: rotate(0deg);
+  transform: rotate(var(--optics-sample-angle));
+  transform-origin: center;
+  transition: transform 260ms ease;
 }
 
 .optics-equilateral-prism > b {
@@ -16798,14 +16784,16 @@ footer > a {
   display: block;
   width: 100%;
   height: 100%;
-  clip-path: polygon(5% 5%, 94% 50%, 5% 95%);
+  clip-path: polygon(27.5% 5%, 72.5% 50%, 27.5% 95%);
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(105, 214, 230, 0.32) 45%, rgba(40, 126, 153, 0.6));
   filter:
     drop-shadow(1px 0 0 #28798f)
     drop-shadow(-1px 0 0 #28798f)
     drop-shadow(0 7px 7px rgba(31, 73, 81, 0.24));
-  transform: rotate(0deg);
+  transform: rotate(var(--optics-sample-angle));
+  transform-origin: center;
+  transition: transform 260ms ease;
 }
 
 .optics-right-prism > b {
