@@ -1,18 +1,38 @@
-# Benim Site
+# Fizik Atölyesi
 
-Kisisel portfoy sayfasi, fizik laboratuvari uygulamasi ve YDS/YOKDIL hazirlik paneli.
+Türkiye Yüzyılı Maarif Modeli ile uyumlu, etkileşimli fizik deneyleri ve
+serbest simülasyonlar için hazırlanan web portalıdır.
 
-## Icerik
+## Visual Studio Code ile çalıştırma
 
-- `index.html`: Ana portfoy sayfasi
-- `fizik-lab/`: Optik ve mekanik simulasyonlar iceren bagimsiz uygulama
-- `yds-hazirlik/`: Next.js kaynak kodu ile gelistirilen YDS/YOKDIL hazirlik uygulamasi
-- `yds-kocum/`: GitHub Pages icin uretilmis statik export cikisi
+1. Visual Studio Code'da `fizik-atolyesi` klasörünü açın.
+2. Terminalde `npm install` komutunu çalıştırın.
+3. `npm run dev` komutuyla yerel geliştirme sunucusunu başlatın.
+4. Terminalde gösterilen yerel adresi tarayıcıda açın.
 
-## Yerelde Acmak
+## Sunucu paketi
 
-Statik bir proje oldugu icin `index.html` dosyasini tarayicida acmak yeterlidir.
+`npm run build:static` komutu, herhangi bir statik web sunucusuna veya GitHub
+Pages'e yüklenebilen dosyaları `sunucu-paketi` klasöründe üretir. Paket göreli
+dosya yolları kullandığından bir alt klasörde de çalışabilir.
 
-## GitHub Pages
+## Ana yapı
 
-Bu repo, `.github/workflows/deploy-pages.yml` dosyasi sayesinde GitHub Pages uzerine otomatik yayina uygun sekilde hazirlanmistir.
+- İlgi çekici, özgün ve telif sorunu taşımayan Fizik Atölyesi ana sayfası
+- Fizik Deney Setleri ve Serbest Deney ve Simülasyon olarak iki ana çalışma yolu
+- Deney setleri altında Mekanik, Elektrik, Dalgalar-Optik ve Modern Fizik alanları
+- Serbest çalışma altında sekiz fizik konu alanı
+- Henüz hazırlanmayan bütün alanlar için çalışan bekleme sayfaları
+- Masaüstü, tablet ve telefonlara uyumlu responsive tasarım
+
+## Açık deney seti: Mekanik
+
+- Serbest vektör çalışma alanı
+- Hava rayında düzgün ve sabit ivmeli hareket
+- Serbest düşme
+- İki boyutta hareket
+- İki boyutlu çarpışmalar
+- Balistik sarkaç
+
+Mekanik deneylerinde öğrenciler düzenekleri kurabilir, ölçüm alabilir, grafikleri
+inceleyebilir ve kanıta dayalı kısa deney raporlarını yazabilir.
