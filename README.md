@@ -37,3 +37,13 @@ dosya yolları kullandığından bir alt klasörde de çalışabilir.
 
 Mekanik deneylerinde öğrenciler düzenekleri kurabilir, ölçüm alabilir, grafikleri
 inceleyebilir ve kanıta dayalı kısa deney raporlarını yazabilir.
+
+## Açık deney seti: Dalgalar - Optik
+
+- Pleksiglas levhada ışığın kırılması ve yanal kayma
+- 60 derece prizmada sapma açısı
+- Dik üçgen prizmada tam yansıma
+
+Optik deneyinde öğrenciler optik rayı sürükleyerek kurabilir, ışın yoluna ilişkin
+hipotez oluşturabilir, açısal ölçümleri kaydedebilir ve verileriyle hipotezini
+değerlendirebilir.

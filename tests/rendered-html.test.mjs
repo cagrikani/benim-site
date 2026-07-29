@@ -113,6 +113,10 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /portal-placeholder/);
   assert.match(page, /YAPIM AŞAMASINDA/);
   assert.match(page, /MechanicsLabHub/);
+  assert.match(page, /OpticsLabHub/);
+  assert.match(page, /module\.key === "waves-optics"/);
+  assert.match(page, /onNavigate\("waves-optics"\)/);
+  assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
 });
 
@@ -130,6 +134,81 @@ test("Fizik Atölyesi ana sayfası responsive portal görsellerini içerir", asy
   assert.match(css, /\.portal-empty-bench\s*\{/);
   assert.match(css, /\.portal-footer\s*\{/);
   assert.match(css, /@media \(max-width: 620px\)/);
+});
+
+test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla sunar", async () => {
+  const hub = await readFile(
+    new URL("app/OpticsLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("app/PrismLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(hub, /Dalgalar - Optik deney setleri/);
+  assert.match(hub, /Kırılma ve prizma/);
+  assert.match(hub, /PrismLab/);
+  assert.match(page, /FİZ\.11\.4\.5/);
+  assert.match(page, /FİZ\.11\.4\.8/);
+  assert.match(page, /application\/x-optics-equipment/);
+  assert.match(page, /SETUP_ORDER/);
+  assert.match(page, /Cetvelli metal optik ray ve ayakları/);
+  assert.match(page, /Yüksekliği ayarlanabilir tek renkli lazer/);
+  assert.match(page, /Açı ölçekli döner optik tabla/);
+  assert.match(page, /Milimetre ölçekli beyaz ışın ekranı/);
+  assert.match(page, /1,50 cm kalınlıklı paralel yüzlü pleksiglas/);
+  assert.match(page, /60 derece tepe açılı cam prizma/);
+  assert.match(page, /İkizkenar dik üçgen cam prizma/);
+  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onStageDrop/);
+  assert.match(page, /isDragOver/);
+  assert.match(page, /Kalan parçaları istediğin sırayla ekleyebilirsin/);
+  assert.match(page, /OpticsRayCanvas/);
+  assert.match(page, /requestAnimationFrame/);
+  assert.match(page, /REFRACTION_ANGLES = \[0, 15, 30, 45, 60\]/);
+  assert.match(page, /DEVIATION_ANGLES = \[30, 40, 50, 60\]/);
+  assert.match(page, /INTERNAL_ANGLES = \[35, 40, 42, 45, 50\]/);
+  assert.match(page, /REFRACTIVE_INDEX = 1\.49/);
+  assert.match(page, /SLAB_THICKNESS_CM = 1\.5/);
+  assert.match(page, /PRISM_APEX_ANGLE = 60/);
+  assert.match(page, /Math\.asin/);
+  assert.match(page, /Pleksiglasta kırılma/);
+  assert.match(page, /Prizmada sapma/);
+  assert.match(page, /Prizmada tam yansıma/);
+  assert.match(page, /Hipotezim/);
+  assert.match(page, /Işını göndermeden önce kısa bir hipotez yaz/);
+  assert.match(page, /Lazeri aç/);
+  assert.match(page, /Optik daireyi sıfırla/);
+  assert.match(page, /IŞINI GÖNDER VE ÖLÇ/);
+  assert.match(page, /n pleksiglas/);
+  assert.match(page, /Sapma δ/);
+  assert.match(page, /Sınır açısı/);
+  assert.match(page, /İşlemsel analizi göster/);
+  assert.match(page, /Yapay rastgele sapma yoktur/);
+  assert.match(page, /KISA DENEY RAPORU/);
+  assert.match(page, /LAZER GÜVENLİĞİ/);
+});
+
+test("optik düzeneği gerçekçi ray, lazer, açı tablası, ekran ve cam elemanları gösterir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.optics-workspace\s*\{/);
+  assert.match(css, /\.optics-equipment-panel\s*,/);
+  assert.match(css, /\.optics-stage\.drag-over\s*\{/);
+  assert.match(css, /\.optics-apparatus\s*\{/);
+  assert.match(css, /\.optics-bench\s*\{/);
+  assert.match(css, /\.optics-rail\s*\{/);
+  assert.match(css, /\.optics-laser\s*\{/);
+  assert.match(css, /\.optics-rotary-table\s*\{/);
+  assert.match(css, /\.optics-degree-ring\s*\{/);
+  assert.match(css, /\.optics-screen\s*\{/);
+  assert.match(css, /\.screen-hit\s*\{/);
+  assert.match(css, /\.optics-slab,/);
+  assert.match(css, /\.optics-equilateral-prism\s*\{/);
+  assert.match(css, /\.optics-right-prism\s*\{/);
+  assert.match(css, /\.optics-ray-canvas\s*\{/);
+  assert.match(css, /\.optics-data-table\s*\{/);
+  assert.match(css, /\.optics-analysis-grid\s*\{/);
+  assert.match(css, /\.optics-report\s*\{/);
 });
 
 test("balistik sarkaç modülü PDF düzeneğiyle kurulabilir ve iki yöntemle hız bulur", async () => {

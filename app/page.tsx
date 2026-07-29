@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import MechanicsLabHub from "./MechanicsLabHub";
+import OpticsLabHub from "./OpticsLabHub";
 
 type PortalView =
   | "home"
   | "experiment-sets"
   | "free-labs"
   | "mechanics"
+  | "waves-optics"
   | "placeholder";
 
 type ModuleCard = {
@@ -38,9 +40,10 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
   {
     key: "waves-optics",
     title: "Dalgalar · Optik",
-    description: "Dalgaları, ışığı ve görüntü oluşumunu deneyle.",
-    detail: "Hazırlanıyor",
+    description: "Kırılmayı, prizmadaki sapmayı ve tam yansımayı deneyle.",
+    detail: "1 deney açık",
     visual: "portal-visual-waves",
+    available: true,
   },
   {
     key: "modern-physics",
@@ -436,7 +439,7 @@ function CollectionView({
         <aside>
           <b>{modules.length}</b>
           <span>{isExperiment ? "deney alanı" : "serbest konu alanı"}</span>
-          <small>{isExperiment ? "Mekanik kullanıma açık" : "İskelet hazır"}</small>
+          <small>{isExperiment ? "Mekanik ve Dalgalar-Optik açık" : "İskelet hazır"}</small>
         </aside>
       </div>
       <ModuleGrid
@@ -444,6 +447,8 @@ function CollectionView({
         onSelect={(module) => {
           if (module.key === "mechanics" && module.available) {
             onNavigate("mechanics");
+          } else if (module.key === "waves-optics" && module.available) {
+            onNavigate("waves-optics");
           } else {
             onPlaceholder(module, type);
           }
@@ -518,6 +523,10 @@ export default function Home() {
 
   if (view === "mechanics") {
     return <MechanicsLabHub onBack={() => navigate("experiment-sets")} />;
+  }
+
+  if (view === "waves-optics") {
+    return <OpticsLabHub onBack={() => navigate("experiment-sets")} />;
   }
 
   return (
