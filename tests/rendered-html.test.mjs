@@ -212,6 +212,13 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /application\/x-torque-equipment/);
   assert.match(page, /onEquipmentDragStart/);
   assert.match(page, /onStageDrop/);
+  assert.match(page, /torque-workspace/);
+  assert.match(page, /MALZEME RAFI/);
+  assert.match(page, /Tut, sürükle ve tezgâha bırak/);
+  assert.match(page, /Kalan malzemeleri istediğin sırayla sürükleyebilirsin/);
+  assert.match(page, /isDragOver/);
+  assert.match(page, /Malzeme tezgâha bırakılınca doğru bağlantı noktasına oturur/);
+  assert.doesNotMatch(page, /Önce .* parçasını yerleştir/);
   assert.match(page, /const RADII = \[0\.015, 0\.02, 0\.025\]/);
   assert.match(page, /const MASSES = \[0\.03, 0\.05, 0\.07, 0\.09\]/);
   assert.match(page, /second-disk/);
@@ -233,6 +240,10 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
 test("tork düzeneği yatay disk, optik okuyucu ve masa makarasını gerçekçi sahnede gösterir", async () => {
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
   assert.match(css, /\.torque-choice-visual\s*\{/);
+  assert.match(css, /\.torque-workspace\s*\{/);
+  assert.match(css, /\.torque-workspace \.torque-equipment-list\s*\{/);
+  assert.match(css, /\.torque-workspace \.torque-stage\.drag-over\s*\{/);
+  assert.match(css, /\.torque-bench-hint\s*\{/);
   assert.match(css, /\.torque-apparatus\s*\{/);
   assert.match(css, /\.torque-workbench\s*\{/);
   assert.match(css, /\.torque-base\s*\{/);

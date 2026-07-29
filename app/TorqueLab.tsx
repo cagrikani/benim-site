@@ -294,10 +294,11 @@ export default function TorqueLab() {
   const [progress, setProgress] = useState(0);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState(
-    "İlk parçayı seçip deney sahnesine yerleştir.",
+    "Sol raftaki bir malzemeyi tutup deney tezgâhına sürükle.",
   );
   const [records, setRecords] = useState<Trial[]>([]);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [report, setReport] = useState({
     radius: "",
     mass: "",
@@ -307,7 +308,8 @@ export default function TorqueLab() {
   });
 
   const setupComplete = installed.length === SETUP_ORDER.length;
-  const nextSetup = SETUP_ORDER[installed.length] ?? null;
+  const nextSetup =
+    SETUP_ORDER.find((kind) => !installed.includes(kind)) ?? null;
   const selectedAttachment =
     ATTACHMENTS.find((item) => item.kind === attachment) ?? ATTACHMENTS[0];
   const totalHangingMass = addedMass + PAN_MASS;
@@ -348,21 +350,15 @@ export default function TorqueLab() {
 
   const addEquipment = (kind: SetupKind) => {
     if (runState === "running" || installed.includes(kind)) return;
-    const expected = SETUP_ORDER[installed.length];
-    if (kind !== expected) {
-      const expectedName = EQUIPMENT.find((item) => item.kind === expected)?.shortName;
-      setMessage(`Önce ${expectedName} parçasını yerleştir.`);
-      return;
-    }
     const nextInstalled = [...installed, kind];
     setInstalled(nextInstalled);
     if (nextInstalled.length === SETUP_ORDER.length) {
       setMessage("Düzenek hazır. Deney serisini seç, ipi sar ve okuyucuyu sıfırla.");
     } else {
-      const upcoming = EQUIPMENT.find(
-        (item) => item.kind === SETUP_ORDER[nextInstalled.length],
-      )?.shortName;
-      setMessage(`${upcoming} parçasını deney sahnesine yerleştir.`);
+      const placedName = EQUIPMENT.find((item) => item.kind === kind)?.shortName;
+      setMessage(
+        `${placedName} yerine oturdu. Kalan malzemeleri istediğin sırayla sürükleyebilirsin.`,
+      );
     }
   };
 
@@ -376,6 +372,7 @@ export default function TorqueLab() {
 
   const onStageDrop = (event: ReactDragEvent<HTMLDivElement>) => {
     event.preventDefault();
+    setIsDragOver(false);
     const kind = event.dataTransfer.getData(MIME) as SetupKind;
     if (SETUP_ORDER.includes(kind)) addEquipment(kind);
   };
@@ -517,7 +514,8 @@ export default function TorqueLab() {
     setProgress(0);
     setTimer(0);
     setShowAnalysis(false);
-    setMessage("İlk parçayı seçip deney sahnesine yerleştir.");
+    setIsDragOver(false);
+    setMessage("Sol raftaki bir malzemeyi tutup deney tezgâhına sürükle.");
   };
 
   const discStyle = {
@@ -562,98 +560,106 @@ export default function TorqueLab() {
 
       <div className="torque-learning-strip">
         <span>
-          <b>1</b> Düzeneği kur
+          <b>1</b> Malzemeleri sürükle
         </span>
         <span>
-          <b>2</b> Bir değişken seç
+          <b>2</b> İpi sar ve ölç
         </span>
         <span>
-          <b>3</b> Grafiği ölç
-        </span>
-        <span>
-          <b>4</b> İlişkiyi kanıtla
+          <b>3</b> Tek değişkeni karşılaştır
         </span>
       </div>
 
-      <section className="torque-equipment-panel">
-        <div className="torque-panel-heading">
-          <div>
-            <small>DENEY MALZEMELERİ</small>
-            <h3>Parçaları yönerge sırasıyla yerleştir</h3>
+      <div className="torque-workspace">
+        <section className="torque-equipment-panel">
+          <div className="torque-panel-heading">
+            <div>
+              <small>MALZEME RAFI</small>
+              <h3>Tut, sürükle ve tezgâha bırak</h3>
+            </div>
+            <span>{installed.length}/{SETUP_ORDER.length}</span>
           </div>
-          <span>{installed.length}/{SETUP_ORDER.length} parça</span>
-        </div>
-        <div className="torque-equipment-list">
-          {EQUIPMENT.map((item) => {
-            const isInstalled = installed.includes(item.kind);
-            const isNext = item.kind === nextSetup;
-            return (
-              <button
-                key={item.kind}
-                type="button"
-                draggable={!isInstalled && runState !== "running"}
-                className={`${isInstalled ? "installed" : ""} ${isNext ? "next" : ""}`}
-                onDragStart={(event) => onEquipmentDragStart(event, item.kind)}
-                onClick={() => addEquipment(item.kind)}
-                disabled={isInstalled || runState === "running"}
-              >
-                <EquipmentIcon kind={item.kind} />
-                <span>
-                  <b>{item.shortName}</b>
-                  <small>
-                    {isInstalled ? "Yerleştirildi" : isNext ? "Sıradaki parça" : item.name}
-                  </small>
-                </span>
+          <p>Malzeme tezgâha bırakılınca doğru bağlantı noktasına oturur.</p>
+          <div className="torque-equipment-list">
+            {EQUIPMENT.map((item) => {
+              const isInstalled = installed.includes(item.kind);
+              const isNext = item.kind === nextSetup;
+              return (
+                <button
+                  key={item.kind}
+                  type="button"
+                  draggable={!isInstalled && runState !== "running"}
+                  className={`${isInstalled ? "installed" : ""} ${isNext ? "next" : ""}`}
+                  onDragStart={(event) => onEquipmentDragStart(event, item.kind)}
+                  onClick={() => addEquipment(item.kind)}
+                  disabled={isInstalled || runState === "running"}
+                  title={item.name}
+                >
+                  <EquipmentIcon kind={item.kind} />
+                  <span>
+                    <b>{item.shortName}</b>
+                    <small>{isInstalled ? "Tezgâha yerleşti" : "Sahneye sürükle"}</small>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <small className="torque-touch-note">
+            Dokunmatik ekranda malzemeye dokunarak da ekleyebilirsin.
+          </small>
+        </section>
+
+        <div
+          className={`torque-stage ${setupComplete ? "setup-complete" : ""} ${isDragOver ? "drag-over" : ""}`}
+          onDragOver={(event) => event.preventDefault()}
+          onDragEnter={() => setIsDragOver(true)}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+              setIsDragOver(false);
+            }
+          }}
+          onDrop={onStageDrop}
+          aria-label="Tork deney malzemelerinin bırakılacağı deney tezgâhı"
+        >
+          <div className="torque-stage-toolbar">
+            <div>
+              <small>DENEY TEZGÂHI</small>
+              <b>
+                {runState === "running"
+                  ? "Optik okuyucu ölçüm alıyor"
+                  : runState === "complete"
+                    ? "Ölçüm tamamlandı"
+                    : "Malzemeleri bu alana bırak"}
+              </b>
+            </div>
+            <div className="torque-live-readouts">
+              <span>
+                <small>Zaman</small>
+                <b>{format(timer, 2)} s</b>
+              </span>
+              <span>
+                <small>Açısal hız</small>
+                <b>{format(currentAngularSpeed, 2)} rad/s</b>
+              </span>
+              <span>
+                <small>Grafik eğimi</small>
+                <b>{runState === "complete" ? format(measuredAlpha, 3) : "—"} rad/s²</b>
+              </span>
+              <button type="button" onClick={resetApparatus} disabled={runState === "running"}>
+                Düzeneği sök
               </button>
-            );
-          })}
-        </div>
-      </section>
+            </div>
+          </div>
 
-      <div
-        className={`torque-stage ${setupComplete ? "setup-complete" : ""}`}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={onStageDrop}
-      >
-        <div className="torque-stage-toolbar">
-          <div>
-            <small>DENEY SAHNESİ</small>
-            <b>
-              {runState === "running"
-                ? "Optik okuyucu ölçüm alıyor"
-                : runState === "complete"
-                  ? "Ölçüm tamamlandı"
-                  : "Dönme düzeneği"}
-            </b>
-          </div>
-          <div className="torque-live-readouts">
-            <span>
-              <small>Zaman</small>
-              <b>{format(timer, 2)} s</b>
-            </span>
-            <span>
-              <small>Açısal hız</small>
-              <b>{format(currentAngularSpeed, 2)} rad/s</b>
-            </span>
-            <span>
-              <small>Grafik eğimi</small>
-              <b>{runState === "complete" ? format(measuredAlpha, 3) : "—"} rad/s²</b>
-            </span>
-            <button type="button" onClick={resetApparatus} disabled={runState === "running"}>
-              Düzeneği sök
-            </button>
-          </div>
-        </div>
-
-        <div className="torque-apparatus" style={discStyle}>
-          <div className="torque-lab-wall">
-            <span>Fizik Atölyesi · Dönme Dinamiği</span>
-          </div>
-          <div className="torque-workbench">
-            <i className="torque-bench-top" />
-            <i className="torque-bench-leg leg-left" />
-            <i className="torque-bench-leg leg-right" />
-          </div>
+          <div className="torque-apparatus" style={discStyle}>
+            <div className="torque-lab-wall">
+              <span>DÖNME DİNAMİĞİ DENEYİ</span>
+            </div>
+            <div className="torque-workbench">
+              <i className="torque-bench-top" />
+              <i className="torque-bench-leg leg-left" />
+              <i className="torque-bench-leg leg-right" />
+            </div>
 
           {installed.includes("base") && (
             <div className="torque-base">
@@ -736,44 +742,43 @@ export default function TorqueLab() {
             </div>
           )}
 
-          <div className="torque-force-overlay">
-            <span className="torque-radius-line">
-              r = {format(radius * 100, 2)} cm
-            </span>
-            <span className="torque-force-arrow">
-              F = {format(force, 2)} N
-            </span>
-            <small>İp diske teğet: kuvvet uygulama açısı 90°</small>
+            {setupComplete && (
+              <div className="torque-force-overlay">
+                <span className="torque-radius-line">
+                  r = {format(radius * 100, 2)} cm
+                </span>
+                <span className="torque-force-arrow">
+                  F = {format(force, 2)} N
+                </span>
+                <small>İp diske teğet bağlanmıştır.</small>
+              </div>
+            )}
+
+            {!setupComplete && (
+              <div className="torque-bench-hint">
+                <b>Malzemeyi buraya bırak</b>
+                <span>Parça doğru konumuna kendiliğinden oturur.</span>
+              </div>
+            )}
           </div>
 
-          {!setupComplete && (
-            <div className="torque-drop-guide">
-              <EquipmentIcon kind={nextSetup ?? "base"} />
-              <b>
-                {EQUIPMENT.find((item) => item.kind === nextSetup)?.shortName ??
-                  "Kurulum tamam"}
-              </b>
-              <span>buraya sürükle veya malzemeye dokun</span>
+          <div className="torque-sensor-panel">
+            <div>
+              <small>CANLI SENSÖR GRAFİĞİ</small>
+              <b>Açısal hız - zaman</b>
+              <p>Doğrunun eğimi, diskin açısal ivmesini verir.</p>
             </div>
-          )}
-        </div>
-
-        <div className="torque-sensor-panel">
-          <div>
-            <small>CANLI SENSÖR GRAFİĞİ</small>
-            <b>Açısal hız - zaman</b>
-            <p>Doğrunun eğimi, diskin açısal ivmesini verir.</p>
+            <VelocityGraph
+              alpha={measuredAlpha}
+              progress={progress}
+              running={runState === "running"}
+            />
           </div>
-          <VelocityGraph
-            alpha={measuredAlpha}
-            progress={progress}
-            running={runState === "running"}
-          />
-        </div>
 
-        <div className={`torque-status ${stringWound && sensorZeroed ? "ready" : ""}`} aria-live="polite">
-          <b>{stringWound && sensorZeroed ? "ÖLÇÜM HAZIR" : "YÖNERGE"}</b>
-          <span>{message}</span>
+          <div className={`torque-status ${stringWound && sensorZeroed ? "ready" : ""}`} aria-live="polite">
+            <b>{stringWound && sensorZeroed ? "ÖLÇÜM HAZIR" : "YÖNERGE"}</b>
+            <span>{message}</span>
+          </div>
         </div>
       </div>
 

@@ -15283,3 +15283,497 @@ footer > a {
     text-align: left;
   }
 }
+
+/* Tork deneyinin sade, tezgâh odaklı çalışma görünümü */
+
+.torque-learning-strip {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.torque-workspace {
+  display: grid;
+  grid-template-columns: 238px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.torque-workspace .torque-equipment-panel {
+  position: sticky;
+  top: 12px;
+  margin: 0;
+  padding: 14px;
+  border-radius: 15px;
+  box-shadow: 0 12px 28px rgba(29, 67, 72, 0.07);
+}
+
+.torque-workspace .torque-panel-heading {
+  align-items: start;
+  gap: 8px;
+}
+
+.torque-workspace .torque-panel-heading h3 {
+  max-width: 150px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.torque-workspace .torque-panel-heading > span {
+  padding: 6px 8px;
+}
+
+.torque-equipment-panel > p {
+  margin: 10px 0 0;
+  color: #718589;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+.torque-workspace .torque-equipment-list {
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.torque-workspace .torque-equipment-list > button {
+  min-height: 59px;
+  grid-template-columns: 41px 1fr;
+  gap: 8px;
+  padding: 6px;
+  border-color: #d7e3df;
+  background: white;
+  box-shadow: 0 3px 8px rgba(32, 66, 71, 0.04);
+}
+
+.torque-workspace .torque-equipment-list > button.next {
+  border-color: #9bcfc3;
+  background: #f1f9f6;
+  box-shadow: inset 3px 0 var(--teal);
+  transform: none;
+}
+
+.torque-workspace .torque-equipment-list > button:not(:disabled):hover {
+  border-color: var(--orange);
+  background: #fffaf0;
+  box-shadow: inset 3px 0 var(--orange);
+  transform: translateX(2px);
+}
+
+.torque-workspace .torque-equipment-list > button.installed {
+  border-color: #c4ded7;
+  background: #f0f8f5;
+  box-shadow: none;
+}
+
+.torque-workspace .torque-equipment-icon {
+  width: 39px;
+  height: 39px;
+  border-radius: 8px;
+}
+
+.torque-touch-note {
+  display: block;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid #e1eae7;
+  color: #829397;
+  font-size: 6px;
+  line-height: 1.45;
+}
+
+.torque-workspace .torque-stage {
+  margin: 0;
+  border: 2px solid #ccdcd7;
+  border-radius: 16px;
+  box-shadow: 0 15px 32px rgba(24, 63, 69, 0.08);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.torque-workspace .torque-stage.drag-over {
+  border-color: var(--orange);
+  box-shadow:
+    0 0 0 5px rgba(239, 159, 40, 0.13),
+    0 15px 32px rgba(24, 63, 69, 0.1);
+}
+
+.torque-workspace .torque-stage-toolbar {
+  min-height: 68px;
+  padding: 10px 13px;
+  background: white;
+}
+
+.torque-workspace .torque-live-readouts {
+  gap: 5px;
+}
+
+.torque-workspace .torque-live-readouts span {
+  min-width: 94px;
+  padding: 6px 8px;
+  background: #f8fbfa;
+}
+
+.torque-workspace .torque-live-readouts button {
+  padding: 0 8px;
+  font-size: 7px;
+}
+
+.torque-workspace .torque-apparatus {
+  min-height: 575px;
+  border-bottom-color: #d9e4e1;
+  background:
+    radial-gradient(ellipse at 48% 30%, rgba(255, 255, 255, 0.95), transparent 36%),
+    linear-gradient(180deg, #f2f5f3 0 72%, #dfe6e2 72% 100%);
+}
+
+.torque-workspace .torque-lab-wall {
+  top: 17px;
+  right: 18px;
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: #96a4a5;
+  font-size: 6px;
+  letter-spacing: 0.16em;
+}
+
+.torque-workspace .torque-workbench {
+  inset: 391px 1.8% 0;
+}
+
+.torque-workspace .torque-bench-top {
+  height: 50px;
+  border-color: #654933;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.23), transparent 17%),
+    linear-gradient(90deg, #aa7955, #c39167 45%, #9b6b49);
+  box-shadow:
+    inset 0 -7px rgba(92, 60, 40, 0.16),
+    0 7px 10px rgba(57, 42, 31, 0.19);
+}
+
+.torque-workspace .torque-bench-leg {
+  top: 47px;
+  width: 52px;
+  border-color: #684934;
+  background: linear-gradient(90deg, #6c4a35, #9c6d4e, #60412f);
+}
+
+.torque-workspace .torque-bench-leg.leg-left {
+  left: 9%;
+}
+
+.torque-workspace .torque-bench-leg.leg-right {
+  right: 9%;
+}
+
+.torque-workspace .torque-base {
+  top: 335px;
+  left: 22%;
+  width: 58%;
+  height: 86px;
+}
+
+.torque-workspace .torque-base-rail {
+  bottom: 18px;
+  height: 34px;
+  border-width: 3px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), transparent 30%),
+    linear-gradient(90deg, #52696f, #dfe6e4 18%, #788c90 48%, #e6ebe9 73%, #4c646a);
+}
+
+.torque-workspace .torque-axis {
+  bottom: 45px;
+  width: 24px;
+  height: 72px;
+}
+
+.torque-workspace .torque-disc {
+  top: 180px;
+  left: 30.5%;
+  width: 365px;
+  height: 187px;
+  filter: drop-shadow(0 15px 10px rgba(35, 58, 62, 0.24));
+}
+
+.torque-workspace .torque-disc-body {
+  border-width: 7px;
+  background:
+    repeating-conic-gradient(
+      from var(--torque-disc-turn),
+      rgba(255, 255, 255, 0.52) 0 11deg,
+      rgba(78, 97, 101, 0.12) 12deg 23deg
+    ),
+    radial-gradient(ellipse at center, #8da0a2 0 16%, #e6ecea 17% 47%, #788c8f 71%, #d9e2df);
+  box-shadow:
+    inset 0 0 0 8px rgba(255, 255, 255, 0.25),
+    inset 0 -18px 20px rgba(35, 58, 62, 0.2),
+    0 5px 0 #465f65;
+}
+
+.torque-workspace .torque-disc-rim {
+  inset: 8px 4px 0;
+}
+
+.torque-workspace .torque-disc-center {
+  top: 67px;
+  left: 153px;
+  width: 59px;
+  height: 53px;
+}
+
+.torque-workspace .torque-disc-marker {
+  top: 82px;
+  left: 181px;
+  width: 145px;
+  height: 5px;
+}
+
+.torque-workspace .torque-extra-disc {
+  inset: 15px 25px 20px;
+}
+
+.torque-workspace .torque-metal-ring {
+  inset: 22px 43px 33px;
+}
+
+.torque-workspace .torque-metal-block {
+  top: 67px;
+  left: 244px;
+}
+
+.torque-workspace .torque-stepped-pulley {
+  top: 239px;
+  left: calc(30.5% + 134px);
+}
+
+.torque-workspace .torque-optical-reader {
+  top: 231px;
+  left: calc(30.5% - 58px);
+  width: 88px;
+  height: 139px;
+}
+
+.torque-workspace .reader-wheel {
+  top: 11px;
+  right: -2px;
+  width: 43px;
+  height: 43px;
+  border-width: 6px;
+}
+
+.torque-workspace .reader-body {
+  top: 42px;
+  left: 4px;
+  width: 52px;
+  height: 73px;
+}
+
+.torque-workspace .reader-arm {
+  top: 43px;
+}
+
+.torque-workspace .torque-edge-pulley {
+  top: 329px;
+  right: 4.5%;
+}
+
+.torque-workspace .torque-string {
+  top: 267px;
+  right: calc(4.5% + 29px);
+  left: calc(30.5% + 181px);
+  height: 117px;
+  border-width: 2px;
+}
+
+.torque-workspace .torque-hanging-pan {
+  top: 383px;
+  right: calc(4.5% + 1px);
+}
+
+.torque-workspace .torque-data-logger {
+  top: 249px;
+  left: 2.8%;
+  width: 145px;
+  height: 116px;
+  border-width: 6px;
+}
+
+.torque-workspace .logger-cable {
+  top: 46px;
+  right: -76px;
+  width: 76px;
+  height: 93px;
+  border-width: 3px;
+}
+
+.torque-workspace .torque-attachment-rack {
+  top: 331px;
+  right: 21%;
+  bottom: auto;
+  width: 149px;
+  height: 72px;
+  border-width: 3px;
+  transform: scale(0.72);
+  transform-origin: bottom right;
+}
+
+.torque-workspace .torque-force-overlay {
+  top: 67px;
+  left: 38%;
+  width: 320px;
+  height: 84px;
+  opacity: 0.86;
+}
+
+.torque-bench-hint {
+  position: absolute;
+  top: 68px;
+  left: 50%;
+  z-index: 30;
+  display: grid;
+  min-width: 250px;
+  justify-items: center;
+  gap: 4px;
+  padding: 12px 18px;
+  border: 2px dashed #a9beb9;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #7c9093;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.torque-bench-hint b {
+  color: #526c70;
+  font-size: 9px;
+}
+
+.torque-bench-hint span {
+  font-size: 7px;
+}
+
+.torque-stage.drag-over .torque-bench-hint {
+  border-color: var(--orange);
+  background: #fff8e8;
+  color: #795f31;
+}
+
+.torque-workspace .torque-sensor-panel {
+  grid-template-columns: 175px 1fr;
+  gap: 13px;
+  padding: 13px;
+}
+
+.torque-workspace .torque-velocity-canvas {
+  height: 190px;
+}
+
+.torque-workspace .torque-status {
+  min-height: 49px;
+  padding: 9px 13px;
+}
+
+@media (max-width: 1050px) {
+  .torque-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .torque-workspace .torque-equipment-panel {
+    position: static;
+  }
+
+  .torque-workspace .torque-equipment-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .torque-workspace .torque-panel-heading h3 {
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .torque-learning-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .torque-learning-strip span {
+    border-right: 0;
+    border-bottom: 1px solid #dfe9e6;
+  }
+
+  .torque-learning-strip span:last-child {
+    border-bottom: 0;
+  }
+
+  .torque-workspace .torque-equipment-list {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .torque-workspace .torque-apparatus {
+    min-height: 495px;
+  }
+
+  .torque-workspace .torque-workbench {
+    top: 322px;
+  }
+
+  .torque-workspace .torque-base {
+    top: 277px;
+    left: 5%;
+    width: 79%;
+  }
+
+  .torque-workspace .torque-disc {
+    top: 145px;
+    left: 10%;
+  }
+
+  .torque-workspace .torque-stepped-pulley {
+    top: 199px;
+    left: calc(10% + 90px);
+  }
+
+  .torque-workspace .torque-optical-reader {
+    top: 193px;
+    left: calc(10% - 20px);
+  }
+
+  .torque-workspace .torque-edge-pulley {
+    top: 270px;
+    right: 2%;
+  }
+
+  .torque-workspace .torque-string {
+    top: 218px;
+    right: calc(2% + 26px);
+    left: calc(10% + 122px);
+    height: 92px;
+  }
+
+  .torque-workspace .torque-hanging-pan {
+    top: 311px;
+    right: calc(2% + 1px);
+  }
+
+  .torque-workspace .torque-data-logger {
+    top: 42px;
+    left: 2%;
+  }
+
+  .torque-workspace .torque-attachment-rack {
+    top: 278px;
+    right: 13%;
+  }
+
+  .torque-bench-hint {
+    top: 102px;
+    min-width: 210px;
+    padding: 10px 13px;
+  }
+
+  .torque-workspace .torque-sensor-panel {
+    grid-template-columns: 1fr;
+  }
+}
