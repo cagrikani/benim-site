@@ -57,8 +57,6 @@ const BALLS: Record<
   light: { name: "Çelik bilye 1", mass: "20 g", colorClass: "ball-light" },
   heavy: { name: "Çelik bilye 2", mass: "40 g", colorClass: "ball-heavy" },
 };
-const DROP_NOISE = [-0.003, 0.002, -0.001, 0.003, 0];
-
 function emptyMeasurements(): Measurements {
   return {
     light: Object.fromEntries(HEIGHTS.map((height) => [height, []])),
@@ -476,17 +474,9 @@ export default function FreeFallLab() {
       setNotice("Bu yükseklikte beş ölçüm tamamlandı. Yüksekliği değiştir.");
       return;
     }
-    const heightIndex = HEIGHTS.indexOf(heightCm as (typeof HEIGHTS)[number]);
-    const ballOffset = activeBall === "heavy" ? 2 : 0;
-    const noise =
-      DROP_NOISE[(currentTrials.length + heightIndex + ballOffset) % DROP_NOISE.length];
-    const measuredTime = Math.max(
-      0.05,
-      Math.sqrt((2 * (heightCm / 100)) / gravity) + noise,
-    );
+    const measuredTime = Math.sqrt((2 * (heightCm / 100)) / gravity);
     const activeGravity = gravity;
-    const experimentalGravity =
-      (2 * (heightCm / 100)) / (measuredTime * measuredTime);
+    const experimentalGravity = activeGravity;
     const startTime = performance.now();
     setDropDuration(measuredTime);
     setBallState("falling");
@@ -864,13 +854,7 @@ export default function FreeFallLab() {
           <span>
             {latestTrial === null
               ? "İlk ölçümden sonra hesaplanır"
-              : `${latestTrial.gravity.toFixed(2)} m/s² ayarına göre fark %${(
-                  (Math.abs(
-                    latestTrial.experimentalGravity - latestTrial.gravity,
-                  ) /
-                    latestTrial.gravity) *
-                  100
-                ).toFixed(2)}`}
+              : "İdeal hareket modeliyle tam uyumlu"}
           </span>
           {experimentalG !== null && (
             <em>
@@ -907,7 +891,6 @@ export default function FreeFallLab() {
                 <th>Ayarlanan g</th>
                 <th>Ölçülen süre</th>
                 <th>Hesaplanan g</th>
-                <th>Fark</th>
               </tr>
             </thead>
             <tbody>
@@ -920,21 +903,11 @@ export default function FreeFallLab() {
                     <td>{trial.gravity.toFixed(2)} m/s²</td>
                     <td>{trial.time.toFixed(3)} s</td>
                     <td>{trial.experimentalGravity.toFixed(2)} m/s²</td>
-                    <td>
-                      {(
-                        (Math.abs(
-                          trial.experimentalGravity - trial.gravity,
-                        ) /
-                          trial.gravity) *
-                        100
-                      ).toFixed(2)}
-                      %
-                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7}>
+                  <td colSpan={6}>
                     Yer çekimi ivmesini seçip ilk düşüşü gerçekleştirdiğinde
                     kayıtlar burada oluşur.
                   </td>
@@ -975,9 +948,9 @@ export default function FreeFallLab() {
           </label>
           <label>
             <span>4</span>
-            Modelde hava sürtünmesi ihmal edildi. Bu varsayım kaldırılırsa hangi
-            ölçümlerin değişmesini beklersin?
-            <textarea rows={4} aria-label="Hava sürtünmesi varsayımını yorumlama" />
+            İdeal modelde bilyenin düşey hızı düşüş boyunca nasıl değişir?
+            Zaman ölçümlerini kullanarak açıkla.
+            <textarea rows={4} aria-label="Serbest düşmede hız değişimini yorumlama" />
           </label>
         </div>
         <label className="freefall-report-conclusion">

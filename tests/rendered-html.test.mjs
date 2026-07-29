@@ -258,6 +258,7 @@ test("Modern Fizik alanı gerçek fotoelektrik düzeneği ve TYMM deney akışı
   assert.match(page, /onEquipmentDragStart/);
   assert.match(page, /onStageDrop/);
   assert.match(page, /requestAnimationFrame/);
+  assert.doesNotMatch(page, /settling|Math\.sin\(progress \* Math\.PI \* 8\)/);
   assert.match(page, /BOŞALT düğmesine bas/);
   assert.match(page, /Çizgi spektrumu hazır/);
   assert.match(page, /PLANCK = 6\.62607015e-34/);
@@ -332,16 +333,15 @@ test("balistik sarkaç modülü PDF düzeneğiyle kurulabilir ve iki yöntemle h
   assert.match(page, /Sarkaç yükseliyor/);
   assert.match(page, /sensorSpeed/);
   assert.match(page, /calculatedSpeed/);
-  assert.match(page, /difference/);
+  assert.doesNotMatch(page, /difference|Yüzdesel fark/);
   assert.match(page, /Üç bilye × üç kademe/);
   assert.match(page, /İşlemsel analizi göster/);
   assert.match(page, /mvᵢ = \(m \+ M\)vₛ/);
   assert.match(page, /Δh = l\(1 − cosφ\)/);
   assert.match(page, /vₛ = √\(2gΔh\)/);
   assert.match(page, /Hız arttıkça açı nasıl değişiyor/);
-  assert.match(page, /İki hız yöntemi birbiriyle uyumlu mu/);
-  assert.match(page, /Açıölçer çözünürlüğü 0,1°/);
-  assert.match(page, /rastgele sapma yoktur/);
+  assert.match(page, /Sensör ve sarkaçtan bulunan hız/);
+  assert.match(page, /İdeal sistemde sensör ve sarkaç modeli aynı ilk hız değerini verir/);
   assert.match(page, /KISA DENEY RAPORU/);
 });
 
@@ -395,6 +395,7 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /second-disk/);
   assert.match(page, /requestAnimationFrame/);
   assert.match(page, /theoreticalAlpha/);
+  assert.match(page, /const measuredAlpha = theoreticalAlpha/);
   assert.match(page, /const torque = force \* radius/);
   assert.match(page, /completion\.total === 11/);
   assert.match(page, /Açısal hız - zaman/);
@@ -404,7 +405,8 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /İşlemsel analizi göster/);
   assert.match(page, /τ = r · F/);
   assert.match(page, /α = τ \/ I/);
-  assert.match(page, /rastgele sapma eklenmez/);
+  assert.match(page, /Grafik eğimi,[\s\S]*model[\s\S]*sonucuna tam eşittir/);
+  assert.doesNotMatch(page, /currentError|record\.error|Yüzdesel fark/);
   assert.match(page, /KISA DENEY RAPORU/);
 });
 
@@ -483,7 +485,7 @@ test("çarpışmalar modülü PDF düzeneğiyle kurulabilir ve veri üretir", as
   assert.match(page, /Δp = Σpₛ − Σpᵢ/);
   assert.match(page, /pₓ/);
   assert.match(page, /pᵧ/);
-  assert.match(page, /Korundu · %/);
+  assert.match(page, /Momentum ideal sistemde tam korundu/);
   assert.doesNotMatch(page, /MomentumVectorOverlay|collision-momentum-overlay/);
   assert.doesNotMatch(page, /MEASUREMENT_NOISE|const noise/);
   assert.match(page, /setMode\("inelastic"\)/);
@@ -555,8 +557,7 @@ test("iki boyutta hareket modülü PDF düzeneğiyle kurulabilir ve ölçüm yap
   assert.match(page, /Yatay hız vₓ/);
   assert.match(page, /Düşey hız vᵧ/);
   assert.match(page, /measuredRange/);
-  assert.match(page, /calculatedRange/);
-  assert.match(page, /errorPercent/);
+  assert.doesNotMatch(page, /calculatedRange|errorPercent|SPEED_NOISE|RANGE_NOISE/);
   assert.match(page, /Doğrultu – menzil/);
   assert.match(page, /Doğrultu – maksimum yükseklik/);
   assert.match(page, /15 deney tamamlandı/);
@@ -613,6 +614,7 @@ test("serbest düşme modülü PDF düzeneğiyle kurulabilir ve ölçüm yapar",
   assert.match(page, /trialLog/);
   assert.match(page, /Ayarlanan g/);
   assert.match(page, /Hesaplanan g/);
+  assert.doesNotMatch(page, /DROP_NOISE|const noise|<th>Fark<\/th>/);
   assert.match(page, /Hava sürtünmesi ihmal edilmiştir/);
   assert.match(page, /KISA DENEY RAPORU/);
 });
@@ -709,8 +711,31 @@ test("hareket ölçümleri iki eşzamanlı grafik, sade tablo, kronometre ve rap
   assert.match(page, /kind="mass"/);
   assert.match(page, /graph-pulley-lock/);
   assert.match(page, /calculateAcceleration/);
+  assert.doesNotMatch(page, /const variation|hata kaynağı/);
   assert.match(page, /Kızağı bırak ve ölç/);
   assert.match(page, /student-report/);
   assert.match(page, /textarea/);
   assert.doesNotMatch(page, /motion-theory-grid/);
+});
+
+test("tüm deney modülleri ideal ölçüm politikası uygular", async () => {
+  const labFiles = [
+    "app/MotionLab.tsx",
+    "app/FreeFallLab.tsx",
+    "app/TwoDimensionalMotionLab.tsx",
+    "app/CollisionLab.tsx",
+    "app/BallisticPendulumLab.tsx",
+    "app/TorqueLab.tsx",
+    "app/PrismLab.tsx",
+    "app/PhotoelectricLab.tsx",
+  ];
+  const pages = await Promise.all(
+    labFiles.map((file) => readFile(new URL(file, projectRoot), "utf8")),
+  );
+  const source = pages.join("\n");
+
+  assert.doesNotMatch(
+    source,
+    /Math\.random|\bNOISE\b|DROP_NOISE|SPEED_NOISE|RANGE_NOISE|const noise|const variation|errorPercent|currentError|momentumDifference|difference: number|Yüzdesel fark|ölçüm belirsizliği|hata kaynağı|ölçüm farkları|fark %/i,
+  );
 });

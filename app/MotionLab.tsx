@@ -538,16 +538,14 @@ export default function MotionLab() {
     }
 
     const distanceMeter = distance / 100;
-    const trialIndex = currentRow?.trials.length ?? 0;
-    const variation = [0.992, 1.006, 1.002][trialIndex] ?? 1;
     let seconds = 0;
     if (mode === "uniform") {
-      seconds = (distanceMeter / 0.78) * variation;
+      seconds = distanceMeter / 0.78;
     } else {
       const acceleration = calculateAcceleration(hangingMass);
-      seconds = Math.sqrt((2 * distanceMeter) / acceleration) * variation;
+      seconds = Math.sqrt((2 * distanceMeter) / acceleration);
     }
-    const milliseconds = Math.round(seconds * 1000);
+    const milliseconds = seconds * 1000;
     const glider = items.find((item) => item.kind === "glider");
     const gliderStartX = glider?.x ?? 18;
     const gliderEndX = (endGateItem?.x ?? 68) + 6;
@@ -569,7 +567,7 @@ export default function MotionLab() {
         progress <= firstGateProgress
           ? 0
           : Math.min(1, (progress - firstGateProgress) / (1 - firstGateProgress));
-      setStopwatchMs(Math.round(milliseconds * measuredProgress));
+      setStopwatchMs(milliseconds * measuredProgress);
 
       if (progress < 1) {
         stopwatchFrameRef.current = requestAnimationFrame(updateStopwatch);
@@ -943,8 +941,9 @@ export default function MotionLab() {
               <textarea rows={4} placeholder="Gözlediğin değişimi ve olası nedenini yaz…" />
             </label>
             <label>
-              <span>4 · ÖLÇÜMÜ DEĞERLENDİR</span>
-              Kronometre kızağın hangi bölümünü izledi? Bir hata kaynağı ve azaltma önerisi yaz.
+              <span>4 · ÖLÇÜMÜ AÇIKLA</span>
+              Kronometre kızağın hangi bölümünü izledi? Optik kapıların süreyi
+              hangi iki anda başlatıp durdurduğunu açıkla.
               <textarea rows={4} placeholder="Turuncu ölçüm bayrağını ve optik kapıları düşün…" />
             </label>
           </div>

@@ -504,14 +504,13 @@ export default function PhotoelectricLab() {
     if (runState === "measuring") return;
 
     setRunState("measuring");
-    setMessage("Fotoelektronlar toplanıyor; multimetre değeri kararlı hâle geliyor.");
+    setMessage("Fotoelektronlar toplanıyor; ideal multimetre değeri hesaplanıyor.");
     const start = performance.now();
     const duration = 1700;
     const animate = (now: number) => {
       const progress = Math.min(1, (now - start) / duration);
       const eased = 1 - Math.exp(-5.6 * progress);
-      const settling = Math.sin(progress * Math.PI * 8) * (1 - progress) * 0.025;
-      setDisplayVoltage(Math.max(0, targetVoltage * eased + settling));
+      setDisplayVoltage(targetVoltage * eased);
       setDisplayCurrent(targetCurrent * (1 - Math.exp(-6 * progress)));
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
@@ -895,7 +894,7 @@ export default function PhotoelectricLab() {
             className="pe-measure-button"
           >
             <i>4</i>
-            {runState === "measuring" ? "DEĞER KARARLI HÂLE GELİYOR" : "ÖLÇ VE KAYDET"}
+            {runState === "measuring" ? "İDEAL DEĞER HESAPLANIYOR" : "ÖLÇ VE KAYDET"}
           </button>
         </section>
       </div>

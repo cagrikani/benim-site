@@ -54,7 +54,6 @@ type CollisionResult = {
   momentumBeforeY: number;
   momentumAfterX: number;
   momentumAfterY: number;
-  momentumDifference: number;
   energyBefore: number;
   energyAfter: number;
   energyRetention: number;
@@ -598,7 +597,7 @@ function CollisionVectorAnalysis({
             {formatPhysics(result.momentumAfterY)}) kg·m/s
           </code>
           <code>Δp = Σpₛ − Σpᵢ = (0, 0) kg·m/s</code>
-          <b>Momentum korundu · fark %0</b>
+          <b>Momentum ideal sistemde tam korundu</b>
         </article>
 
         <article className="energy-proof">
@@ -1040,11 +1039,6 @@ export default function CollisionLab() {
       Math.abs(rawEnergyAfter - energyBefore) < PHYSICS_EPSILON
         ? energyBefore
         : exactZero(rawEnergyAfter);
-    const rawMomentumDifference =
-      (Math.hypot(momentumAfterX - momentumBeforeX, momentumAfterY) /
-        Math.max(Math.abs(momentumBeforeX), 0.001)) *
-      100;
-    const momentumDifference = exactZero(rawMomentumDifference);
     const rawEnergyRetention = (energyAfter / energyBefore) * 100;
     const energyRetention =
       Math.abs(rawEnergyRetention - 100) < PHYSICS_EPSILON
@@ -1076,7 +1070,6 @@ export default function CollisionLab() {
       momentumBeforeY,
       momentumAfterX,
       momentumAfterY,
-      momentumDifference,
       energyBefore,
       energyAfter,
       energyRetention,
@@ -1722,7 +1715,7 @@ export default function CollisionLab() {
             <small>Momentum korunumu</small>
             <b>
               {latestResult
-                ? `Korundu · %${formatPhysics(latestResult.momentumDifference, 2)} fark`
+                ? "İdeal sistemde tam korundu"
                 : "—"}
             </b>
           </span>
@@ -1830,8 +1823,8 @@ export default function CollisionLab() {
           <label>
             <span>4</span>
             İz kâğıdındaki nokta aralıkları hızlar hakkında hangi kanıtı
-            sağlıyor? Ölçüm belirsizliğini artırabilecek etkenleri yaz.
-            <textarea rows={4} aria-label="Nokta izlerini ve belirsizliği yorumlama" />
+            sağlıyor? Çarpışmadan önceki ve sonraki aralıkları karşılaştır.
+            <textarea rows={4} aria-label="Nokta izlerinden hızları yorumlama" />
           </label>
         </div>
         <label className="collision-report-conclusion">

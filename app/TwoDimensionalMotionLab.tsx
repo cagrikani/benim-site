@@ -26,10 +26,8 @@ type ShotRecord = {
   level: number;
   speed: number;
   measuredRange: number;
-  calculatedRange: number;
   maxHeight: number;
   flightTime: number;
-  errorPercent: number;
 };
 type Trajectory = {
   angle: number;
@@ -65,9 +63,6 @@ const EQUIPMENT: Array<{
   { kind: "ruler", name: "Bir metre cetvel", shortName: "Cetvel" },
   { kind: "ball", name: "19 mm çelik bilye", shortName: "Çelik bilye" },
 ];
-const SPEED_NOISE = [-0.02, 0.01, 0.025, -0.01, 0.015];
-const RANGE_NOISE = [-0.012, 0.008, -0.005, 0.01, 0.003];
-
 function recordKey(angle: number, level: number) {
   return `${angle}-${level}`;
 }
@@ -429,17 +424,12 @@ export default function TwoDimensionalMotionLab() {
 
   const launch = () => {
     if (!setupReady || !sensorReady || projectileState === "flying") return;
-    const seed = ANGLES.indexOf(angle as (typeof ANGLES)[number]) + speedLevel;
-    const measuredSpeed = SPEEDS[speedLevel] + SPEED_NOISE[seed % SPEED_NOISE.length];
+    const measuredSpeed = SPEEDS[speedLevel];
     const radians = (angle * Math.PI) / 180;
     const vx = measuredSpeed * Math.cos(radians);
     const vy0 = measuredSpeed * Math.sin(radians);
     const flightTime = (2 * vy0) / 9.81;
-    const calculatedRange = vx * flightTime;
-    const measuredRange = Math.max(
-      0.05,
-      calculatedRange + RANGE_NOISE[(seed + speedLevel) % RANGE_NOISE.length],
-    );
+    const measuredRange = vx * flightTime;
     const maxHeight = (vy0 * vy0) / (2 * 9.81);
     const nextTrajectory = {
       angle,
@@ -469,17 +459,13 @@ export default function TwoDimensionalMotionLab() {
       setPosition({ x, y });
       setVelocity({ x: vx, y: vy0 - 9.81 * physicalTime });
       if (progress >= 1) {
-        const errorPercent =
-          (Math.abs(measuredRange - calculatedRange) / calculatedRange) * 100;
         const nextRecord: ShotRecord = {
           angle,
           level: speedLevel,
           speed: measuredSpeed,
           measuredRange,
-          calculatedRange,
           maxHeight,
           flightTime,
-          errorPercent,
         };
         setRecords((current) => ({
           ...current,
@@ -836,8 +822,8 @@ export default function TwoDimensionalMotionLab() {
           <b>{currentRecord ? `${currentRecord.measuredRange.toFixed(2)} m` : "—"}</b>
           <span>
             {currentRecord
-              ? `Hesaplanan ${currentRecord.calculatedRange.toFixed(2)} m · fark %${currentRecord.errorPercent.toFixed(2)}`
-              : "Fırlatmadan sonra menzil karşılaştırılır"}
+              ? `İdeal model · uçuş süresi ${currentRecord.flightTime.toFixed(2)} s`
+              : "Fırlatmadan sonra ideal menzil kaydedilir"}
           </span>
         </div>
       </div>
@@ -879,8 +865,9 @@ export default function TwoDimensionalMotionLab() {
           </label>
           <label>
             <span>4</span>
-            Ölçülen ve hesaplanan menzil arasındaki farkın olası nedenlerini yaz.
-            <textarea rows={4} aria-label="Menzil ölçüm farkları" />
+            45°’ye eşit uzaklıktaki iki fırlatma doğrultusunun menzillerini
+            karşılaştır. Hangi ortak özelliği görüyorsun?
+            <textarea rows={4} aria-label="Tamamlayıcı doğrultuların menzillerini karşılaştırma" />
           </label>
         </div>
         <label className="twod-report-conclusion">

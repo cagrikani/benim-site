@@ -35,7 +35,6 @@ type Trial = {
   torque: number;
   measuredAlpha: number;
   theoreticalAlpha: number;
-  error: number;
 };
 
 const G = 9.81;
@@ -316,11 +315,7 @@ export default function TorqueLab() {
   const force = totalHangingMass * G;
   const torque = force * radius;
   const theoreticalAlpha = torque / selectedAttachment.inertia;
-  const measuredAlpha = Number(theoreticalAlpha.toFixed(3));
-  const currentError =
-    theoreticalAlpha === 0
-      ? 0
-      : (Math.abs(measuredAlpha - theoreticalAlpha) / theoreticalAlpha) * 100;
+  const measuredAlpha = theoreticalAlpha;
   const latest = records.at(-1) ?? null;
   const currentAngularSpeed = measuredAlpha * timer;
 
@@ -473,7 +468,6 @@ export default function TorqueLab() {
           torque,
           measuredAlpha,
           theoreticalAlpha,
-          error: currentError,
         };
         nextIdRef.current += 1;
         setRecords((current) => [...current, trial]);
@@ -492,7 +486,6 @@ export default function TorqueLab() {
   }, [
     addedMass,
     attachment,
-    currentError,
     experiment,
     force,
     measuredAlpha,
@@ -902,15 +895,14 @@ export default function TorqueLab() {
                 <th>Dönen sistem</th>
                 <th>I</th>
                 <th>Tork</th>
-                <th>α deneysel</th>
-                <th>α model</th>
-                <th>Fark</th>
+                <th>Grafik eğimi α</th>
+                <th>İdeal model α</th>
               </tr>
             </thead>
             <tbody>
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={10}>İlk ölçüm tamamlandığında veriler burada görünecek.</td>
+                  <td colSpan={9}>İlk ölçüm tamamlandığında veriler burada görünecek.</td>
                 </tr>
               ) : (
                 records.map((record) => (
@@ -930,7 +922,6 @@ export default function TorqueLab() {
                     <td>{format(record.torque, 4)} N·m</td>
                     <td>{format(record.measuredAlpha, 3)} rad/s²</td>
                     <td>{format(record.theoreticalAlpha, 3)} rad/s²</td>
-                    <td>%{format(record.error, 2)}</td>
                   </tr>
                 ))
               )}
@@ -999,14 +990,10 @@ export default function TorqueLab() {
               <small>Model sonucu</small>
               <b>{format(latest.theoreticalAlpha, 3)} rad/s²</b>
             </span>
-            <span>
-              <small>Yüzdesel fark</small>
-              <b>%{format(latest.error, 2)}</b>
-            </span>
             <p>
-              Bu ideal simülasyonda sürtünme ve ip kütlesi ihmal edilir; yapay
-              rastgele sapma eklenmez. Böylece karşılaştırma yalnızca seçtiğin
-              değişkenin etkisini gösterir.
+              İdeal sistemde sürtünme ve ip kütlesi ihmal edilir. Grafik eğimi,
+              seçilen yarıçap, kütle ve eylemsizlik momentinden bulunan model
+              sonucuna tam eşittir.
             </p>
           </div>
         </section>

@@ -40,7 +40,6 @@ type Trial = {
   sensorSpeed: number;
   pendulumSpeed: number;
   calculatedSpeed: number;
-  difference: number;
 };
 
 const G = 9.81;
@@ -348,13 +347,10 @@ export default function BallisticPendulumLab() {
       Math.min(1, 1 - collisionSpeed ** 2 / (2 * G * length)),
     );
     const exactAngle = (Math.acos(cosine) * 180) / Math.PI;
-    const measuredAngle = Math.round(exactAngle * 10) / 10;
+    const measuredAngle = exactAngle;
     const rise = length * (1 - Math.cos((measuredAngle * Math.PI) / 180));
     const pendulumSpeed = Math.sqrt(2 * G * rise);
-    const calculatedSpeed =
-      ((ball.mass + pendulumMass) / ball.mass) * pendulumSpeed;
-    const difference =
-      (Math.abs(calculatedSpeed - sensorSpeed) / sensorSpeed) * 100;
+    const calculatedSpeed = sensorSpeed;
 
     return {
       id: nextIdRef.current,
@@ -369,7 +365,6 @@ export default function BallisticPendulumLab() {
       sensorSpeed,
       pendulumSpeed,
       calculatedSpeed,
-      difference,
     } satisfies Trial;
   };
 
@@ -851,7 +846,7 @@ export default function BallisticPendulumLab() {
             <i style={{ width: `${progress * 100}%` }} />
           </div>
           <small className="ballistic-resolution-note">
-            Açıölçer çözünürlüğü 0,1°; yapay veya rastgele sapma yoktur.
+            İdeal sistemde sensör ve sarkaç modeli aynı ilk hız değerini verir.
           </small>
         </div>
       </section>
@@ -883,13 +878,12 @@ export default function BallisticPendulumLab() {
                 <th>Δh</th>
                 <th>Sensör hızı</th>
                 <th>Sarkaçtan hız</th>
-                <th>Fark</th>
               </tr>
             </thead>
             <tbody>
               {records.length === 0 ? (
                 <tr>
-                  <td colSpan={10}>İlk ölçümden sonra veriler burada görünecek.</td>
+                  <td colSpan={9}>İlk ölçümden sonra veriler burada görünecek.</td>
                 </tr>
               ) : (
                 records.map((record) => (
@@ -902,11 +896,10 @@ export default function BallisticPendulumLab() {
                     <td>{record.level}</td>
                     <td>{Math.round(record.pendulumMass * 1000)} g</td>
                     <td>{Math.round(record.length * 100)} cm</td>
-                    <td>{format(record.angle, 1)}°</td>
+                    <td>{format(record.angle, 2)}°</td>
                     <td>{format(record.rise * 100, 2)} cm</td>
                     <td>{format(record.sensorSpeed)} m/s</td>
                     <td>{format(record.calculatedSpeed)} m/s</td>
-                    <td>%{format(record.difference, 2)}</td>
                   </tr>
                 ))
               )}
@@ -947,7 +940,7 @@ export default function BallisticPendulumLab() {
               <b>1 · En büyük yükselme</b>
               <p>Δh = l(1 − cosφ)</p>
               <code>
-                Δh = {format(latest.length, 2)}(1 − cos{format(latest.angle, 1)}°)
+                Δh = {format(latest.length, 2)}(1 − cos{format(latest.angle, 2)}°)
                 = {format(latest.rise, 4)} m
               </code>
               <small>Gösterge çubuğunun tuttuğu açı, yükselme miktarına dönüştürüldü.</small>
@@ -981,10 +974,6 @@ export default function BallisticPendulumLab() {
               <small>Sarkaçtan bulunan</small>
               <b>{format(latest.calculatedSpeed)} m/s</b>
             </span>
-            <span>
-              <small>Yüzdesel fark</small>
-              <b>%{format(latest.difference, 2)}</b>
-            </span>
             <p>
               Bilye yakalayıcıda kaldığı için çarpışma tam esnek olmayandır.
               Çarpışma evresinde momentum, yükselme evresinde ise mekanik enerji
@@ -996,7 +985,7 @@ export default function BallisticPendulumLab() {
 
       <section className="ballistic-graphs">
         <MiniGraph title="Hız arttıkça açı nasıl değişiyor?" records={records} kind="angle" />
-        <MiniGraph title="İki hız yöntemi birbiriyle uyumlu mu?" records={records} kind="speed" />
+        <MiniGraph title="Sensör ve sarkaçtan bulunan hız" records={records} kind="speed" />
         <div className="ballistic-graph-legend">
           {BALLS.map((ball, index) => (
             <span key={ball.kind}>
@@ -1017,7 +1006,7 @@ export default function BallisticPendulumLab() {
         </div>
         <div className="ballistic-report-grid">
           <label>
-            <span>En az üç ölçümü karşılaştır. Sensör ve sarkaç hızları hangi kanıtla uyumlu?</span>
+            <span>En az üç ölçümü karşılaştır. Sensör ve sarkaç neden aynı ilk hız değerini verir?</span>
             <textarea
               rows={4}
               value={report.evidence}
@@ -1041,7 +1030,7 @@ export default function BallisticPendulumLab() {
             />
           </label>
           <label>
-            <span>Bilyeyi merkezlemek ve göstergeyi sıfırlamak neden güvenilir ölçüm için kritiktir?</span>
+            <span>Bilyeyi merkezlemek ve göstergeyi sıfırlamak deneyin başlangıç koşullarını nasıl belirler?</span>
             <textarea
               rows={4}
               value={report.method}
