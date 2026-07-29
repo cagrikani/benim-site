@@ -56,7 +56,7 @@ const LIGHTS: Record<
     color: "#ffd43b",
     glow: "rgba(255, 212, 59, 0.72)",
     stageAngle: -8,
-    shift: 34,
+    shift: -29,
   },
   green: {
     label: "Yeşil",
@@ -64,7 +64,7 @@ const LIGHTS: Record<
     color: "#53e58d",
     glow: "rgba(83, 229, 141, 0.68)",
     stageAngle: -4,
-    shift: 51,
+    shift: -15,
   },
   blue: {
     label: "Mavi",
@@ -72,7 +72,7 @@ const LIGHTS: Record<
     color: "#4f8dff",
     glow: "rgba(79, 141, 255, 0.68)",
     stageAngle: 1,
-    shift: 72,
+    shift: 4,
   },
   violet: {
     label: "Mor",
@@ -80,7 +80,7 @@ const LIGHTS: Record<
     color: "#a875ff",
     glow: "rgba(168, 117, 255, 0.68)",
     stageAngle: 6,
-    shift: 94,
+    shift: 22,
   },
   ultraviolet: {
     label: "Morötesi",
@@ -88,7 +88,7 @@ const LIGHTS: Record<
     color: "#d68cff",
     glow: "rgba(214, 140, 255, 0.72)",
     stageAngle: 10,
-    shift: 111,
+    shift: 37,
   },
 };
 
@@ -709,23 +709,38 @@ export default function PhotoelectricLab() {
             )}
 
             {installed.includes("he-apparatus") && (
-              <div className={`pe-he-apparatus ${alignedLight === selectedLight ? "aligned" : ""}`}>
-                <i className="pe-he-body" />
-                <i className="pe-he-top" />
-                <i className="pe-photodiode-window" />
-                <i className="pe-mask-slit" />
-                <i className="pe-discharge-button" />
-                <i className="pe-he-switch" />
-                <i className="pe-he-post" />
-                <i className="pe-he-foot" />
-                <b>h/e APARATI</b>
-                <span>FOTODİYOT</span>
-                {runState === "measuring" && (
-                  <span className="pe-electron-stream">
-                    <i /><i /><i /><i /><i />
-                  </span>
-                )}
-              </div>
+              <>
+                <div
+                  className={`pe-detector-head ${
+                    alignedLight === selectedLight ? "aligned" : ""
+                  }`}
+                >
+                  <i className="pe-detector-body" />
+                  <i className="pe-photodiode-window" />
+                  <i className="pe-mask-slit" />
+                  <i className="pe-detector-post" />
+                  <i className="pe-detector-foot" />
+                  <b>FOTODİYOT</b>
+                  <small>GİRİŞ YARIĞI</small>
+                  {runState === "measuring" && (
+                    <span className="pe-electron-stream">
+                      <i /><i /><i /><i /><i />
+                    </span>
+                  )}
+                </div>
+
+                <div className="pe-he-apparatus">
+                  <i className="pe-he-body" />
+                  <i className="pe-he-top" />
+                  <i className="pe-discharge-button" />
+                  <i className="pe-battery-test" />
+                  <i className="pe-he-switch" />
+                  <i className="pe-he-terminals" />
+                  <b>h/e KONTROL ÜNİTESİ</b>
+                  <span className="pe-he-caption">FOTODİYOT · DURDURMA GERİLİMİ</span>
+                  <small className="pe-discharge-label">BOŞALT</small>
+                </div>
+              </>
             )}
 
             {installed.includes("color-filter") && (
@@ -738,11 +753,9 @@ export default function PhotoelectricLab() {
             {installed.includes("transmission-filter") && (
               <div className="pe-transmission-filter">
                 {TRANSMISSIONS.map((value) => (
-                  <i key={value} className={transmission === value ? "active" : ""}>
-                    {value}
-                  </i>
+                  <i key={value} className={transmission === value ? "active" : ""} />
                 ))}
-                <b>GEÇİRGENLİK FİLTRESİ</b>
+                <b>YOĞUNLUK FİLTRESİ</b>
               </div>
             )}
 
@@ -763,6 +776,7 @@ export default function PhotoelectricLab() {
               <>
                 <i className="pe-cable pe-cable-red" />
                 <i className="pe-cable pe-cable-black" />
+                <i className="pe-cable pe-cable-signal" />
               </>
             )}
 

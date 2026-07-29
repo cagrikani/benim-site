@@ -19534,3 +19534,432 @@ footer > a {
     text-align: left;
   }
 }
+
+/* Fotoelektrik tezgâhı · açık yerleşim düzeltmesi */
+
+.pe-apparatus {
+  min-width: 900px;
+  min-height: 620px;
+  background:
+    linear-gradient(90deg, rgba(71, 100, 101, 0.03) 1px, transparent 1px) 0 0 / 54px 54px,
+    linear-gradient(rgba(71, 100, 101, 0.03) 1px, transparent 1px) 0 0 / 54px 54px,
+    radial-gradient(circle at 50% 34%, #ffffff, #edf4f2 69%);
+}
+
+.pe-workbench {
+  height: 120px;
+}
+
+.pe-optical-rail {
+  right: 2.5%;
+  bottom: 120px;
+  left: 2.5%;
+  z-index: 4;
+}
+
+.pe-mercury-lamp {
+  top: 208px;
+  bottom: auto;
+  left: 2.6%;
+  z-index: 9;
+}
+
+.pe-lamp-foot {
+  right: 57px;
+  bottom: -90px;
+  left: 57px;
+  height: 90px;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, #43595e, #9dadad 48%, #42595e);
+}
+
+.pe-lamp-foot::after {
+  position: absolute;
+  right: -27px;
+  bottom: -8px;
+  left: -27px;
+  height: 15px;
+  border: 3px solid #3d545a;
+  border-radius: 50%;
+  background: linear-gradient(#829596, #465e63);
+  content: "";
+}
+
+.pe-grating {
+  top: 241px;
+  bottom: auto;
+  left: 35.5%;
+  height: 231px;
+}
+
+.pe-grating-post {
+  bottom: 17px;
+  height: auto;
+}
+
+.pe-grating > b {
+  top: 121px;
+  left: -7px;
+  width: 78px;
+  padding: 4px 0;
+  border-radius: 4px;
+  background: rgba(247, 251, 250, 0.85);
+}
+
+.pe-spectrum,
+.pe-selected-ray {
+  top: 300px;
+  left: 39.5%;
+  width: 25%;
+}
+
+.pe-spectrum i {
+  opacity: 0.3;
+}
+
+.pe-spectrum i.selected {
+  opacity: 0.92;
+}
+
+.pe-detector-head {
+  position: absolute;
+  top: 165px;
+  left: 62%;
+  z-index: 12;
+  width: 112px;
+  height: 307px;
+}
+
+.pe-detector-body {
+  position: absolute;
+  top: calc(75px + var(--pe-apparatus-shift));
+  left: 19px;
+  width: 79px;
+  height: 104px;
+  border: 5px solid #43585e;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), transparent 42%),
+    linear-gradient(#dfe5e4, #899799);
+  box-shadow:
+    inset -6px -7px 10px rgba(47, 66, 70, 0.15),
+    0 10px 13px rgba(34, 64, 70, 0.19);
+  transition: top 280ms ease;
+}
+
+.pe-detector-head .pe-photodiode-window {
+  top: calc(92px + var(--pe-apparatus-shift));
+  left: 12px;
+  width: 49px;
+  height: 69px;
+  transition: top 280ms ease;
+}
+
+.pe-detector-head .pe-mask-slit {
+  top: calc(108px + var(--pe-apparatus-shift));
+  left: -2px;
+  width: 20px;
+  height: 54px;
+  transition: top 280ms ease;
+}
+
+.pe-detector-head.aligned .pe-mask-slit {
+  box-shadow:
+    0 0 8px var(--pe-line-color),
+    0 0 16px var(--pe-line-glow);
+}
+
+.pe-detector-post {
+  position: absolute;
+  top: calc(175px + var(--pe-apparatus-shift));
+  bottom: 16px;
+  left: 60px;
+  width: 9px;
+  background: linear-gradient(90deg, #435a60, #a8b7b7 52%, #445b61);
+  transition: top 280ms ease;
+}
+
+.pe-detector-foot {
+  position: absolute;
+  bottom: 0;
+  left: 25px;
+  width: 80px;
+  height: 18px;
+  border: 4px solid #3d545a;
+  border-radius: 50%;
+  background: linear-gradient(#849697, #465e63);
+}
+
+.pe-detector-head > b {
+  position: absolute;
+  top: calc(183px + var(--pe-apparatus-shift));
+  left: 6px;
+  width: 105px;
+  padding: 3px 0;
+  border-radius: 4px;
+  background: rgba(247, 251, 250, 0.86);
+  color: #405a60;
+  font-size: 6px;
+  letter-spacing: 0.08em;
+  text-align: center;
+  transition: top 280ms ease;
+}
+
+.pe-detector-head > small {
+  position: absolute;
+  top: calc(151px + var(--pe-apparatus-shift));
+  left: -19px;
+  width: 43px;
+  color: #64797c;
+  font-size: 5px;
+  font-weight: 950;
+  text-align: center;
+  transition: top 280ms ease;
+}
+
+.pe-detector-head .pe-electron-stream {
+  top: calc(112px + var(--pe-apparatus-shift));
+  left: 31px;
+  width: 52px;
+  height: 38px;
+}
+
+.pe-detector-head .pe-electron-stream i {
+  animation-duration: 780ms;
+}
+
+.pe-he-apparatus {
+  top: auto;
+  right: 2.8%;
+  bottom: 120px;
+  left: auto;
+  z-index: 12;
+  width: 246px;
+  height: 142px;
+  transform: none;
+}
+
+.pe-he-body {
+  inset: 0;
+  height: auto;
+  border-radius: 10px 10px 4px 4px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.68), transparent 35%),
+    linear-gradient(#e2e7e6, #8e9a9c);
+  box-shadow:
+    inset -9px -10px 12px rgba(48, 66, 70, 0.13),
+    0 10px 14px rgba(34, 64, 70, 0.21);
+}
+
+.pe-he-top {
+  top: -15px;
+  right: 44px;
+  left: 44px;
+  height: 19px;
+  border-width: 4px;
+  border-radius: 5px 5px 0 0;
+  clip-path: none;
+  background: linear-gradient(#aebaba, #68797c);
+}
+
+.pe-discharge-button {
+  top: 55px;
+  right: 145px;
+}
+
+.pe-battery-test {
+  position: absolute;
+  top: 56px;
+  right: 105px;
+  width: 18px;
+  height: 18px;
+  border: 4px solid #3e555a;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 28%, #b8efe1, #4b9686 70%);
+  box-shadow: 0 3px 3px rgba(36, 63, 62, 0.2);
+}
+
+.pe-he-switch {
+  top: 48px;
+  right: 23px;
+  width: 25px;
+  height: 45px;
+}
+
+.pe-he-terminals {
+  position: absolute;
+  bottom: 16px;
+  left: 27px;
+  width: 67px;
+  height: 15px;
+  background:
+    radial-gradient(circle at 8px 7px, #222a2e 0 6px, transparent 7px),
+    radial-gradient(circle at 58px 7px, #e3473f 0 6px, transparent 7px);
+}
+
+.pe-he-apparatus > b {
+  top: 19px;
+  right: auto;
+  left: 24px;
+  color: #3f575d;
+  font-size: 8px;
+}
+
+.pe-he-apparatus > .pe-he-caption {
+  top: 101px;
+  left: 115px;
+  width: 105px;
+  color: #5d7276;
+  font-size: 5px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.pe-he-apparatus > .pe-discharge-label {
+  position: absolute;
+  top: 80px;
+  right: 135px;
+  color: #7a5954;
+  font-size: 5px;
+  font-weight: 950;
+}
+
+.pe-color-filter {
+  top: calc(279px + var(--pe-apparatus-shift));
+  left: 56.4%;
+  z-index: 14;
+  width: 41px;
+  height: 49px;
+  transition: top 280ms ease;
+}
+
+.pe-color-filter i {
+  inset: 0 4px 14px;
+  border-width: 4px;
+}
+
+.pe-color-filter b {
+  right: -17px;
+  bottom: -2px;
+  left: -17px;
+  width: 75px;
+  padding: 3px 0;
+  border-radius: 4px;
+  background: rgba(247, 251, 250, 0.88);
+}
+
+.pe-transmission-filter {
+  top: calc(280px + var(--pe-apparatus-shift));
+  left: 46.2%;
+  z-index: 13;
+  width: 88px;
+  height: 42px;
+  padding: 5px;
+  transform: none;
+  transition: top 280ms ease;
+}
+
+.pe-transmission-filter i {
+  color: transparent;
+  font-size: 0;
+}
+
+.pe-transmission-filter i.active {
+  outline-width: 2px;
+}
+
+.pe-transmission-filter b {
+  right: -9px;
+  bottom: -17px;
+  left: -9px;
+  padding: 3px 0;
+  border-radius: 4px;
+  background: rgba(247, 251, 250, 0.9);
+  color: #4a6267;
+  font-size: 5px;
+}
+
+.pe-multimeter {
+  bottom: 120px;
+  left: 41.5%;
+  z-index: 12;
+  width: 137px;
+  height: 146px;
+}
+
+.pe-meter-screen {
+  top: 15px;
+  right: 16px;
+  left: 16px;
+  height: 40px;
+}
+
+.pe-multimeter strong {
+  top: 25px;
+  right: 24px;
+  font-size: 18px;
+}
+
+.pe-multimeter small {
+  top: 45px;
+  left: 24px;
+}
+
+.pe-meter-knob {
+  top: 70px;
+  left: 44px;
+  width: 48px;
+  height: 48px;
+}
+
+.pe-meter-red-port,
+.pe-meter-black-port {
+  bottom: 10px;
+}
+
+.pe-multimeter > b {
+  bottom: -17px;
+  padding: 3px 0;
+  border-radius: 4px;
+  background: rgba(247, 251, 250, 0.9);
+}
+
+.pe-cable {
+  z-index: 7;
+  border-width: 4px;
+  pointer-events: none;
+}
+
+.pe-cable-red {
+  bottom: 105px;
+  left: 53%;
+  width: 23%;
+  height: 71px;
+  border-color: #d9453d;
+  transform: rotate(-1deg);
+}
+
+.pe-cable-black {
+  bottom: 96px;
+  left: 52%;
+  width: 25%;
+  height: 78px;
+  border-color: #283337;
+  transform: rotate(2deg);
+}
+
+.pe-cable-signal {
+  right: 10%;
+  bottom: 238px;
+  width: 27%;
+  height: 72px;
+  border-color: #53757b;
+  transform: rotate(-7deg);
+}
+
+@media (max-width: 1080px) {
+  .pe-apparatus {
+    min-width: 900px;
+  }
+}
