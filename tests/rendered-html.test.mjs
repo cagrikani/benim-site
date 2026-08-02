@@ -113,12 +113,15 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /portal-placeholder/);
   assert.match(page, /YAPIM AŞAMASINDA/);
   assert.match(page, /MechanicsLabHub/);
+  assert.match(page, /ElectricityLabHub/);
   assert.match(page, /OpticsLabHub/);
   assert.match(page, /ModernPhysicsLabHub/);
   assert.match(page, /module\.key === "waves-optics"/);
   assert.match(page, /onNavigate\("waves-optics"\)/);
   assert.match(page, /module\.key === "modern-physics"/);
   assert.match(page, /onNavigate\("modern-physics"\)/);
+  assert.match(page, /module\.key === "electricity"/);
+  assert.match(page, /onNavigate\("electricity"\)/);
   assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
 });
@@ -137,6 +140,54 @@ test("Fizik Atölyesi ana sayfası responsive portal görsellerini içerir", asy
   assert.match(css, /\.portal-empty-bench\s*\{/);
   assert.match(css, /\.portal-footer\s*\{/);
   assert.match(css, /@media \(max-width: 620px\)/);
+});
+
+test("Elektrik alanı TYMM uyumlu Ohm yasası deneyini sunar", async () => {
+  const hub = await readFile(
+    new URL("app/ElectricityLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(new URL("app/OhmLawLab.tsx", projectRoot), "utf8");
+  assert.match(hub, /Elektrik deney setleri/);
+  assert.match(hub, /Ohm yasası/);
+  assert.match(hub, /OhmLawLab/);
+  assert.match(page, /FİZ\.10\.3\.3/);
+  assert.match(page, /application\/x-ohm-equipment/);
+  assert.match(page, /0-20 V doğru akım güç kaynağı/);
+  assert.match(page, /100 Ω ve 1000 Ω direnç panosu/);
+  assert.match(page, /Doğru akım ampermetresi/);
+  assert.match(page, /Doğru akım voltmetresi/);
+  assert.match(page, /Yalıtımlı bağlantı kabloları/);
+  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onStageDrop/);
+  assert.match(page, /REQUIRED_CONNECTIONS/);
+  assert.match(page, /source-positive/);
+  assert.match(page, /ammeter-positive/);
+  assert.match(page, /voltmeter-positive/);
+  assert.match(page, /Ampermetre neden seri, voltmetre neden direncin uçlarına paralel/);
+  assert.match(page, /currentMilliamp: \(voltage \/ resistance\) \* 1000/);
+  assert.match(page, /Gerilim-akım grafiği/);
+  assert.match(page, /V = I · R/);
+  assert.match(page, /TYMM · KISA DENEY RAPORU/);
+  assert.match(page, /İDEAL ÖLÇÜM/);
+  assert.doesNotMatch(page, /Kirchhoff|Math\.random|NOISE|hata|belirsiz/i);
+});
+
+test("Ohm düzeneği gerçekçi cihazlar, bağlantı uçları ve veri alanları içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.ohm-builder\s*\{/);
+  assert.match(css, /\.ohm-equipment-panel,/);
+  assert.match(css, /\.ohm-apparatus\s*\{/);
+  assert.match(css, /\.ohm-power-supply\s*\{/);
+  assert.match(css, /\.ohm-resistor-board\s*\{/);
+  assert.match(css, /\.ohm-meter\s*\{/);
+  assert.match(css, /\.ohm-circuit-switch\s*\{/);
+  assert.match(css, /\.ohm-terminal\s*\{/);
+  assert.match(css, /\.ohm-wire-canvas\s*\{/);
+  assert.match(css, /\.ohm-control-grid\s*\{/);
+  assert.match(css, /\.ohm-evidence-grid\s*\{/);
+  assert.match(css, /\.ohm-graph-canvas\s*\{/);
+  assert.match(css, /\.ohm-report\s*\{/);
 });
 
 test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla sunar", async () => {
@@ -728,6 +779,7 @@ test("tüm deney modülleri ideal ölçüm politikası uygular", async () => {
     "app/TorqueLab.tsx",
     "app/PrismLab.tsx",
     "app/PhotoelectricLab.tsx",
+    "app/OhmLawLab.tsx",
   ];
   const pages = await Promise.all(
     labFiles.map((file) => readFile(new URL(file, projectRoot), "utf8")),

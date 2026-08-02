@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ElectricityLabHub from "./ElectricityLabHub";
 import MechanicsLabHub from "./MechanicsLabHub";
 import ModernPhysicsLabHub from "./ModernPhysicsLabHub";
 import OpticsLabHub from "./OpticsLabHub";
@@ -10,6 +11,7 @@ type PortalView =
   | "experiment-sets"
   | "free-labs"
   | "mechanics"
+  | "electricity"
   | "waves-optics"
   | "modern-physics"
   | "placeholder";
@@ -35,9 +37,10 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
   {
     key: "electricity",
     title: "Elektrik",
-    description: "Devre kurma ve elektriksel büyüklükleri keşfetme alanı.",
-    detail: "Hazırlanıyor",
+    description: "Devreyi kur, akım-gerilim örüntüsünden Ohm yasasına ulaş.",
+    detail: "1 deney açık",
     visual: "portal-visual-electricity",
+    available: true,
   },
   {
     key: "waves-optics",
@@ -226,7 +229,7 @@ function HomeView({
           </div>
           <div className="portal-hero-notes">
             <span>
-              <b>09</b>
+              <b>10</b>
               çalışan deney
             </span>
             <span>
@@ -442,7 +445,7 @@ function CollectionView({
         <aside>
           <b>{modules.length}</b>
           <span>{isExperiment ? "deney alanı" : "serbest konu alanı"}</span>
-          <small>{isExperiment ? "Mekanik, Optik ve Modern Fizik açık" : "İskelet hazır"}</small>
+          <small>{isExperiment ? "Mekanik, Elektrik, Optik ve Modern Fizik açık" : "İskelet hazır"}</small>
         </aside>
       </div>
       <ModuleGrid
@@ -450,6 +453,8 @@ function CollectionView({
         onSelect={(module) => {
           if (module.key === "mechanics" && module.available) {
             onNavigate("mechanics");
+          } else if (module.key === "electricity" && module.available) {
+            onNavigate("electricity");
           } else if (module.key === "waves-optics" && module.available) {
             onNavigate("waves-optics");
           } else if (module.key === "modern-physics" && module.available) {
@@ -528,6 +533,10 @@ export default function Home() {
 
   if (view === "mechanics") {
     return <MechanicsLabHub onBack={() => navigate("experiment-sets")} />;
+  }
+
+  if (view === "electricity") {
+    return <ElectricityLabHub onBack={() => navigate("experiment-sets")} />;
   }
 
   if (view === "waves-optics") {
