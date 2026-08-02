@@ -20383,6 +20383,194 @@ footer > a {
   font-weight: 900;
 }
 
+.ohm-wiring-guide {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 15px 16px;
+  border: 1px solid #e4c98c;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #fff9e9, #fffdf8);
+  box-shadow: inset 4px 0 0 #efa72c;
+}
+
+.ohm-wiring-guide.complete {
+  border-color: #b9ddcf;
+  background: linear-gradient(135deg, #ebf8f2, #fbfffd);
+  box-shadow: inset 4px 0 0 #1b9a7d;
+}
+
+.ohm-wiring-guide-heading,
+.ohm-guide-action,
+.ohm-guide-complete {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ohm-wiring-guide-heading > span {
+  display: grid;
+  gap: 2px;
+}
+
+.ohm-wiring-guide-heading small {
+  color: #b86a37;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.ohm-wiring-guide-heading b {
+  color: #173e4f;
+  font-size: 14px;
+}
+
+.ohm-wiring-guide-heading > strong {
+  display: grid;
+  min-width: 38px;
+  height: 30px;
+  place-items: center;
+  border-radius: 999px;
+  background: #f0a72f;
+  color: white;
+  font-size: 11px;
+}
+
+.ohm-wiring-guide.complete .ohm-wiring-guide-heading > strong {
+  background: #1b977b;
+}
+
+.ohm-guide-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.ohm-guide-copy > span {
+  position: relative;
+  display: grid;
+  min-height: 58px;
+  align-content: center;
+  padding: 10px 12px 10px 49px;
+  border: 1px solid #e4d5b7;
+  border-radius: 11px;
+  background: white;
+}
+
+.ohm-guide-copy > span i {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border-radius: 50%;
+  background: #e7863f;
+  color: white;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  transform: translateY(-50%);
+}
+
+.ohm-guide-copy > span:last-child i {
+  background: #167f75;
+}
+
+.ohm-guide-copy small {
+  color: #8a7c68;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.ohm-guide-copy b {
+  margin-top: 2px;
+  color: #173d4e;
+  font-size: 13px;
+}
+
+.ohm-guide-copy > em {
+  color: #d77b3c;
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.ohm-guide-action {
+  padding-top: 10px;
+  border-top: 1px solid #eadfc8;
+}
+
+.ohm-guide-action > span {
+  display: grid;
+  gap: 2px;
+}
+
+.ohm-guide-action b {
+  color: #284b58;
+  font-size: 11px;
+}
+
+.ohm-guide-action small {
+  color: #728286;
+  font-size: 9px;
+}
+
+.ohm-guide-action button {
+  flex: 0 0 auto;
+  padding: 11px 15px;
+  border: 0;
+  border-radius: 9px;
+  background: #d9713c;
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 7px 16px rgba(190, 94, 47, 0.2);
+}
+
+.ohm-guide-action button:disabled {
+  background: #b9c5c2;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.ohm-guide-complete {
+  justify-content: flex-start;
+}
+
+.ohm-guide-complete > i {
+  display: grid;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  background: #199779;
+  color: white;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.ohm-guide-complete > span {
+  display: grid;
+  gap: 2px;
+}
+
+.ohm-guide-complete b {
+  color: #165447;
+  font-size: 12px;
+}
+
+.ohm-guide-complete small {
+  color: #5f7c75;
+  font-size: 9px;
+}
+
 .ohm-apparatus {
   position: relative;
   min-height: 590px;
@@ -20799,8 +20987,19 @@ footer > a {
   color: #314f59;
   font-size: 8px;
   font-weight: 900;
-  transform: translateX(-50%);
+  opacity: 0;
+  transform: translate(-50%, -3px);
+  transition: opacity 150ms ease, transform 150ms ease;
   pointer-events: none;
+}
+
+.ohm-terminal:hover > span,
+.ohm-terminal:focus-visible > span,
+.ohm-terminal.selected > span,
+.ohm-terminal.guide-start > span,
+.ohm-terminal.guide-end > span {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .ohm-terminal.selected {
@@ -20809,6 +21008,42 @@ footer > a {
 }
 
 .ohm-terminal.connected::after { background: #f0d987; }
+
+.ohm-terminal.guide-start,
+.ohm-terminal.guide-end {
+  z-index: 18;
+  width: 32px;
+  height: 32px;
+  animation: ohm-guide-pulse 1.15s ease-in-out infinite;
+}
+
+.ohm-terminal.guide-start {
+  outline: 7px solid rgba(239, 167, 44, 0.3);
+}
+
+.ohm-terminal.guide-end {
+  outline: 7px solid rgba(22, 127, 117, 0.28);
+  animation-delay: 180ms;
+}
+
+.ohm-terminal.guide-start > span,
+.ohm-terminal.guide-end > span {
+  top: 35px;
+  padding: 5px 8px;
+  border: 1px solid #e4c98c;
+  box-shadow: 0 5px 14px rgba(24, 54, 65, 0.16);
+  color: #173d4e;
+  font-size: 9px;
+}
+
+.ohm-terminal.guide-end > span {
+  border-color: #acd5c9;
+}
+
+@keyframes ohm-guide-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.13); }
+}
 
 .ohm-empty-stage {
   position: absolute;
@@ -21300,6 +21535,7 @@ footer > a {
   .ohm-stage { overflow-x: auto; }
   .ohm-stage-toolbar,
   .ohm-notice,
+  .ohm-wiring-guide,
   .ohm-connection-list { min-width: 900px; }
   .ohm-control-grid { grid-template-columns: 1fr 1fr; }
   .ohm-live-reading { grid-column: 1 / -1; }
@@ -21327,6 +21563,8 @@ footer > a {
   .ohm-control-heading,
   .ohm-evidence-heading,
   .ohm-analysis-prompt { align-items: flex-start; flex-direction: column; }
+  .ohm-guide-action { align-items: flex-start; flex-direction: column; }
+  .ohm-guide-action button { width: 100%; }
   .ohm-report-grid { grid-template-columns: 1fr; }
   .ohm-controls,
   .ohm-report { padding: 18px; }

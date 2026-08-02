@@ -97,14 +97,53 @@ const TERMINALS: Record<
   "voltmeter-negative": { x: 69, y: 72, label: "Voltmetre -", equipment: "voltmeter", polarity: "black" },
 };
 
-const REQUIRED_CONNECTIONS: Array<[TerminalId, TerminalId]> = [
-  ["source-positive", "ammeter-positive"],
-  ["ammeter-negative", "resistor-left"],
-  ["resistor-right", "switch-left"],
-  ["switch-right", "source-negative"],
-  ["voltmeter-positive", "resistor-left"],
-  ["voltmeter-negative", "resistor-right"],
+const WIRING_STEPS: Array<{
+  from: TerminalId;
+  to: TerminalId;
+  title: string;
+  detail: string;
+}> = [
+  {
+    from: "source-positive",
+    to: "ammeter-positive",
+    title: "Kaynağı ampermetreye bağla",
+    detail: "Güç kaynağının kırmızı (+) ucundan ampermetrenin kırmızı (+) ucuna git.",
+  },
+  {
+    from: "ammeter-negative",
+    to: "resistor-left",
+    title: "Ampermetreden dirence geç",
+    detail: "Ampermetrenin siyah (-) ucunu direncin sol ucuna bağla.",
+  },
+  {
+    from: "resistor-right",
+    to: "switch-left",
+    title: "Direnci anahtara bağla",
+    detail: "Direncin sağ ucundan devre anahtarının girişine git.",
+  },
+  {
+    from: "switch-right",
+    to: "source-negative",
+    title: "Seri akım yolunu tamamla",
+    detail: "Anahtarın çıkışını güç kaynağının siyah (-) ucuna bağla.",
+  },
+  {
+    from: "voltmeter-positive",
+    to: "resistor-left",
+    title: "Voltmetrenin artı ucunu bağla",
+    detail: "Voltmetrenin kırmızı (+) ucunu direncin sol ucuna bağla.",
+  },
+  {
+    from: "voltmeter-negative",
+    to: "resistor-right",
+    title: "Paralel ölçüm kolunu tamamla",
+    detail: "Voltmetrenin siyah (-) ucunu direncin sağ ucuna bağla.",
+  },
 ];
+
+const REQUIRED_CONNECTIONS: Array<[TerminalId, TerminalId]> = WIRING_STEPS.map(
+  ({ from, to }) => [from, to],
+);
 
 const WIRE_COLORS = ["#e34b43", "#183f52", "#f3a72c", "#345f72", "#cb5b4a", "#536e78"];
 
@@ -338,6 +377,15 @@ export default function OhmLawLab() {
   const currentMilliamp = circuitActive ? (voltage / resistance) * 1000 : 0;
   const nonzeroReadings = readings.filter((reading) => reading.voltage > 0);
   const analysisReady = nonzeroReadings.length >= 3;
+  const nextWiringStep = WIRING_STEPS.find(
+    ({ from, to }) =>
+      !connections.some(
+        (connection) => connection.id === connectionKey(from, to),
+      ),
+  ) ?? null;
+  const nextWiringStepNumber = nextWiringStep
+    ? WIRING_STEPS.indexOf(nextWiringStep) + 1
+    : WIRING_STEPS.length;
 
   const seriesProgress = useMemo(
     () => ({
@@ -409,6 +457,32 @@ export default function OhmLawLab() {
       nextConnections.length === REQUIRED_CONNECTIONS.length
         ? "Devre tamamlandı. Güç kaynağını aç, ardından anahtarı kapat."
         : `Bağlantı tamamlandı. ${REQUIRED_CONNECTIONS.length - nextConnections.length} kablo kaldı.`,
+    );
+  };
+
+  const connectGuidedCable = () => {
+    if (!allInstalled || !installed.includes("cables")) {
+      setNotice("Önce bütün araçları ve kablo takımını tezgâha yerleştir.");
+      return;
+    }
+    if (!nextWiringStep) return;
+    const key = connectionKey(nextWiringStep.from, nextWiringStep.to);
+    const nextConnections = [
+      ...connections,
+      { id: key, from: nextWiringStep.from, to: nextWiringStep.to },
+    ];
+    const followingStep = WIRING_STEPS.find(
+      ({ from, to }) =>
+        !nextConnections.some(
+          (connection) => connection.id === connectionKey(from, to),
+        ),
+    );
+    setSelectedTerminal(null);
+    setConnections(nextConnections);
+    setNotice(
+      followingStep
+        ? `Kablo yerleşti. Sıradaki: ${followingStep.detail}`
+        : "Altı bağlantı da tamamlandı. Güç kaynağını aç, ardından anahtarı kapat.",
     );
   };
 
@@ -584,6 +658,56 @@ export default function OhmLawLab() {
             <span>{notice}</span>
           </div>
 
+          <section className={`ohm-wiring-guide ${circuitComplete ? "complete" : ""}`}>
+            <div className="ohm-wiring-guide-heading">
+              <span>
+                <small>KABLO BAĞLANTI REHBERİ</small>
+                <b>
+                  {!allInstalled
+                    ? "Önce malzemeleri tamamla"
+                    : circuitComplete
+                      ? "Bütün bağlantılar tamamlandı"
+                      : `${nextWiringStepNumber}. kablo / ${WIRING_STEPS.length}`}
+                </b>
+              </span>
+              <strong>{circuitComplete ? "✓" : `${connections.length}/${WIRING_STEPS.length}`}</strong>
+            </div>
+            {nextWiringStep ? (
+              <>
+                <div className="ohm-guide-copy">
+                  <span>
+                    <i>1</i>
+                    <small>ÖNCE BU UÇ</small>
+                    <b>{TERMINALS[nextWiringStep.from].label}</b>
+                  </span>
+                  <em>→</em>
+                  <span>
+                    <i>2</i>
+                    <small>SONRA BU UÇ</small>
+                    <b>{TERMINALS[nextWiringStep.to].label}</b>
+                  </span>
+                </div>
+                <div className="ohm-guide-action">
+                  <span>
+                    <b>{nextWiringStep.title}</b>
+                    <small>{nextWiringStep.detail}</small>
+                  </span>
+                  <button type="button" onClick={connectGuidedCable} disabled={!allInstalled}>
+                    Gösterilen kabloyu bağla
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="ohm-guide-complete">
+                <i>✓</i>
+                <span>
+                  <b>Ampermetre seri, voltmetre dirence paralel bağlandı.</b>
+                  <small>Ölçüme geçmek için güç kaynağını açabilirsin.</small>
+                </span>
+              </div>
+            )}
+          </section>
+
           <div className="ohm-apparatus">
             <div className="ohm-lab-wall" />
             <div className="ohm-workbench"><i /><i /></div>
@@ -639,20 +763,25 @@ export default function OhmLawLab() {
             {(Object.keys(TERMINALS) as TerminalId[]).map((terminal) => {
               const item = TERMINALS[terminal];
               if (!installed.includes(item.equipment)) return null;
+              const isGuideStart = nextWiringStep?.from === terminal;
+              const isGuideEnd = nextWiringStep?.to === terminal;
               const connected = connections.some(
                 (connection) => connection.from === terminal || connection.to === terminal,
               );
               return (
                 <button
                   type="button"
-                  className={`ohm-terminal ${item.polarity} ${selectedTerminal === terminal ? "selected" : ""} ${connected ? "connected" : ""}`}
+                  className={`ohm-terminal ${item.polarity} ${selectedTerminal === terminal ? "selected" : ""} ${connected ? "connected" : ""} ${isGuideStart ? "guide-start" : ""} ${isGuideEnd ? "guide-end" : ""}`}
                   style={{ left: `${item.x}%`, top: `${item.y}%` }}
                   onClick={() => connectTerminal(terminal)}
-                  aria-label={`${item.label}${connected ? ", bağlı" : ", bağlantı bekliyor"}`}
+                  aria-label={`${isGuideStart ? "Önce " : isGuideEnd ? "Sonra " : ""}${item.label}${connected ? ", bağlı" : ", bağlantı bekliyor"}`}
                   key={terminal}
                 >
                   <i />
-                  <span>{item.label}</span>
+                  <span>
+                    {isGuideStart ? "1 · ÖNCE: " : isGuideEnd ? "2 · SONRA: " : ""}
+                    {item.label}
+                  </span>
                 </button>
               );
             })}

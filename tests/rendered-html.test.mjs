@@ -161,9 +161,15 @@ test("Elektrik alanı TYMM uyumlu Ohm yasası deneyini sunar", async () => {
   assert.match(page, /onEquipmentDragStart/);
   assert.match(page, /onStageDrop/);
   assert.match(page, /REQUIRED_CONNECTIONS/);
+  assert.match(page, /WIRING_STEPS/);
   assert.match(page, /source-positive/);
   assert.match(page, /ammeter-positive/);
   assert.match(page, /voltmeter-positive/);
+  assert.match(page, /KABLO BAĞLANTI REHBERİ/);
+  assert.match(page, /ÖNCE BU UÇ/);
+  assert.match(page, /SONRA BU UÇ/);
+  assert.match(page, /Gösterilen kabloyu bağla/);
+  assert.match(page, /connectGuidedCable/);
   assert.match(page, /Ampermetre neden seri, voltmetre neden direncin uçlarına paralel/);
   assert.match(page, /currentMilliamp: \(voltage \/ resistance\) \* 1000/);
   assert.match(page, /Gerilim-akım grafiği/);
@@ -183,6 +189,10 @@ test("Ohm düzeneği gerçekçi cihazlar, bağlantı uçları ve veri alanları 
   assert.match(css, /\.ohm-meter\s*\{/);
   assert.match(css, /\.ohm-circuit-switch\s*\{/);
   assert.match(css, /\.ohm-terminal\s*\{/);
+  assert.match(css, /\.ohm-wiring-guide\s*\{/);
+  assert.match(css, /\.ohm-guide-copy\s*\{/);
+  assert.match(css, /\.ohm-terminal\.guide-start,/);
+  assert.match(css, /@keyframes ohm-guide-pulse/);
   assert.match(css, /\.ohm-wire-canvas\s*\{/);
   assert.match(css, /\.ohm-control-grid\s*\{/);
   assert.match(css, /\.ohm-evidence-grid\s*\{/);
