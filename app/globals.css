@@ -21569,3 +21569,653 @@ footer > a {
   .ohm-controls,
   .ohm-report { padding: 18px; }
 }
+
+/* Elektrik deney seçici */
+.electricity-experiment-launcher {
+  width: min(1180px, calc(100% - 44px));
+  margin: 0 auto;
+  padding: 42px 0 8px;
+}
+
+.electricity-experiment-launcher > div:first-child {
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.electricity-experiment-launcher > div:first-child span {
+  color: #cf6b3d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.electricity-experiment-launcher h1 {
+  margin: 8px 0 0;
+  color: #102f42;
+  font-size: clamp(30px, 4vw, 46px);
+  letter-spacing: -0.045em;
+}
+
+.electricity-experiment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.electricity-experiment-grid > button {
+  display: grid;
+  grid-template-columns: 94px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  min-height: 112px;
+  padding: 14px 18px 14px 14px;
+  border: 1px solid #d6e3e0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  color: #14384a;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.electricity-experiment-grid > button:hover,
+.electricity-experiment-grid > button.active {
+  border-color: #edab5b;
+  box-shadow: 0 16px 36px rgba(18, 54, 70, 0.11);
+  transform: translateY(-2px);
+}
+
+.electricity-experiment-grid > button > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+}
+
+.electricity-experiment-grid small {
+  color: #cf6b3d;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.electricity-experiment-grid b { font-size: 19px; }
+.electricity-experiment-grid em { color: #667e83; font-size: 12px; font-style: normal; }
+.electricity-experiment-grid strong { color: #167f75; font-size: 11px; white-space: nowrap; }
+
+.electricity-choice-visual {
+  position: relative;
+  display: block;
+  width: 94px;
+  height: 82px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #edf6f4, #dcebe8);
+}
+
+.ohm-choice-visual i:first-child {
+  position: absolute;
+  inset: 23px 31px;
+  border: 5px solid #cf7d3b;
+  border-radius: 4px;
+  background: #ead0a0;
+}
+
+.ohm-choice-visual i:nth-child(2) {
+  position: absolute;
+  top: 38px;
+  left: 10px;
+  width: 74px;
+  border-top: 3px solid #183f50;
+}
+
+.ohm-choice-visual i:last-child {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 23px;
+  height: 23px;
+  border: 4px solid #167f75;
+  border-radius: 50%;
+  background: white;
+}
+
+.resistor-choice-visual::before,
+.resistor-choice-visual::after {
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  content: "";
+}
+
+.resistor-choice-visual::before {
+  top: 24px;
+  height: 32px;
+  border: 3px solid #183f50;
+  border-top: 0;
+  border-bottom: 0;
+}
+
+.resistor-choice-visual::after {
+  top: 31px;
+  height: 18px;
+  border-top: 3px solid #183f50;
+  border-bottom: 3px solid #183f50;
+}
+
+.resistor-choice-visual i {
+  position: absolute;
+  z-index: 1;
+  left: 28px;
+  width: 38px;
+  height: 9px;
+  border: 2px solid #bb6b35;
+  border-radius: 4px;
+  background: #e9c97e;
+}
+
+.resistor-choice-visual i:first-child { top: 26px; }
+.resistor-choice-visual i:nth-child(2) { bottom: 26px; }
+.resistor-choice-visual i:nth-child(3),
+.resistor-choice-visual i:nth-child(4) { display: none; }
+
+/* Elektrik deney seti · Dirençlerin seri ve paralel bağlanması */
+.resistor-connections-lab {
+  width: min(1480px, calc(100% - 44px));
+  margin: 0 auto;
+  padding: 54px 0 96px;
+  color: #153a4c;
+}
+
+.rcl-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 40px;
+  align-items: end;
+  margin-bottom: 26px;
+}
+
+.rcl-heading > div > span,
+.rcl-prediction small,
+.rcl-section-heading > span,
+.rcl-stage-toolbar small,
+.rcl-evidence-heading > div > span,
+.rcl-analysis-prompt span,
+.rcl-report-heading > span {
+  display: block;
+  margin-bottom: 8px;
+  color: #d66f3d;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+}
+
+.rcl-heading h1 {
+  max-width: 940px;
+  margin: 0;
+  color: #0e3043;
+  font-size: clamp(34px, 4.2vw, 62px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+}
+
+.rcl-heading p {
+  max-width: 760px;
+  margin: 18px 0 0;
+  color: #567077;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.rcl-heading aside {
+  display: grid;
+  min-width: 230px;
+  padding: 20px 24px;
+  border: 1px solid #d8e5e2;
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 16px 38px rgba(18, 54, 70, 0.08);
+}
+
+.rcl-heading aside b { color: #167f75; font-size: 12px; letter-spacing: 0.14em; }
+.rcl-heading aside span { margin-top: 8px; color: #12384a; font-size: 20px; font-weight: 900; }
+.rcl-heading aside small { margin-top: 4px; color: #71868a; }
+
+.rcl-prediction {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.05fr);
+  gap: 28px;
+  align-items: center;
+  margin-bottom: 22px;
+  padding: 20px 24px;
+  border: 1px solid #efd9b9;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fffaf1, #fff);
+}
+
+.rcl-prediction b { color: #183e50; font-size: 16px; }
+
+.rcl-prediction input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid #ddcba9;
+  border-radius: 12px;
+  outline: none;
+  color: #14384a;
+  font: inherit;
+}
+
+.rcl-prediction input:focus,
+.rcl-report textarea:focus { border-color: #d98744; box-shadow: 0 0 0 4px rgba(217, 135, 68, 0.12); }
+
+.rcl-task-selector,
+.rcl-equipment-panel,
+.rcl-stage,
+.rcl-measurement-panel,
+.rcl-table-card,
+.rcl-bars-card,
+.rcl-analysis-prompt,
+.rcl-analysis,
+.rcl-report {
+  border: 1px solid #d7e4e1;
+  border-radius: 22px;
+  background: white;
+  box-shadow: 0 18px 42px rgba(18, 54, 70, 0.06);
+}
+
+.rcl-task-selector { margin-bottom: 16px; padding: 22px; }
+.rcl-section-heading h2 { margin: 0; color: #12384a; font-size: 24px; letter-spacing: -0.025em; }
+
+.rcl-task-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.rcl-task-grid button {
+  position: relative;
+  display: grid;
+  min-height: 118px;
+  padding: 15px;
+  border: 1px solid #d9e5e2;
+  border-radius: 14px;
+  background: #f8fbfa;
+  color: #153b4c;
+  cursor: pointer;
+  text-align: left;
+}
+
+.rcl-task-grid button:hover,
+.rcl-task-grid button.active { border-color: #e3a052; background: #fffaf2; box-shadow: inset 0 0 0 1px #e3a052; }
+.rcl-task-grid button > span { color: #d37340; font-size: 10px; font-weight: 900; }
+.rcl-task-grid button b { margin-top: 6px; font-size: 13px; }
+.rcl-task-grid button strong { align-self: center; color: #167f75; font-size: 19px; }
+.rcl-task-grid button small { color: #73868a; font-size: 9px; }
+
+.rcl-builder {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.rcl-equipment-panel { padding: 17px; }
+.rcl-equipment-panel > div:first-child { margin-bottom: 13px; }
+.rcl-equipment-panel > div:first-child span { display: block; color: #d26e3d; font-size: 9px; font-weight: 900; letter-spacing: 0.14em; }
+.rcl-equipment-panel > div:first-child b { display: block; margin-top: 5px; font-size: 18px; }
+
+.rcl-equipment-panel > button:not(.rcl-reset) {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 72px;
+  margin-bottom: 8px;
+  padding: 8px;
+  border: 1px solid #dce7e4;
+  border-radius: 13px;
+  background: #f8fbfa;
+  color: #153a4c;
+  cursor: grab;
+  text-align: left;
+}
+
+.rcl-equipment-panel > button:not(.rcl-reset):hover { border-color: #e0a55e; background: #fffaf3; }
+.rcl-equipment-panel > button.installed { border-color: #b9ded4; background: #eff9f5; cursor: default; opacity: 0.72; }
+.rcl-equipment-panel button > span:nth-child(2) { display: grid; gap: 3px; }
+.rcl-equipment-panel button b { font-size: 11px; line-height: 1.25; }
+.rcl-equipment-panel button small { color: #72868a; font-size: 9px; line-height: 1.3; }
+
+.rcl-equipment-icon {
+  position: relative;
+  display: block;
+  width: 52px;
+  height: 48px;
+  border-radius: 10px;
+  background: #e7f0ee;
+}
+
+.rcl-icon-power-supply::before { position: absolute; inset: 9px 8px; border: 3px solid #294f5c; border-radius: 5px; background: #567783; content: ""; }
+.rcl-icon-power-supply::after { position: absolute; top: 17px; left: 16px; width: 20px; height: 9px; border-radius: 2px; background: #a9f3d2; content: ""; }
+.rcl-icon-switch-board::before { position: absolute; inset: 7px; border: 3px solid #47717a; border-radius: 5px; background: #dbe8e5; content: ""; }
+.rcl-icon-switch-board::after { position: absolute; top: 17px; left: 12px; width: 28px; height: 12px; background: radial-gradient(circle, #d4783e 0 3px, transparent 4px) 0 0 / 10px 10px; content: ""; }
+.rcl-icon-resistor-set::before { position: absolute; top: 19px; left: 7px; width: 38px; height: 10px; border: 3px solid #b86e37; border-radius: 4px; background: #e6c17d; content: ""; }
+.rcl-icon-resistor-set::after { position: absolute; top: 23px; left: 1px; width: 50px; border-top: 2px solid #48636c; content: ""; }
+.rcl-icon-ammeter::before,
+.rcl-icon-voltmeter::before { position: absolute; inset: 8px; display: grid; place-items: center; border: 3px solid #375b67; border-radius: 50%; background: white; color: #167f75; content: "A"; font-weight: 900; }
+.rcl-icon-voltmeter::before { content: "V"; color: #d16d3e; }
+
+.rcl-reset {
+  width: 100%;
+  margin-top: 8px;
+  padding: 11px;
+  border: 1px solid #e5c7b4;
+  border-radius: 11px;
+  background: white;
+  color: #bb6439;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.rcl-stage { min-width: 0; overflow: hidden; }
+.rcl-stage.drag-over { outline: 3px solid rgba(22, 127, 117, 0.3); outline-offset: -5px; }
+.rcl-stage-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 17px 20px; border-bottom: 1px solid #dce7e4; }
+.rcl-stage-toolbar span b { display: block; font-size: 17px; }
+.rcl-stage-toolbar strong { padding: 7px 10px; border-radius: 999px; background: #eef3f2; color: #7b8d90; font-size: 10px; }
+.rcl-stage-toolbar strong.ready { background: #e7f7f2; color: #167f75; }
+
+.rcl-notice {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 14px 0;
+  padding: 10px 13px;
+  border-radius: 11px;
+  background: #fff7e9;
+  color: #744c2a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.rcl-notice i { display: grid; flex: 0 0 22px; height: 22px; place-items: center; border-radius: 50%; background: #efa93a; color: white; font-style: normal; }
+
+.rcl-switch-guide {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 10px 14px;
+  padding: 13px 15px;
+  border: 1px solid #cde0dc;
+  border-radius: 14px;
+  background: #f4faf8;
+}
+
+.rcl-switch-guide > div { display: grid; grid-template-columns: auto auto; gap: 3px 12px; align-items: baseline; }
+.rcl-switch-guide span { color: #167f75; font-size: 9px; font-weight: 900; letter-spacing: 0.12em; }
+.rcl-switch-guide b { color: #d36d3d; font-size: 19px; }
+.rcl-switch-guide small { grid-column: 1 / -1; color: #657d82; font-size: 10px; }
+.rcl-switch-guide button,
+.rcl-measurement-grid button,
+.rcl-analysis-prompt button {
+  padding: 11px 15px;
+  border: 0;
+  border-radius: 10px;
+  background: #167f75;
+  color: white;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.rcl-switch-guide button:disabled,
+.rcl-measurement-grid button:disabled,
+.rcl-analysis-prompt button:disabled { cursor: not-allowed; opacity: 0.45; }
+
+.rcl-apparatus {
+  position: relative;
+  min-height: 570px;
+  overflow: hidden;
+  border-top: 1px solid #d7e2df;
+  border-bottom: 1px solid #c5d2cf;
+  background: linear-gradient(#e8f0ee 0 68%, #b98359 68% 100%);
+}
+
+.rcl-wall { position: absolute; inset: 0 0 32%; background: linear-gradient(90deg, transparent 49.8%, rgba(74, 112, 116, 0.05) 50%, transparent 50.2%) 0 0 / 75px 100%, linear-gradient(#edf4f2, #dfe9e7); }
+.rcl-bench { position: absolute; right: 0; bottom: 0; left: 0; height: 32%; border-top: 13px solid #8b5e3f; background: linear-gradient(90deg, rgba(255,255,255,.06), transparent 20%), #a97853; box-shadow: inset 0 8px 16px rgba(61, 37, 22, 0.18); }
+.rcl-bench i { position: absolute; bottom: 0; width: 24px; height: 100%; background: #725039; }
+.rcl-bench i:first-child { left: 7%; }
+.rcl-bench i:last-child { right: 7%; }
+
+.rcl-power,
+.rcl-switch-board,
+.rcl-resistor-rack,
+.rcl-meter { position: absolute; z-index: 2; box-shadow: 0 12px 26px rgba(29, 45, 46, 0.2); }
+
+.rcl-power {
+  top: 42px;
+  left: 3%;
+  display: grid;
+  width: 17%;
+  min-width: 145px;
+  height: 174px;
+  padding: 14px;
+  border: 7px solid #324b54;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #6c858d, #405b65);
+  color: white;
+}
+
+.rcl-power small { font-size: 8px; letter-spacing: .1em; }
+.rcl-power b { align-self: center; padding: 8px; border: 3px inset #39494c; border-radius: 4px; background: #162b2e; color: #a0f4c8; font: 900 25px/1 monospace; text-align: right; }
+.rcl-power b em { margin-left: 4px; font-size: 10px; font-style: normal; }
+.rcl-power button { align-self: end; padding: 8px; border: 1px solid #a9bcc0; border-radius: 5px; background: #e8eceb; color: #25414a; cursor: pointer; font-size: 8px; font-weight: 900; }
+.rcl-power.on { box-shadow: 0 0 0 4px rgba(77, 221, 159, .14), 0 12px 26px rgba(29,45,46,.2); }
+
+.rcl-switch-board {
+  top: 24px;
+  right: 3%;
+  width: 75%;
+  height: 334px;
+  padding: 15px 18px;
+  border: 9px solid #647b80;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #f6f2dd, #d7ddcb);
+  box-shadow: inset 0 0 0 2px #b5b7a8, 0 16px 34px rgba(29,45,46,.24);
+}
+
+.rcl-board-label { display: flex; align-items: center; justify-content: space-between; color: #38545a; }
+.rcl-board-label span { font-size: 9px; font-weight: 900; letter-spacing: .11em; }
+.rcl-board-label b { color: #b86a36; font-size: 11px; }
+
+.rcl-schematic {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 172px;
+  margin-top: 5px;
+  padding: 20px 41px 22px 63px;
+}
+
+.rcl-source-symbol { position: absolute; left: 7px; top: 61px; width: 39px; height: 49px; border: 2px solid #4b6468; border-radius: 5px; background: #f7f4e5; }
+.rcl-source-symbol::before,
+.rcl-source-symbol::after { position: absolute; left: 8px; width: 22px; border-top: 3px solid #3f565b; content: ""; }
+.rcl-source-symbol::before { top: 17px; }
+.rcl-source-symbol::after { top: 26px; left: 13px; width: 12px; }
+.rcl-source-symbol b,
+.rcl-source-symbol em { position: absolute; right: -12px; color: #c04d3d; font-size: 9px; font-style: normal; }
+.rcl-source-symbol b { top: -7px; }
+.rcl-source-symbol em { bottom: -5px; color: #2e617b; }
+
+.rcl-wire { position: absolute; border-color: #425f65; border-style: solid; }
+.rcl-wire.wire-entry { top: 43px; right: 28px; left: 45px; height: 28px; border-width: 3px 3px 0; border-radius: 8px 8px 0 0; }
+.rcl-wire.wire-return { right: 28px; bottom: 23px; left: 45px; height: 31px; border-width: 0 3px 3px; border-radius: 0 0 8px 8px; }
+.rcl-schematic-content { position: relative; z-index: 2; display: flex; width: 100%; align-items: center; justify-content: center; gap: 13px; }
+.rcl-schematic-content > .between { width: 38px; border-top: 3px solid #425f65; }
+
+.rcl-schematic-resistor { position: relative; display: grid; width: 78px; height: 38px; place-content: center; border: 3px solid #a45f32; border-radius: 5px; background: linear-gradient(#efce8a, #dcb16c); box-shadow: 0 4px 7px rgba(80,59,34,.18); text-align: center; }
+.rcl-schematic-resistor::before,
+.rcl-schematic-resistor::after { position: absolute; top: 16px; width: 17px; border-top: 3px solid #425f65; content: ""; }
+.rcl-schematic-resistor::before { left: -20px; }
+.rcl-schematic-resistor::after { right: -20px; }
+.rcl-schematic-resistor i { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 20%, #7d4a2d 20% 24%, transparent 24% 44%, #c64435 44% 48%, transparent 48% 70%, #e3a829 70% 74%, transparent 74%); opacity: .8; }
+.rcl-schematic-resistor b { position: relative; z-index: 1; font-size: 12px; }
+.rcl-schematic-resistor small { position: relative; z-index: 1; font-size: 7px; }
+.rcl-parallel-branches { display: grid; gap: 20px; min-width: 145px; padding: 7px 22px; border-right: 3px solid #425f65; border-left: 3px solid #425f65; }
+.rcl-parallel-branches > span { display: flex; justify-content: center; }
+.rcl-current-pulse { position: absolute; z-index: 5; top: 38px; right: 24px; left: 41px; height: 105px; pointer-events: none; }
+.rcl-current-pulse i { position: absolute; top: 0; width: 8px; height: 8px; border-radius: 50%; background: #ff9a27; box-shadow: 0 0 9px #ff9a27; animation: rcl-current-flow 1.4s linear infinite; }
+.rcl-current-pulse i:nth-child(2) { animation-delay: -.46s; }
+.rcl-current-pulse i:nth-child(3) { animation-delay: -.92s; }
+
+@keyframes rcl-current-flow {
+  0% { left: 0; top: 0; }
+  48% { left: calc(100% - 8px); top: 0; }
+  52% { left: calc(100% - 8px); top: calc(100% - 8px); }
+  100% { left: 0; top: calc(100% - 8px); }
+}
+
+.rcl-switch-grid { display: grid; grid-template-columns: repeat(11, 1fr); gap: 5px; padding-top: 9px; border-top: 1px solid rgba(67, 91, 92, .2); }
+.rcl-switch-grid button { display: grid; gap: 4px; padding: 3px 2px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #52686b; cursor: pointer; }
+.rcl-switch-grid button > span { position: relative; display: block; height: 22px; }
+.rcl-switch-grid button > span::before,
+.rcl-switch-grid button > span::after { position: absolute; bottom: 2px; width: 7px; height: 7px; border-radius: 50%; background: #53686c; content: ""; }
+.rcl-switch-grid button > span::before { left: 6px; }
+.rcl-switch-grid button > span::after { right: 6px; }
+.rcl-switch-grid button i { position: absolute; left: 12px; bottom: 7px; width: 19px; border-top: 3px solid #506569; transform: rotate(-27deg); transform-origin: left center; transition: transform .16s ease; }
+.rcl-switch-grid button b { font-size: 9px; }
+.rcl-switch-grid button.required { border-color: #e4a142; background: rgba(255, 245, 218, .7); }
+.rcl-switch-grid button.closed { border-color: #4ea78c; background: #e7f6f0; color: #126b61; }
+.rcl-switch-grid button.closed i { border-color: #16816f; transform: rotate(0); }
+.rcl-switch-grid button.wrong { border-color: #d85d52; background: #fff0ee; color: #b8463d; }
+
+.rcl-resistor-rack { bottom: 23px; left: 4%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; width: 38%; padding: 11px; border: 5px solid #445e65; border-radius: 8px; background: #d9e1de; }
+.rcl-resistor-rack > small { grid-column: 1 / -1; color: #435b61; font-size: 7px; font-weight: 900; letter-spacing: .12em; }
+.rcl-resistor-rack span { position: relative; display: grid; height: 47px; place-content: center; border: 2px solid #a86134; border-radius: 4px; background: #e6c17b; text-align: center; }
+.rcl-resistor-rack span i { position: absolute; top: 0; bottom: 0; left: 30%; border-left: 4px solid #b54337; }
+.rcl-resistor-rack span b,
+.rcl-resistor-rack span em { position: relative; z-index: 1; font-size: 9px; font-style: normal; }
+.rcl-resistor-rack span em { font-size: 7px; }
+
+.rcl-meter { bottom: 24px; display: grid; width: 18%; height: 110px; padding: 10px 12px; border: 6px solid #344c54; border-radius: 8px; background: linear-gradient(145deg, #72888d, #4a6269); color: white; }
+.rcl-ammeter { right: 24%; }
+.rcl-voltmeter { right: 4%; }
+.rcl-meter small { font-size: 7px; letter-spacing: .09em; }
+.rcl-meter b { align-self: center; padding: 6px; border: 3px inset #263a3e; border-radius: 3px; background: #172b2e; color: #a7dfe5; font: 900 23px/1 monospace; text-align: right; }
+.rcl-meter em { justify-self: end; font-size: 9px; font-style: normal; }
+.rcl-meter.active b { color: #a0f4c8; text-shadow: 0 0 8px rgba(108, 255, 189, .3); }
+.rcl-empty-stage { position: absolute; z-index: 3; inset: 0; display: grid; place-content: center; color: #6f8588; text-align: center; }
+.rcl-empty-stage i { font-size: 42px; font-style: normal; font-weight: 200; }
+.rcl-empty-stage b { margin-top: 8px; font-size: 13px; }
+
+.rcl-switch-status { display: grid; grid-template-columns: repeat(3, 1fr); background: #f7faf9; }
+.rcl-switch-status span { display: grid; gap: 4px; padding: 12px 18px; border-right: 1px solid #dce7e4; }
+.rcl-switch-status span:last-child { border-right: 0; }
+.rcl-switch-status small { color: #73878a; font-size: 8px; font-weight: 800; text-transform: uppercase; }
+.rcl-switch-status b { font-size: 11px; }
+.rcl-switch-status .correct b { color: #167f75; }
+
+.rcl-measurement-panel { margin-top: 16px; padding: 22px; }
+.rcl-measurement-grid { display: grid; grid-template-columns: 1.05fr repeat(3, 1fr) auto; gap: 9px; margin-top: 16px; }
+.rcl-measurement-grid label,
+.rcl-measurement-grid > span { display: grid; gap: 6px; min-height: 72px; padding: 12px; border: 1px solid #dce7e4; border-radius: 12px; background: #f8fbfa; }
+.rcl-measurement-grid small { color: #75878b; font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.rcl-measurement-grid b { align-self: end; color: #153a4b; font-size: 16px; }
+.rcl-measurement-grid select { align-self: end; border: 0; outline: 0; background: transparent; color: #153a4b; font-family: inherit; font-size: 16px; font-weight: 900; line-height: 1; }
+.rcl-measurement-grid button { align-self: stretch; }
+
+.rcl-evidence { margin-top: 16px; }
+.rcl-evidence-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 13px; padding: 0 3px; }
+.rcl-evidence-heading h2 { margin: 0; font-size: 24px; }
+.rcl-evidence-heading > b { display: grid; min-width: 68px; place-items: center; padding: 10px; border-radius: 13px; background: #153a4b; color: white; font-size: 22px; }
+.rcl-evidence-heading > b small { font-size: 8px; font-weight: 700; }
+.rcl-evidence-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(310px, .65fr); gap: 16px; }
+.rcl-table-card,
+.rcl-bars-card { padding: 18px; }
+.rcl-card-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.rcl-card-heading b { font-size: 16px; }
+.rcl-card-heading span { color: #167f75; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.rcl-table-wrap { overflow-x: auto; }
+.rcl-table-card table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.rcl-table-card th,
+.rcl-table-card td { padding: 11px 9px; border-bottom: 1px solid #e2eae8; text-align: left; }
+.rcl-table-card thead th { background: #edf5f3; color: #557076; font-size: 8px; text-transform: uppercase; }
+.rcl-table-card tbody th { color: #153a4b; }
+
+.rcl-resistance-bars { display: grid; gap: 12px; }
+.rcl-resistance-bars > div > span { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.rcl-resistance-bars span b { font-size: 10px; }
+.rcl-resistance-bars span small { color: #718589; font-size: 9px; }
+.rcl-resistance-bars > div > i { display: block; height: 9px; overflow: hidden; border-radius: 999px; background: #e8efed; }
+.rcl-resistance-bars > div > i b { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #167f75, #e1a13d); transition: width .25s ease; }
+
+.rcl-analysis-prompt { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-top: 16px; padding: 22px; }
+.rcl-analysis-prompt h2 { margin: 0; font-size: 24px; }
+.rcl-analysis-prompt p { margin: 7px 0 0; color: #687f84; font-size: 11px; }
+.rcl-analysis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; padding: 18px; }
+.rcl-analysis article { padding: 16px; border: 1px solid #dce7e4; border-radius: 13px; background: #f8fbfa; }
+.rcl-analysis article span { color: #cf6c3c; font-size: 9px; font-weight: 900; letter-spacing: .12em; }
+.rcl-analysis article b { display: block; margin-top: 10px; color: #123a4b; font-size: 15px; }
+.rcl-analysis article p { margin: 8px 0 0; color: #647c81; font-size: 10px; line-height: 1.6; }
+
+.rcl-report { margin-top: 16px; padding: 24px; }
+.rcl-report-heading h2 { margin: 0; font-size: 26px; }
+.rcl-report-heading p { margin: 7px 0 0; color: #697f84; font-size: 11px; }
+.rcl-report-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 18px; }
+.rcl-report label { color: #365761; font-size: 11px; font-weight: 700; line-height: 1.5; }
+.rcl-report label > span { display: block; margin-bottom: 5px; color: #c2693d; font-size: 9px; font-weight: 900; letter-spacing: .12em; }
+.rcl-report textarea { width: 100%; margin-top: 8px; padding: 12px; border: 1px solid #d3e0dd; border-radius: 10px; outline: none; resize: vertical; color: #153b4c; font: inherit; }
+.rcl-report-conclusion { display: block; margin-top: 12px; }
+
+@media (max-width: 1180px) {
+  .rcl-builder { grid-template-columns: 220px minmax(0, 1fr); }
+  .rcl-apparatus { min-width: 930px; }
+  .rcl-stage { overflow-x: auto; }
+  .rcl-stage-toolbar,
+  .rcl-notice,
+  .rcl-switch-guide,
+  .rcl-switch-status { min-width: 930px; }
+  .rcl-task-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 850px) {
+  .electricity-site-header nav { display: none; }
+  .electricity-experiment-grid { grid-template-columns: 1fr; }
+  .resistor-connections-lab { width: min(100% - 24px, 1480px); padding-top: 34px; }
+  .rcl-heading { grid-template-columns: 1fr; gap: 18px; }
+  .rcl-heading aside { min-width: 0; }
+  .rcl-prediction { grid-template-columns: 1fr; gap: 12px; }
+  .rcl-task-grid { grid-template-columns: repeat(2, 1fr); }
+  .rcl-builder { grid-template-columns: 1fr; }
+  .rcl-equipment-panel { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .rcl-equipment-panel > div:first-child,
+  .rcl-reset { grid-column: 1 / -1; }
+  .rcl-equipment-panel > button:not(.rcl-reset) { margin: 0; }
+  .rcl-measurement-grid { grid-template-columns: repeat(2, 1fr); }
+  .rcl-measurement-grid button { min-height: 64px; }
+  .rcl-evidence-grid,
+  .rcl-analysis { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+  .electricity-experiment-launcher { width: calc(100% - 24px); padding-top: 28px; }
+  .electricity-experiment-grid > button { grid-template-columns: 74px minmax(0, 1fr); }
+  .electricity-choice-visual { width: 74px; }
+  .electricity-experiment-grid > button > strong { grid-column: 2; }
+  .rcl-heading h1 { font-size: 38px; }
+  .rcl-task-grid,
+  .rcl-equipment-panel,
+  .rcl-measurement-grid,
+  .rcl-report-grid { grid-template-columns: 1fr; }
+  .rcl-equipment-panel > div:first-child,
+  .rcl-reset { grid-column: auto; }
+  .rcl-analysis-prompt,
+  .rcl-evidence-heading { align-items: flex-start; flex-direction: column; }
+  .rcl-analysis-prompt button { width: 100%; }
+  .rcl-task-selector,
+  .rcl-measurement-panel,
+  .rcl-report { padding: 18px; }
+}

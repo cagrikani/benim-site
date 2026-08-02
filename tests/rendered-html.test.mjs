@@ -122,6 +122,8 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /onNavigate\("modern-physics"\)/);
   assert.match(page, /module\.key === "electricity"/);
   assert.match(page, /onNavigate\("electricity"\)/);
+  assert.match(page, /2 deney açık/);
+  assert.match(page, /<b>11<\/b>\s*çalışan deney/);
   assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
 });
@@ -198,6 +200,52 @@ test("Ohm düzeneği gerçekçi cihazlar, bağlantı uçları ve veri alanları 
   assert.match(css, /\.ohm-evidence-grid\s*\{/);
   assert.match(css, /\.ohm-graph-canvas\s*\{/);
   assert.match(css, /\.ohm-report\s*\{/);
+});
+
+test("Elektrik alanı dirençlerin seri ve paralel bağlanması deneyini sunar", async () => {
+  const hub = await readFile(
+    new URL("app/ElectricityLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("app/ResistorConnectionsLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(hub, /ResistorConnectionsLab/);
+  assert.match(hub, /Dirençlerin bağlanması/);
+  assert.match(hub, /FİZ\.10\.3\.4/);
+  assert.match(page, /application\/x-resistor-connections-equipment/);
+  assert.match(page, /1-11 anahtarlı devre panosu/);
+  assert.match(page, /A-B-C-D direnç takımı/);
+  assert.match(page, /A: 100, B: 150, C: 220, D: 330/);
+  assert.match(page, /switches: \[1, 3, 7, 10\]/);
+  assert.match(page, /switches: \[1, 2, 4, 6, 10\]/);
+  assert.match(page, /switches: \[1, 4, 5, 7, 8, 10\]/);
+  assert.match(page, /Gerekli anahtarları kapat/);
+  assert.match(page, /onDragStart/);
+  assert.match(page, /onDrop/);
+  assert.match(page, /RESISTORS\.A \+ RESISTORS\.B/);
+  assert.match(page, /\(RESISTORS\.A \* RESISTORS\.C\) \/ \(RESISTORS\.A \+ RESISTORS\.C\)/);
+  assert.match(page, /Seri · paralel · birleşik/);
+  assert.match(page, /İdeal değerler/);
+  assert.match(page, /TYMM · KISA DENEY RAPORU/);
+  assert.doesNotMatch(page, /Kirchhoff|Math\.random|NOISE|hata|belirsiz/i);
+});
+
+test("direnç bağlantıları düzeneği gerçekçi pano ve ölçüm alanları içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.electricity-experiment-launcher\s*\{/);
+  assert.match(css, /\.resistor-connections-lab\s*\{/);
+  assert.match(css, /\.rcl-builder\s*\{/);
+  assert.match(css, /\.rcl-apparatus\s*\{/);
+  assert.match(css, /\.rcl-switch-board\s*\{/);
+  assert.match(css, /\.rcl-switch-grid\s*\{/);
+  assert.match(css, /\.rcl-schematic-resistor\s*\{/);
+  assert.match(css, /\.rcl-parallel-branches\s*\{/);
+  assert.match(css, /@keyframes rcl-current-flow/);
+  assert.match(css, /\.rcl-measurement-grid\s*\{/);
+  assert.match(css, /\.rcl-evidence-grid\s*\{/);
+  assert.match(css, /\.rcl-report\s*\{/);
 });
 
 test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla sunar", async () => {
@@ -790,6 +838,7 @@ test("tüm deney modülleri ideal ölçüm politikası uygular", async () => {
     "app/PrismLab.tsx",
     "app/PhotoelectricLab.tsx",
     "app/OhmLawLab.tsx",
+    "app/ResistorConnectionsLab.tsx",
   ];
   const pages = await Promise.all(
     labFiles.map((file) => readFile(new URL(file, projectRoot), "utf8")),

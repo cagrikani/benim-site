@@ -37,8 +37,8 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
   {
     key: "electricity",
     title: "Elektrik",
-    description: "Devreyi kur, akım-gerilim örüntüsünden Ohm yasasına ulaş.",
-    detail: "1 deney açık",
+    description: "Ohm yasasını ve dirençlerin seri-paralel bağlanmasını gerçek düzeneklerle incele.",
+    detail: "2 deney açık",
     visual: "portal-visual-electricity",
     available: true,
   },
@@ -229,7 +229,7 @@ function HomeView({
           </div>
           <div className="portal-hero-notes">
             <span>
-              <b>10</b>
+              <b>11</b>
               çalışan deney
             </span>
             <span>
