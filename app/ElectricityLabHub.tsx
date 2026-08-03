@@ -48,7 +48,7 @@ export default function ElectricityLabHub({ onBack }: { onBack: () => void }) {
             </button>
             <button type="button" className={activeExperiment === "resistor-connections" ? "active" : ""} onClick={() => setActiveExperiment("resistor-connections")}>
               <span className="electricity-choice-visual resistor-choice-visual" aria-hidden="true"><i /><i /><i /><i /></span>
-              <span><small>DENEY 02 · FİZ.10.3.4</small><b>Dirençlerin bağlanması</b><em>Seri, paralel ve birleşik devreleri karşılaştır</em></span>
+              <span><small>DENEY 02 · FİZ.10.3.4</small><b>Dirençlerin bağlanması</b><em>Seri ve paralel devreleri karşılaştır</em></span>
               <strong>{activeExperiment === "resistor-connections" ? "Açık" : "Deneyi aç"} →</strong>
             </button>
           </div>

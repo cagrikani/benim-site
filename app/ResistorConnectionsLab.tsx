@@ -2,36 +2,22 @@
 
 import { useMemo, useState } from "react";
 
-type ResistorLabel = "A" | "B" | "C" | "D";
-type NodeId = "P" | "N" | "AT" | "AB" | "BT" | "BB" | "CT" | "X" | "DT";
-type CircuitKind = "single-a" | "single-b" | "series-ab" | "parallel-ac" | "mixed-abcd";
-type CircuitType = "single" | "series" | "parallel" | "mixed";
+type ResistorLabel = "A" | "B";
+type ConnectionKind = "single-a" | "single-b" | "series" | "parallel" | "open";
+type TargetKind = "series" | "parallel";
 
-type CircuitTask = {
-  kind: CircuitKind;
+type CircuitTarget = {
+  kind: TargetKind;
   title: string;
   notation: string;
-  type: CircuitType;
   purpose: string;
   switches: number[];
-};
-
-type Trial = {
-  id: string;
-  task: CircuitKind;
-  type: CircuitType;
-  title: string;
-  switches: number[];
-  voltage: number;
-  equivalentResistance: number;
-  totalCurrentMilliamp: number;
-  currentNote: string;
+  instruction: string;
 };
 
 type CircuitAnalysis = {
   complete: boolean;
-  shortCircuit: boolean;
-  circuitType: CircuitType;
+  kind: ConnectionKind;
   topology: string;
   equivalentResistance: number;
   totalCurrentMilliamp: number;
@@ -40,84 +26,48 @@ type CircuitAnalysis = {
   activeSwitches: number[];
 };
 
-const RESISTORS: Record<ResistorLabel, number> = { A: 100, B: 150, C: 220, D: 330 };
-const NODES: NodeId[] = ["P", "N", "AT", "AB", "BT", "BB", "CT", "X", "DT"];
-
-const RESISTOR_EDGES: Array<{ label: ResistorLabel; from: NodeId; to: NodeId; resistance: number }> = [
-  { label: "A", from: "AT", to: "AB", resistance: RESISTORS.A },
-  { label: "B", from: "BT", to: "BB", resistance: RESISTORS.B },
-  { label: "C", from: "CT", to: "X", resistance: RESISTORS.C },
-  { label: "D", from: "DT", to: "X", resistance: RESISTORS.D },
-];
-
-const SWITCH_EDGES: Record<number, [NodeId, NodeId]> = {
-  1: ["P", "AT"],
-  2: ["AB", "N"],
-  3: ["AB", "BB"],
-  4: ["BT", "CT"],
-  5: ["BB", "CT"],
-  6: ["P", "BT"],
-  7: ["BT", "X"],
-  8: ["P", "DT"],
-  9: ["DT", "N"],
-  10: ["X", "N"],
-  11: ["BB", "X"],
+type Trial = CircuitAnalysis & {
+  id: string;
+  voltage: number;
+  switches: number[];
 };
 
-const SWITCH_INFO: Record<number, { short: string; description: string; orientation: "horizontal" | "vertical" }> = {
-  1: { short: "+ → A", description: "Pozitif ana hattı A direncinin üst ucuna bağlar.", orientation: "vertical" },
-  2: { short: "A → −", description: "A direncinin alt ucunu negatif ana hatta bağlar.", orientation: "vertical" },
-  3: { short: "A ↔ B", description: "A ve B dirençlerinin alt uçlarını birbirine bağlar.", orientation: "horizontal" },
-  4: { short: "B ↔ C üst", description: "B ve C dirençlerinin üst uçlarını birbirine bağlar.", orientation: "horizontal" },
-  5: { short: "B alt → C üst", description: "B'nin alt ucunu C'nin üst ucuna bağlayan çapraz yolu tamamlar.", orientation: "horizontal" },
-  6: { short: "+ → B", description: "Pozitif ana hattı B direncinin üst ucuna bağlar.", orientation: "vertical" },
-  7: { short: "B üst → dönüş", description: "B'nin üst ucunu C-D ortak dönüş hattına bağlar.", orientation: "vertical" },
-  8: { short: "+ → D", description: "Pozitif ana hattı D direncinin üst ucuna bağlar.", orientation: "vertical" },
-  9: { short: "D üst → −", description: "D'nin üst ucunu sağ dönüş yoluyla negatif ana hatta bağlar.", orientation: "vertical" },
-  10: { short: "C-D → −", description: "C-D ortak dönüş hattını negatif ana hatta bağlar.", orientation: "vertical" },
-  11: { short: "B alt → C-D", description: "B'nin alt ucunu C-D ortak dönüş hattına bağlar.", orientation: "horizontal" },
+const RESISTORS: Record<ResistorLabel, number> = { A: 100, B: 150 };
+
+const SWITCH_INFO: Record<number, { title: string; short: string; description: string }> = {
+  1: {
+    title: "Seri köprü",
+    short: "A → B",
+    description: "A direncinin çıkışını B direncinin girişine bağlar.",
+  },
+  2: {
+    title: "A kolu",
+    short: "A → −",
+    description: "A direncinin çıkışını kaynağın eksi ucuna bağlar.",
+  },
+  3: {
+    title: "B kolu",
+    short: "+ → B",
+    description: "Kaynağın artı ucunu B direncinin girişine bağlar.",
+  },
 };
 
-const TASKS: CircuitTask[] = [
+const TARGETS: CircuitTarget[] = [
   {
-    kind: "single-a",
-    title: "Yalnız A",
-    notation: "A",
-    type: "single",
-    purpose: "A direncini tek başına kaynak uçlarına bağla.",
-    switches: [1, 2],
-  },
-  {
-    kind: "single-b",
-    title: "Yalnız B",
-    notation: "B",
-    type: "single",
-    purpose: "Akımı yalnızca B direncinden geçir.",
-    switches: [6, 3, 2],
-  },
-  {
-    kind: "series-ab",
-    title: "A-B seri",
+    kind: "series",
+    title: "Seri bağlantı",
     notation: "A — B",
-    type: "series",
-    purpose: "Akımın A ve B üzerinden art arda geçtiği tek yolu oluştur.",
-    switches: [1, 3, 7, 10],
+    purpose: "Akımın önce A, ardından B direncinden geçtiği tek yolu oluştur.",
+    switches: [1],
+    instruction: "Yalnız S1'i kapat. S2 ve S3 açık kalsın.",
   },
   {
-    kind: "parallel-ac",
-    title: "A-C paralel",
-    notation: "A ∥ C",
-    type: "parallel",
-    purpose: "A ve C için aynı iki nokta arasında iki ayrı akım yolu oluştur.",
-    switches: [1, 2, 6, 4, 10],
-  },
-  {
-    kind: "mixed-abcd",
-    title: "Birleşik devre",
-    notation: "A — (B ∥ C) — D",
-    type: "mixed",
-    purpose: "A ve D seri kalırken B ile C arasında paralel kollar oluştur.",
-    switches: [1, 3, 5, 7, 9],
+    kind: "parallel",
+    title: "Paralel bağlantı",
+    notation: "A ∥ B",
+    purpose: "Akımın A ve B kollarına ayrıldığı iki yol oluştur.",
+    switches: [2, 3],
+    instruction: "S1'i aç; S2 ve S3'ü kapat.",
   },
 ];
 
@@ -125,228 +75,83 @@ function formatResistance(value: number) {
   return Number.isInteger(value) ? value.toFixed(0) : value.toFixed(2);
 }
 
-function solveLinearSystem(matrix: number[][], values: number[]) {
-  const size = values.length;
-  if (!size) return [];
-  const augmented = matrix.map((row, index) => [...row, values[index]]);
-
-  for (let column = 0; column < size; column += 1) {
-    let pivot = column;
-    for (let row = column + 1; row < size; row += 1) {
-      if (Math.abs(augmented[row][column]) > Math.abs(augmented[pivot][column])) pivot = row;
-    }
-    if (Math.abs(augmented[pivot][column]) < 1e-12) return null;
-    [augmented[column], augmented[pivot]] = [augmented[pivot], augmented[column]];
-
-    const divisor = augmented[column][column];
-    for (let item = column; item <= size; item += 1) augmented[column][item] /= divisor;
-
-    for (let row = 0; row < size; row += 1) {
-      if (row === column) continue;
-      const multiplier = augmented[row][column];
-      for (let item = column; item <= size; item += 1) {
-        augmented[row][item] -= multiplier * augmented[column][item];
-      }
-    }
-  }
-
-  return augmented.map((row) => row[size]);
-}
-
 function analyzeCircuit(closedSwitches: number[], voltage: number): CircuitAnalysis {
-  const parent = new Map<NodeId, NodeId>(NODES.map((node) => [node, node]));
-  const find = (node: NodeId): NodeId => {
-    const current = parent.get(node) ?? node;
-    if (current === node) return node;
-    const root = find(current);
-    parent.set(node, root);
-    return root;
+  const closed = new Set(closedSwitches);
+  const emptyCurrents: Record<ResistorLabel, number> = { A: 0, B: 0 };
+  const open: CircuitAnalysis = {
+    complete: false,
+    kind: "open",
+    topology: "Açık devre",
+    equivalentResistance: 0,
+    totalCurrentMilliamp: 0,
+    currentsMilliamp: emptyCurrents,
+    activeResistors: [],
+    activeSwitches: [],
   };
-  const union = (first: NodeId, second: NodeId) => {
-    const firstRoot = find(first);
-    const secondRoot = find(second);
-    if (firstRoot !== secondRoot) parent.set(secondRoot, firstRoot);
-  };
 
-  closedSwitches.forEach((number) => {
-    const edge = SWITCH_EDGES[number];
-    if (edge) union(edge[0], edge[1]);
-  });
-
-  const positiveRoot = find("P");
-  const negativeRoot = find("N");
-  const emptyCurrents: Record<ResistorLabel, number> = { A: 0, B: 0, C: 0, D: 0 };
-
-  if (positiveRoot === negativeRoot) {
+  if (closed.has(1)) {
+    const equivalentResistance = RESISTORS.A + RESISTORS.B;
+    const current = (voltage / equivalentResistance) * 1000;
     return {
-      complete: false,
-      shortCircuit: true,
-      circuitType: "mixed",
-      topology: "Kısa devre: kaynak uçları doğrudan birleşti",
-      equivalentResistance: 0,
-      totalCurrentMilliamp: 0,
-      currentsMilliamp: emptyCurrents,
-      activeResistors: [],
-      activeSwitches: [],
+      complete: true,
+      kind: "series",
+      topology: "Seri bağlantı: A — B",
+      equivalentResistance,
+      totalCurrentMilliamp: current,
+      currentsMilliamp: { A: current, B: current },
+      activeResistors: ["A", "B"],
+      activeSwitches: [1],
     };
   }
 
-  const reducedEdges = RESISTOR_EDGES.map((edge) => ({
-    ...edge,
-    fromRoot: find(edge.from),
-    toRoot: find(edge.to),
-  })).filter((edge) => edge.fromRoot !== edge.toRoot);
-
-  const adjacency = new Map<NodeId, Set<NodeId>>();
-  reducedEdges.forEach((edge) => {
-    if (!adjacency.has(edge.fromRoot)) adjacency.set(edge.fromRoot, new Set());
-    if (!adjacency.has(edge.toRoot)) adjacency.set(edge.toRoot, new Set());
-    adjacency.get(edge.fromRoot)?.add(edge.toRoot);
-    adjacency.get(edge.toRoot)?.add(edge.fromRoot);
-  });
-
-  const reachable = new Set<NodeId>([positiveRoot]);
-  const queue: NodeId[] = [positiveRoot];
-  while (queue.length) {
-    const current = queue.shift() as NodeId;
-    adjacency.get(current)?.forEach((neighbor) => {
-      if (!reachable.has(neighbor)) {
-        reachable.add(neighbor);
-        queue.push(neighbor);
-      }
-    });
-  }
-
-  if (!reachable.has(negativeRoot)) {
+  if (closed.has(2) && closed.has(3)) {
+    const equivalentResistance = (RESISTORS.A * RESISTORS.B) / (RESISTORS.A + RESISTORS.B);
+    const currentA = (voltage / RESISTORS.A) * 1000;
+    const currentB = (voltage / RESISTORS.B) * 1000;
     return {
-      complete: false,
-      shortCircuit: false,
-      circuitType: "mixed",
-      topology: "Açık devre: kaynaktan dönüş hattına kesintisiz yol yok",
-      equivalentResistance: 0,
-      totalCurrentMilliamp: 0,
-      currentsMilliamp: emptyCurrents,
-      activeResistors: [],
-      activeSwitches: [],
+      complete: true,
+      kind: "parallel",
+      topology: "Paralel bağlantı: A ∥ B",
+      equivalentResistance,
+      totalCurrentMilliamp: currentA + currentB,
+      currentsMilliamp: { A: currentA, B: currentB },
+      activeResistors: ["A", "B"],
+      activeSwitches: [2, 3],
     };
   }
 
-  const unknownNodes = [...reachable].filter((node) => node !== positiveRoot && node !== negativeRoot);
-  const nodeIndex = new Map<NodeId, number>(unknownNodes.map((node, index) => [node, index]));
-  const matrix = Array.from({ length: unknownNodes.length }, () => Array(unknownNodes.length).fill(0));
-  const constants = Array(unknownNodes.length).fill(0);
-  const fixedVoltage = (node: NodeId) => node === positiveRoot ? voltage : 0;
-
-  reducedEdges.forEach((edge) => {
-    if (!reachable.has(edge.fromRoot) || !reachable.has(edge.toRoot)) return;
-    const conductance = 1 / edge.resistance;
-    const firstIndex = nodeIndex.get(edge.fromRoot);
-    const secondIndex = nodeIndex.get(edge.toRoot);
-
-    if (firstIndex !== undefined) {
-      matrix[firstIndex][firstIndex] += conductance;
-      if (secondIndex !== undefined) matrix[firstIndex][secondIndex] -= conductance;
-      else constants[firstIndex] += conductance * fixedVoltage(edge.toRoot);
-    }
-    if (secondIndex !== undefined) {
-      matrix[secondIndex][secondIndex] += conductance;
-      if (firstIndex !== undefined) matrix[secondIndex][firstIndex] -= conductance;
-      else constants[secondIndex] += conductance * fixedVoltage(edge.fromRoot);
-    }
-  });
-
-  const solved = solveLinearSystem(matrix, constants);
-  if (solved === null) {
+  if (closed.has(2)) {
+    const current = (voltage / RESISTORS.A) * 1000;
     return {
-      complete: false,
-      shortCircuit: false,
-      circuitType: "mixed",
-      topology: "Açık devre: bağlantı yolu tamamlanmadı",
-      equivalentResistance: 0,
-      totalCurrentMilliamp: 0,
-      currentsMilliamp: emptyCurrents,
-      activeResistors: [],
-      activeSwitches: [],
+      complete: true,
+      kind: "single-a",
+      topology: "Yalnız A direnci",
+      equivalentResistance: RESISTORS.A,
+      totalCurrentMilliamp: current,
+      currentsMilliamp: { A: current, B: 0 },
+      activeResistors: ["A"],
+      activeSwitches: [2],
     };
   }
 
-  const potentials = new Map<NodeId, number>([[positiveRoot, voltage], [negativeRoot, 0]]);
-  unknownNodes.forEach((node, index) => potentials.set(node, solved[index]));
-  const currentsMilliamp: Record<ResistorLabel, number> = { A: 0, B: 0, C: 0, D: 0 };
-
-  reducedEdges.forEach((edge) => {
-    const firstVoltage = potentials.get(edge.fromRoot);
-    const secondVoltage = potentials.get(edge.toRoot);
-    if (firstVoltage === undefined || secondVoltage === undefined) return;
-    currentsMilliamp[edge.label] = Math.abs((firstVoltage - secondVoltage) / edge.resistance) * 1000;
-  });
-
-  let totalCurrentAmp = 0;
-  reducedEdges.forEach((edge) => {
-    if (edge.fromRoot === positiveRoot) {
-      totalCurrentAmp += (voltage - (potentials.get(edge.toRoot) ?? voltage)) / edge.resistance;
-    } else if (edge.toRoot === positiveRoot) {
-      totalCurrentAmp += (voltage - (potentials.get(edge.fromRoot) ?? voltage)) / edge.resistance;
-    }
-  });
-  totalCurrentAmp = Math.abs(totalCurrentAmp);
-
-  const activeResistors = (Object.keys(currentsMilliamp) as ResistorLabel[])
-    .filter((label) => currentsMilliamp[label] > 1e-6);
-  const currentRoots = new Set<NodeId>();
-  reducedEdges.forEach((edge) => {
-    if (currentsMilliamp[edge.label] > 1e-6) {
-      currentRoots.add(edge.fromRoot);
-      currentRoots.add(edge.toRoot);
-    }
-  });
-  const activeSwitches = closedSwitches.filter((number) => {
-    const edge = SWITCH_EDGES[number];
-    return edge ? currentRoots.has(find(edge[0])) || currentRoots.has(find(edge[1])) : false;
-  });
-
-  const parallelGroups = new Map<string, ResistorLabel[]>();
-  reducedEdges.forEach((edge) => {
-    if (currentsMilliamp[edge.label] <= 1e-6) return;
-    const key = [edge.fromRoot, edge.toRoot].sort().join("|");
-    parallelGroups.set(key, [...(parallelGroups.get(key) ?? []), edge.label]);
-  });
-  const parallelGroup = [...parallelGroups.values()].find((group) => group.length > 1) ?? null;
-  const activeCurrents = activeResistors.map((label) => currentsMilliamp[label]);
-  const sameCurrent = activeCurrents.length > 1
-    && Math.max(...activeCurrents) - Math.min(...activeCurrents) < 1e-5;
-
-  let circuitType: CircuitType = "mixed";
-  let topology = "Birleşik bağlantı";
-  if (activeResistors.length === 1) {
-    circuitType = "single";
-    topology = `Tek direnç: ${activeResistors[0]}`;
-  } else if (parallelGroup && parallelGroup.length === activeResistors.length) {
-    circuitType = "parallel";
-    topology = `Paralel bağlantı: ${parallelGroup.join(" ∥ ")}`;
-  } else if (parallelGroup) {
-    circuitType = "mixed";
-    const seriesLabels = activeResistors.filter((label) => !parallelGroup.includes(label));
-    topology = `Birleşik bağlantı: ${seriesLabels[0] ?? ""} — (${parallelGroup.join(" ∥ ")})${seriesLabels[1] ? ` — ${seriesLabels[1]}` : ""}`;
-  } else if (sameCurrent) {
-    circuitType = "series";
-    topology = `Seri bağlantı: ${activeResistors.join(" — ")}`;
+  if (closed.has(3)) {
+    const current = (voltage / RESISTORS.B) * 1000;
+    return {
+      complete: true,
+      kind: "single-b",
+      topology: "Yalnız B direnci",
+      equivalentResistance: RESISTORS.B,
+      totalCurrentMilliamp: current,
+      currentsMilliamp: { A: 0, B: current },
+      activeResistors: ["B"],
+      activeSwitches: [3],
+    };
   }
 
-  return {
-    complete: totalCurrentAmp > 1e-12,
-    shortCircuit: false,
-    circuitType,
-    topology,
-    equivalentResistance: totalCurrentAmp > 1e-12 ? voltage / totalCurrentAmp : 0,
-    totalCurrentMilliamp: totalCurrentAmp * 1000,
-    currentsMilliamp,
-    activeResistors,
-    activeSwitches,
-  };
+  return open;
 }
 
-function BoardResistor({
+function BenchResistor({
   label,
   powered,
   currentMilliamp,
@@ -356,10 +161,10 @@ function BoardResistor({
   currentMilliamp: number;
 }) {
   return (
-    <div className={`rc3-board-resistor rc3-resistor-${label.toLowerCase()} ${powered ? "powered" : ""}`}>
-      <i className="rc3-resistor-lead top" />
-      <span className="rc3-resistor-body"><i /><i /><i /><i /></span>
-      <i className="rc3-resistor-lead bottom" />
+    <div className={`rc4-resistor rc4-resistor-${label.toLowerCase()} ${powered ? "powered" : ""}`}>
+      <i className="rc4-resistor-lead left" />
+      <span className="rc4-resistor-body"><i /><i /><i /><i /></span>
+      <i className="rc4-resistor-lead right" />
       <b>{label}</b>
       <small>{RESISTORS[label]} Ω</small>
       <em>{powered ? `${currentMilliamp.toFixed(1)} mA` : ""}</em>
@@ -367,7 +172,7 @@ function BoardResistor({
   );
 }
 
-function BoardSwitch({
+function CircuitSwitch({
   number,
   closed,
   highlighted,
@@ -384,271 +189,237 @@ function BoardSwitch({
   return (
     <button
       type="button"
-      className={`rc3-board-switch rc3-switch-${number} ${info.orientation} ${closed ? "closed" : "open"} ${highlighted ? "highlighted" : ""} ${energized ? "energized" : ""}`}
+      className={`rc4-switch rc4-switch-${number} ${closed ? "closed" : "open"} ${highlighted ? "highlighted" : ""} ${energized ? "energized" : ""}`}
       onClick={() => onToggle(number)}
       aria-pressed={closed}
-      aria-label={`S${number}: ${info.description} Şu anda ${closed ? "kapalı" : "açık"}.`}
+      aria-label={`S${number} ${info.title}: ${info.description} Şu anda ${closed ? "kapalı" : "açık"}.`}
       data-testid={`resistor-switch-${number}`}
     >
-      <span className="rc3-switch-tag">S{number}</span>
-      <span className="rc3-switch-contact" aria-hidden="true"><i /><i /><b /></span>
-      <small>{info.short}</small>
+      <span>S{number}</span>
+      <i className="rc4-switch-mechanism"><b /><b /><em /></i>
+      <strong>{info.title}</strong>
+      <small>{closed ? "KAPALI" : "AÇIK"}</small>
     </button>
   );
 }
 
-function FixedCircuitBoard({
+function SimpleCircuit({
   closedSwitches,
-  highlightedSwitch,
+  targetSwitches,
   powerOn,
   analysis,
   onToggle,
 }: {
   closedSwitches: number[];
-  highlightedSwitch: number | null;
+  targetSwitches: number[];
   powerOn: boolean;
   analysis: CircuitAnalysis;
   onToggle: (number: number) => void;
 }) {
+  const seriesActive = powerOn && analysis.kind === "series";
+  const parallelActive = powerOn && analysis.kind === "parallel";
+
   return (
-    <div className={`rc3-fixed-board ${powerOn ? "powered" : ""}`}>
-      <div className="rc3-board-title">
-        <span><b>SABİT DİRENÇ BAĞLANTI PANOSU</b><small>A, B, C ve D her zaman aynı yerde</small></span>
-        <strong>{analysis.complete ? analysis.topology : "Anahtarlarla kesintisiz bir yol oluştur"}</strong>
+    <div className={`rc4-circuit ${powerOn ? "powered" : ""}`} data-testid="simple-resistor-circuit">
+      <div className="rc4-circuit-caption">
+        <span><b>İKİ DİRENÇLİ DEVRE</b><small>Parçaların yeri değişmez</small></span>
+        <strong>{analysis.complete ? analysis.topology : "Bir akım yolu oluştur"}</strong>
       </div>
-      <div className="rc3-network" data-testid="fixed-resistor-network">
-        <span className="rc3-main-rail positive"><b>+ POZİTİF ANA HAT</b></span>
-        <span className="rc3-main-rail negative"><b>− NEGATİF ANA HAT</b></span>
 
-        <i className="rc3-wire wire-a" /><i className="rc3-wire wire-b" />
-        <i className="rc3-wire wire-ab" /><i className="rc3-wire wire-b-upper" />
-        <i className="rc3-wire wire-bc-upper" /><i className="rc3-wire wire-bc-drop" />
-        <i className="rc3-wire wire-bc-cross" /><i className="rc3-wire wire-bc-cross-rise" />
-        <i className="rc3-wire wire-b-return" /><i className="rc3-wire wire-bb-drop" />
-        <i className="rc3-wire wire-bb-return" /><i className="rc3-wire wire-common-return" />
-        <i className="rc3-wire wire-c" /><i className="rc3-wire wire-d" />
-        <i className="rc3-wire wire-d-source" /><i className="rc3-wire wire-d-right" />
-        <i className="rc3-wire wire-d-right-drop" /><i className="rc3-wire wire-return-negative" />
+      <div className="rc4-circuit-field">
+        <span className="rc4-terminal positive"><b>+</b><small>KAYNAK</small></span>
+        <span className="rc4-terminal negative"><b>−</b><small>DÖNÜŞ</small></span>
 
-        <span className="rc3-node node-btop">B üst düğümü</span>
-        <span className="rc3-node node-bbottom">A-B alt düğümü</span>
-        <span className="rc3-node node-return">C-D ortak dönüş hattı</span>
+        <i className={`rc4-wire wire-source-a ${powerOn ? "active" : ""}`} />
+        <i className={`rc4-wire wire-a-split ${powerOn ? "active" : ""}`} />
+        <i className={`rc4-wire wire-series ${seriesActive ? "active" : ""}`} />
+        <i className={`rc4-wire wire-series-b ${seriesActive ? "active" : ""}`} />
+        <i className={`rc4-wire wire-a-return ${parallelActive || (powerOn && analysis.kind === "single-a") ? "active" : ""}`} />
+        <i className={`rc4-wire wire-b-feed ${parallelActive || (powerOn && analysis.kind === "single-b") ? "active" : ""}`} />
+        <i className={`rc4-wire wire-b-left ${powerOn && analysis.activeResistors.includes("B") ? "active" : ""}`} />
+        <i className={`rc4-wire wire-b-return ${powerOn && analysis.activeResistors.includes("B") ? "active" : ""}`} />
+        <i className={`rc4-wire wire-negative ${powerOn ? "active" : ""}`} />
 
-        <BoardResistor label="A" powered={powerOn && analysis.activeResistors.includes("A")} currentMilliamp={analysis.currentsMilliamp.A} />
-        <BoardResistor label="B" powered={powerOn && analysis.activeResistors.includes("B")} currentMilliamp={analysis.currentsMilliamp.B} />
-        <BoardResistor label="C" powered={powerOn && analysis.activeResistors.includes("C")} currentMilliamp={analysis.currentsMilliamp.C} />
-        <BoardResistor label="D" powered={powerOn && analysis.activeResistors.includes("D")} currentMilliamp={analysis.currentsMilliamp.D} />
+        <span className="rc4-junction junction-positive" />
+        <span className="rc4-junction junction-a" />
+        <span className="rc4-junction junction-b" />
+        <span className="rc4-junction junction-negative" />
 
-        {Array.from({ length: 11 }, (_, index) => index + 1).map((number) => (
-          <BoardSwitch
+        <BenchResistor label="A" powered={powerOn && analysis.activeResistors.includes("A")} currentMilliamp={analysis.currentsMilliamp.A} />
+        <BenchResistor label="B" powered={powerOn && analysis.activeResistors.includes("B")} currentMilliamp={analysis.currentsMilliamp.B} />
+
+        {[1, 2, 3].map((number) => (
+          <CircuitSwitch
             number={number}
             closed={closedSwitches.includes(number)}
-            highlighted={highlightedSwitch === number}
+            highlighted={targetSwitches.includes(number) && !closedSwitches.includes(number)}
             energized={powerOn && analysis.activeSwitches.includes(number)}
             onToggle={onToggle}
             key={number}
           />
         ))}
+
+        <span className="rc4-route-label series">SERİ YOL</span>
+        <span className="rc4-route-label parallel">PARALEL KOLLAR</span>
       </div>
-      <div className="rc3-board-legend">
-        <span><i className="open" />Açık anahtar</span>
+
+      <div className="rc4-legend">
+        <span><i />Açık anahtar</span>
         <span><i className="closed" />Kapalı anahtar</span>
-        <span><i className="flow" />Akım taşıyan direnç ve bağlantı</span>
-        <em>Pano hiçbir görevde biçim değiştirmez.</em>
+        <span><i className="flow" />Akım geçen yol</span>
       </div>
     </div>
   );
 }
 
 export default function ResistorConnectionsLab() {
-  const [selectedTask, setSelectedTask] = useState<CircuitKind>("series-ab");
+  const [selectedTarget, setSelectedTarget] = useState<TargetKind>("series");
   const [closedSwitches, setClosedSwitches] = useState<number[]>([]);
-  const [highlightedSwitch, setHighlightedSwitch] = useState<number | null>(1);
-  const [selectedSwitch, setSelectedSwitch] = useState<number>(1);
   const [voltage, setVoltage] = useState(9);
   const [powerOn, setPowerOn] = useState(false);
   const [trials, setTrials] = useState<Trial[]>([]);
   const [prediction, setPrediction] = useState("");
   const [showAnalysis, setShowAnalysis] = useState(false);
-  const [notice, setNotice] = useState("S1 seçili: Pozitif ana hattı A direncinin üst ucuna bağlar.");
+  const [notice, setNotice] = useState("Seri bağlantı için yalnız S1 anahtarını kapat.");
 
-  const task = TASKS.find((item) => item.kind === selectedTask) ?? TASKS[0];
-  const analysis = useMemo(
-    () => analyzeCircuit(closedSwitches, voltage),
-    [closedSwitches, voltage],
-  );
-  const targetClosedCount = task.switches.filter((number) => closedSwitches.includes(number)).length;
-  const extraSwitches = closedSwitches.filter((number) => !task.switches.includes(number));
-  const goalComplete = targetClosedCount === task.switches.length && extraSwitches.length === 0;
-  const nextTargetSwitch = task.switches.find((number) => !closedSwitches.includes(number)) ?? null;
+  const target = TARGETS.find((item) => item.kind === selectedTarget) ?? TARGETS[0];
+  const analysis = useMemo(() => analyzeCircuit(closedSwitches, voltage), [closedSwitches, voltage]);
+  const goalComplete = target.switches.length === closedSwitches.length
+    && target.switches.every((number) => closedSwitches.includes(number));
   const displayTotalCurrent = powerOn && analysis.complete ? analysis.totalCurrentMilliamp : 0;
-  const displayEquivalent = powerOn && analysis.complete ? analysis.equivalentResistance : 0;
-  const analysisReady =
-    trials.some((trial) => trial.type === "series")
-    && trials.some((trial) => trial.type === "parallel")
-    && trials.some((trial) => trial.type === "mixed");
+  const analysisReady = trials.some((trial) => trial.kind === "series")
+    && trials.some((trial) => trial.kind === "parallel");
 
-  const latestTrials = useMemo(
-    () => TASKS.map((item) => ({
-      task: item,
-      trial: [...trials].reverse().find((trial) => trial.task === item.kind) ?? null,
+  const latestTargetTrials = useMemo(
+    () => TARGETS.map((item) => ({
+      target: item,
+      trial: [...trials].reverse().find((trial) => trial.kind === item.kind) ?? null,
     })),
     [trials],
   );
 
-  const selectTask = (kind: CircuitKind) => {
-    const selected = TASKS.find((item) => item.kind === kind) ?? TASKS[0];
-    setSelectedTask(kind);
-    const next = selected.switches.find((number) => !closedSwitches.includes(number)) ?? selected.switches[0];
-    setHighlightedSwitch(next);
-    setSelectedSwitch(next);
+  const selectTarget = (kind: TargetKind) => {
+    const nextTarget = TARGETS.find((item) => item.kind === kind) ?? TARGETS[0];
+    setSelectedTarget(kind);
     setShowAnalysis(false);
-    setNotice(`Yeni hedef seçildi; pano ve anahtar konumları değişmedi. S${next}: ${SWITCH_INFO[next].description}`);
+    setNotice(`${nextTarget.title} seçildi. ${nextTarget.instruction}`);
   };
 
   const toggleSwitch = (number: number) => {
-    setSelectedSwitch(number);
     if (powerOn) {
-      setNotice("Akım varken anahtar değiştirilmez. Önce güç kaynağını kapat.");
+      setNotice("Anahtar değiştirmek için önce güç kaynağını kapat.");
       return;
     }
-    const closing = !closedSwitches.includes(number);
-    const next = closing
-      ? [...closedSwitches, number]
-      : closedSwitches.filter((item) => item !== number);
-    setClosedSwitches(next);
-    const nextMissing = task.switches.find((item) => !next.includes(item));
-    setHighlightedSwitch(nextMissing ?? null);
-    setNotice(`S${number} ${closing ? "kapandı" : "açıldı"}: ${SWITCH_INFO[number].description}`);
-  };
 
-  const showNextTarget = () => {
-    if (nextTargetSwitch === null) {
-      setNotice(extraSwitches.length
-        ? `Hedef dışındaki anahtarları aç: ${extraSwitches.map((number) => `S${number}`).join(", ")}.`
-        : "Hedef anahtarları tamam. Devrenin fiziksel sonucunu üst göstergeden kontrol et.");
-      return;
+    const closing = !closedSwitches.includes(number);
+    let next: number[];
+    if (!closing) {
+      next = closedSwitches.filter((item) => item !== number);
+    } else if (number === 1) {
+      next = [1];
+    } else {
+      next = [...closedSwitches.filter((item) => item !== 1), number].filter(
+        (item, index, items) => items.indexOf(item) === index,
+      );
     }
-    setHighlightedSwitch(nextTargetSwitch);
-    setSelectedSwitch(nextTargetSwitch);
-    setNotice(`Panoda S${nextTargetSwitch} vurgulandı: ${SWITCH_INFO[nextTargetSwitch].description}`);
+    setClosedSwitches(next.sort((first, second) => first - second));
+    setNotice(`S${number} ${closing ? "kapandı" : "açıldı"}. ${SWITCH_INFO[number].description}`);
   };
 
   const resetSwitches = () => {
     if (powerOn) return;
     setClosedSwitches([]);
-    setHighlightedSwitch(task.switches[0]);
-    setSelectedSwitch(task.switches[0]);
-    setNotice("Bütün anahtarlar açıldı; A-B-C-D dirençleri aynı yerlerinde kaldı.");
+    setNotice("Üç anahtar da açıldı. Devre parçaları aynı yerlerinde kaldı.");
   };
 
   const togglePower = () => {
-    if (analysis.shortCircuit) {
-      setNotice("Kısa devre oluştu. Güç vermeden önce kaynak uçlarını doğrudan birleştiren anahtarlardan birini aç.");
-      return;
-    }
     if (!analysis.complete) {
-      setHighlightedSwitch(nextTargetSwitch);
-      setNotice("Devre açık: pozitif ana hattan negatif ana hatta direnç içeren kesintisiz bir yol oluştur.");
+      setNotice(`Devre açık. ${target.instruction}`);
       return;
     }
     setPowerOn((current) => !current);
     setNotice(powerOn
-      ? "Güç kaynağı kapatıldı; anahtarlar yeniden düzenlenebilir."
-      : `${analysis.topology} çalışıyor. Akım taşıyan dirençler turuncu-yeşil renkte.`);
+      ? "Güç kaynağı kapatıldı; anahtarlar yeniden ayarlanabilir."
+      : `${analysis.topology} çalışıyor. Akım geçen yol yeşil renkte gösteriliyor.`);
   };
 
   const recordTrial = () => {
-    if (!powerOn || !analysis.complete) {
-      setNotice("Ölçüm kaydı için geçerli devreyi çalıştır.");
-      return;
-    }
-    const switches = [...closedSwitches].sort((a, b) => a - b);
-    const currentNote = analysis.activeResistors
-      .map((label) => `${label}: ${analysis.currentsMilliamp[label].toFixed(1)} mA`)
-      .join(" · ");
+    if (!powerOn || !analysis.complete) return;
+    const switches = [...closedSwitches].sort((first, second) => first - second);
     const trial: Trial = {
-      id: `${switches.join("-")}-${voltage}`,
-      task: task.kind,
-      type: analysis.circuitType,
-      title: analysis.topology,
-      switches,
+      ...analysis,
+      id: `${analysis.kind}-${voltage}`,
       voltage,
-      equivalentResistance: analysis.equivalentResistance,
-      totalCurrentMilliamp: analysis.totalCurrentMilliamp,
-      currentNote,
+      switches,
     };
     setTrials((current) => [...current.filter((item) => item.id !== trial.id), trial]);
-    setNotice(`${analysis.topology} kaydedildi: ${formatResistance(analysis.equivalentResistance)} Ω, ${analysis.totalCurrentMilliamp.toFixed(1)} mA.`);
+    setNotice(`${analysis.topology} ölçümü kaydedildi.`);
   };
 
   return (
-    <section className="resistor-connections-lab rc2-lab rc3-lab" id="direnc-baglantilari-deneyi">
-      <header className="rc2-hero rc3-hero">
+    <section className="resistor-connections-lab rc2-lab rc4-lab" id="direnc-baglantilari-deneyi">
+      <header className="rc2-hero rc4-hero">
         <div>
           <span>ELEKTRİK · DENEY 2 · FİZ.10.3.4</span>
-          <h1>Tek pano, değişen bağlantılar.</h1>
+          <h1>İki direnç, üç anahtar, tek devre.</h1>
           <p>
-            A, B, C ve D dirençleri ile S1-S11 anahtarları sürekli aynı devre üzerinde kalır.
-            Yalnız anahtarları açıp kapat; seri, paralel ve birleşik yolları pano üzerinde oluştur.
+            A ve B dirençleri aynı yerde kalır. S1 ile seri yolu, S2 ve S3 ile paralel
+            kolları oluştur; devrenin tamamını tek bakışta izle.
           </p>
         </div>
-        <aside><i>4R</i><span><b>SABİT DEVRE TOPOLOJİSİ</b><small>4 direnç · 11 anahtar · tek fiziksel pano</small></span></aside>
+        <aside><i>2R</i><span><b>SADE DENEY DÜZENEĞİ</b><small>2 direnç · 3 anahtar · ideal ölçüm</small></span></aside>
       </header>
 
       <div className="rc2-prediction">
-        <span><small>DENEY ÖNCESİ TAHMİN</small><b>Aynı panoda hangi anahtarlar paralel iki akım yolu oluşturabilir?</b></span>
+        <span><small>DENEY ÖNCESİ TAHMİN</small><b>Seri ve paralel bağlandığında toplam direnç nasıl değişir?</b></span>
         <input value={prediction} onChange={(event) => setPrediction(event.target.value)} placeholder="Tahminini buraya yaz…" />
       </div>
 
-      <section className="rc2-task-picker rc3-task-picker">
-        <div className="rc2-section-heading"><span>1 · HEDEFİ SEÇ</span><h2>Hedef değişir; devre şeması ve parçaların yeri değişmez.</h2></div>
-        <div className="rc2-task-tabs">
-          {TASKS.map((item, index) => (
-            <button type="button" className={task.kind === item.kind ? "active" : ""} onClick={() => selectTask(item.kind)} aria-pressed={task.kind === item.kind} key={item.kind}>
-              <small>{String(index + 1).padStart(2, "0")}</small><b>{item.title}</b><strong>{item.notation}</strong>
+      <section className="rc2-task-picker rc4-task-picker">
+        <div className="rc2-section-heading"><span>1 · BAĞLANTIYI SEÇ</span><h2>Aynı devrede yalnız gerekli anahtarları kullan.</h2></div>
+        <div className="rc4-target-tabs">
+          {TARGETS.map((item, index) => (
+            <button type="button" className={target.kind === item.kind ? "active" : ""} onClick={() => selectTarget(item.kind)} aria-pressed={target.kind === item.kind} key={item.kind}>
+              <small>0{index + 1}</small><span><b>{item.title}</b><em>{item.purpose}</em></span><strong>{item.notation}</strong>
             </button>
           ))}
         </div>
       </section>
 
-      <div className="rc2-workspace rc3-workspace">
-        <aside className="rc2-guide-card rc3-guide-card">
+      <div className="rc2-workspace rc4-workspace">
+        <aside className="rc2-guide-card rc4-guide-card">
           <span className="rc2-eyebrow">HEDEF BAĞLANTI</span>
-          <h2>{task.title}</h2>
-          <strong>{task.notation}</strong>
-          <p>{task.purpose}</p>
-          <div className="rc3-progress"><i><b style={{ width: `${(targetClosedCount / task.switches.length) * 100}%` }} /></i><span>{targetClosedCount}/{task.switches.length} hedef anahtarı kapalı</span></div>
-          <div className="rc2-connection-list">
-            {task.switches.map((number, index) => {
-              const closed = closedSwitches.includes(number);
-              return (
-                <button type="button" className={`${closed ? "done" : ""} ${highlightedSwitch === number ? "next" : ""}`} onClick={() => { setHighlightedSwitch(number); setSelectedSwitch(number); }} key={number}>
-                  <i>{closed ? "✓" : index + 1}</i>
-                  <span><b>S{number} · {SWITCH_INFO[number].short}</b><small>{SWITCH_INFO[number].description}</small></span>
-                </button>
-              );
-            })}
+          <h2>{target.title}</h2>
+          <strong>{target.notation}</strong>
+          <p>{target.instruction}</p>
+          <div className={`rc4-goal-state ${goalComplete ? "complete" : ""}`}>
+            <i>{goalComplete ? "✓" : target.switches.length}</i>
+            <span><b>{goalComplete ? "Bağlantı hazır" : "Gerekli anahtar"}</b><small>{target.switches.map((number) => `S${number}`).join(" ve ")}</small></span>
           </div>
-          <button type="button" className="rc2-find-next" onClick={showNextTarget}>{goalComplete ? "Hedef bağlantı tamam" : "Sıradaki hedefi panoda göster"}</button>
-          <button type="button" className="rc2-reset-links" onClick={resetSwitches} disabled={powerOn}>Bütün anahtarları aç</button>
-          <div className="rc3-selected-switch"><span>SEÇİLİ ANAHTAR · S{selectedSwitch}</span><b>{SWITCH_INFO[selectedSwitch].short}</b><p>{SWITCH_INFO[selectedSwitch].description}</p></div>
+          <div className="rc4-switch-key">
+            {[1, 2, 3].map((number) => (
+              <span className={closedSwitches.includes(number) ? "closed" : ""} key={number}>
+                <b>S{number}</b><small>{SWITCH_INFO[number].title}</small><em>{closedSwitches.includes(number) ? "Kapalı" : "Açık"}</em>
+              </span>
+            ))}
+          </div>
+          <button type="button" className="rc2-reset-links" onClick={resetSwitches} disabled={powerOn}>Anahtarları aç</button>
         </aside>
 
-        <section className="rc2-stage rc3-stage">
+        <section className="rc2-stage rc4-stage">
           <div className="rc2-stage-topbar">
-            <span><small>TEK VE SABİT DENEY PANOSU</small><b>{analysis.topology}</b></span>
-            <strong className={analysis.complete ? "ready" : analysis.shortCircuit ? "danger" : ""}>{analysis.shortCircuit ? "Kısa devre" : analysis.complete ? "Geçerli devre" : "Açık devre"}</strong>
+            <span><small>MASA ÜSTÜ DENEY DEVRESİ</small><b>{analysis.topology}</b></span>
+            <strong className={analysis.complete ? "ready" : ""}>{analysis.complete ? "Devre tamam" : "Açık devre"}</strong>
           </div>
-          <div className={`rc2-instruction ${analysis.shortCircuit ? "danger" : ""}`} role="status">
-            <i>{analysis.shortCircuit ? "!" : analysis.complete ? "✓" : "i"}</i>
-            <span><small>{analysis.shortCircuit ? "GÜÇ VERİLEMEZ" : analysis.complete ? "DEVRE TANIMLANDI" : `ANAHTAR ${selectedSwitch}`}</small><b>{notice}</b></span>
+          <div className="rc2-instruction" role="status">
+            <i>{analysis.complete ? "✓" : "i"}</i>
+            <span><small>{analysis.complete ? "BAĞLANTI TANINDI" : "YÖNERGE"}</small><b>{notice}</b></span>
           </div>
 
-          <div className="rc2-workbench rc3-workbench">
+          <div className="rc2-workbench rc4-workbench">
             <div className="rc2-wall"><i /><i /></div><div className="rc2-table"><i /><i /></div>
 
-            <FixedCircuitBoard closedSwitches={closedSwitches} highlightedSwitch={highlightedSwitch} powerOn={powerOn} analysis={analysis} onToggle={toggleSwitch} />
+            <SimpleCircuit closedSwitches={closedSwitches} targetSwitches={target.switches} powerOn={powerOn} analysis={analysis} onToggle={toggleSwitch} />
 
             <div className={`rc2-power-supply ${powerOn ? "on" : ""}`}>
               <div className="rc2-device-handle" /><small>DC GÜÇ KAYNAĞI</small>
@@ -662,10 +433,10 @@ export default function ResistorConnectionsLab() {
             <div className={`rc2-digital-meter volt ${powerOn ? "on" : ""}`}><small>KAYNAK GERİLİMİ</small><b>{powerOn ? voltage.toFixed(2) : "0.00"}</b><em>V</em><span>V</span></div>
           </div>
 
-          <div className="rc2-controls">
+          <div className="rc2-controls rc4-controls">
             <label><span>Kaynak gerilimi</span><select value={voltage} onChange={(event) => setVoltage(Number(event.target.value))} disabled={powerOn}><option value={6}>6 V</option><option value={9}>9 V</option><option value={12}>12 V</option></select></label>
             <span><small>Tanımlanan bağlantı</small><b>{analysis.complete ? analysis.topology : "—"}</b></span>
-            <span><small>Eşdeğer direnç</small><b>{powerOn ? `${formatResistance(displayEquivalent)} Ω` : "Devreyi çalıştır"}</b></span>
+            <span><small>Eşdeğer direnç</small><b>{powerOn ? `${formatResistance(analysis.equivalentResistance)} Ω` : "Devreyi çalıştır"}</b></span>
             <span><small>Toplam akım</small><b>{powerOn ? `${displayTotalCurrent.toFixed(1)} mA` : "—"}</b></span>
             <button type="button" onClick={recordTrial} disabled={!powerOn}>Ölçümü kaydet</button>
           </div>
@@ -673,43 +444,40 @@ export default function ResistorConnectionsLab() {
       </div>
 
       <section className="rc2-data-section">
-        <div className="rc2-data-heading"><div><span>2 · AYNI PANODAKİ SONUÇLAR</span><h2>Anahtar durumu değiştiğinde bağlantı türü nasıl değişti?</h2></div><b>{trials.length}<small>kayıt</small></b></div>
+        <div className="rc2-data-heading"><div><span>2 · İDEAL ÖLÇÜM SONUÇLARI</span><h2>Seri ve paralel bağlantıyı karşılaştır.</h2></div><b>{trials.length}<small>kayıt</small></b></div>
         <div className="rc2-data-grid">
           <article className="rc2-table-card">
-            <div><b>İdeal ölçüm tablosu</b><span>Tek sabit pano</span></div>
-            <div className="rc2-table-wrap"><table><thead><tr><th>Tanımlanan devre</th><th>Anahtarlar</th><th>Gerilim</th><th>R eş</th><th>I toplam</th><th>Direnç akımları</th></tr></thead><tbody>
-              {trials.length ? trials.map((trial) => <tr key={trial.id}><th>{trial.title}</th><td>{trial.switches.map((number) => `S${number}`).join(", ")}</td><td>{trial.voltage} V</td><td>{formatResistance(trial.equivalentResistance)} Ω</td><td>{trial.totalCurrentMilliamp.toFixed(1)} mA</td><td>{trial.currentNote}</td></tr>) : <tr><td colSpan={6}>Aynı panoda geçerli bir yol oluştur, çalıştır ve ilk ölçümü kaydet.</td></tr>}
+            <div><b>Ölçüm tablosu</b><span>İdeal devre</span></div>
+            <div className="rc2-table-wrap"><table><thead><tr><th>Bağlantı</th><th>Anahtarlar</th><th>Gerilim</th><th>R eş</th><th>I toplam</th><th>I A</th><th>I B</th></tr></thead><tbody>
+              {trials.length ? trials.map((trial) => <tr key={trial.id}><th>{trial.topology}</th><td>{trial.switches.map((number) => `S${number}`).join(", ")}</td><td>{trial.voltage} V</td><td>{formatResistance(trial.equivalentResistance)} Ω</td><td>{trial.totalCurrentMilliamp.toFixed(1)} mA</td><td>{trial.currentsMilliamp.A.toFixed(1)} mA</td><td>{trial.currentsMilliamp.B.toFixed(1)} mA</td></tr>) : <tr><td colSpan={7}>Seri veya paralel devreyi çalıştırıp ilk ölçümü kaydet.</td></tr>}
             </tbody></table></div>
           </article>
           <article className="rc2-comparison-card">
-            <div><b>Hedef deneyler</b><span>Son kayıtlar</span></div>
+            <div><b>Bağlantılar</b><span>Son kayıtlar</span></div>
             <div className="rc2-comparison-bars">
-              {latestTrials.map(({ task: item, trial }) => <div key={item.kind}><span><b>{item.notation}</b><small>{trial ? `${formatResistance(trial.equivalentResistance)} Ω` : "ölçülmedi"}</small></span><i><b style={{ width: trial ? `${Math.max(5, trial.equivalentResistance / 6)}%` : "0%" }} /></i></div>)}
+              {latestTargetTrials.map(({ target: item, trial }) => <div key={item.kind}><span><b>{item.notation}</b><small>{trial ? `${formatResistance(trial.equivalentResistance)} Ω` : "ölçülmedi"}</small></span><i><b style={{ width: trial ? `${Math.min(100, Math.max(8, trial.equivalentResistance / 2.5))}%` : "0%" }} /></i></div>)}
             </div>
           </article>
         </div>
       </section>
 
       <section className="rc2-analysis-gate">
-        <div><span>3 · SONUCU AÇIKLA</span><h2>Tek pano üzerindeki örüntüyü matematiksel modele dönüştür.</h2><p>{analysisReady ? "Seri, paralel ve birleşik devre kayıtların hazır." : "Analiz için aynı panoda seri, paralel ve birleşik birer devre ölç."}</p></div>
+        <div><span>3 · SONUCU AÇIKLA</span><h2>İki bağlantı arasındaki örüntüyü incele.</h2><p>{analysisReady ? "Seri ve paralel ölçümlerin hazır." : "Analiz için bir seri ve bir paralel ölçüm kaydet."}</p></div>
         <button type="button" disabled={!analysisReady} onClick={() => setShowAnalysis((current) => !current)}>{showAnalysis ? "Analizi kapat" : "İşlemsel analizi göster"} →</button>
       </section>
 
-      {showAnalysis && analysisReady && <section className="rc2-analysis-cards">
-        <article><span>SERİ BAĞLANTI</span><b>R<sub>eş</sub> = R<sub>1</sub> + R<sub>2</sub></b><p>Aynı akım, etkin dirençlerden art arda geçer.</p></article>
-        <article><span>PARALEL BAĞLANTI</span><b>1/R<sub>eş</sub> = 1/R<sub>1</sub> + 1/R<sub>2</sub></b><p>Aynı iki düğüm arasında birden fazla akım yolu oluşur.</p></article>
-        <article><span>BİRLEŞİK DEVRE</span><b>Önce paralel kol, sonra seri toplam</b><p>Pano değişmeden yalnız anahtar durumları yeni devreyi oluşturur.</p></article>
+      {showAnalysis && analysisReady && <section className="rc2-analysis-cards rc4-analysis-cards">
+        <article><span>SERİ BAĞLANTI</span><b>R<sub>eş</sub> = R<sub>A</sub> + R<sub>B</sub></b><p>A ve B üzerinden aynı akım geçer.</p></article>
+        <article><span>PARALEL BAĞLANTI</span><b>1/R<sub>eş</sub> = 1/R<sub>A</sub> + 1/R<sub>B</sub></b><p>Akım iki kola ayrılır; kol akımları toplanır.</p></article>
       </section>}
 
       <section className="rc2-report">
-        <div className="rc2-report-heading"><span>TYMM · KISA DENEY RAPORU</span><h2>Sabit panoda oluşan devreleri kanıtlarınla açıkla.</h2><p>Yanıtlarında anahtar numaralarını, direnç akımlarını ve ölçüm tablonu kullan.</p></div>
+        <div className="rc2-report-heading"><span>TYMM · KISA DENEY RAPORU</span><h2>Seri ve paralel bağlantıyı kanıtlarınla karşılaştır.</h2><p>Yanıtlarında anahtar durumlarını ve ölçüm tablosunu kullan.</p></div>
         <div className="rc2-report-grid">
-          <label><span>1 · SERİ YOL</span>Hangi anahtarlar kapandığında akım A ve B&apos;den art arda geçti?<textarea rows={4} /></label>
-          <label><span>2 · PARALEL KOLLAR</span>Hangi düğümler ortak olduğunda A ve C paralel hâle geldi?<textarea rows={4} /></label>
-          <label><span>3 · AKIMLAR</span>Seri ve paralel durumda A-B-C-D akımlarını karşılaştır.<textarea rows={4} /></label>
-          <label><span>4 · BİRLEŞİK DEVRE</span>A-(B∥C)-D yolunu aynı pano üzerinde hangi anahtarlarla oluşturdun?<textarea rows={4} /></label>
+          <label><span>1 · ANAHTARLAR</span>Seri ve paralel bağlantıda hangi anahtarları kapattın?<textarea rows={4} /></label>
+          <label><span>2 · AKIM</span>İki bağlantıda toplam akım ve direnç akımları nasıl değişti?<textarea rows={4} /></label>
         </div>
-        <label className="rc2-report-conclusion"><span>SONUÇ</span>Anahtarların devrenin seri, paralel veya birleşik olmasını nasıl belirlediğini açıkla.<textarea rows={5} /></label>
+        <label className="rc2-report-conclusion"><span>SONUÇ</span>Bağlantı biçiminin eşdeğer dirence etkisini ölçümlerine dayanarak açıkla.<textarea rows={5} /></label>
       </section>
     </section>
   );
