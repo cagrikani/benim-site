@@ -24142,3 +24142,402 @@ footer > a {
   .rc4-analysis-cards { grid-template-columns: 1fr; }
   .rc4-circuit-caption strong { display: none; }
 }
+
+/* Dirençlerin bağlanması · Ohm deneyine eş devre kurma akışı */
+.rcl-heading h1 {
+  max-width: 980px;
+}
+
+.rcl-mode-selector {
+  display: grid;
+  grid-template-columns: minmax(320px, .78fr) minmax(520px, 1.22fr);
+  gap: 28px;
+  align-items: center;
+  margin-bottom: 18px;
+  padding: 20px 24px;
+  border: 1px solid #d7e4e1;
+  border-radius: 22px;
+  background: white;
+  box-shadow: 0 18px 48px rgba(18, 54, 70, .07);
+}
+
+.rcl-mode-selector > div:first-child > span {
+  display: block;
+  margin-bottom: 7px;
+  color: #d66f3d;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .15em;
+}
+
+.rcl-mode-selector h2 {
+  margin: 0;
+  color: #103448;
+  font-size: 24px;
+  letter-spacing: -.025em;
+}
+
+.rcl-mode-selector p {
+  margin: 7px 0 0;
+  color: #667d82;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.rcl-mode-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rcl-mode-buttons button {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 13px;
+  align-items: center;
+  min-height: 105px;
+  padding: 13px;
+  border: 1px solid #d8e4e1;
+  border-radius: 15px;
+  background: #f7faf9;
+  color: #173d4e;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.rcl-mode-buttons button:hover,
+.rcl-mode-buttons button.active {
+  border-color: #e2a14d;
+  background: #fffaf1;
+  box-shadow: inset 0 0 0 1px #e2a14d, 0 8px 18px rgba(30, 57, 65, .08);
+  transform: translateY(-2px);
+}
+
+.rcl-mode-buttons button > i {
+  position: relative;
+  display: block;
+  width: 86px;
+  height: 64px;
+  border: 1px solid #d4e0dd;
+  border-radius: 11px;
+  background: #edf4f2;
+  overflow: hidden;
+}
+
+.rcl-mode-buttons button > i::before,
+.rcl-mode-buttons button > i::after {
+  position: absolute;
+  height: 4px;
+  border-radius: 999px;
+  background: #526d73;
+  content: "";
+}
+
+.rcl-mode-buttons button > i.series::before { top: 30px; right: 7px; left: 7px; }
+.rcl-mode-buttons button > i.series::after { display: none; }
+.rcl-mode-buttons button > i.parallel::before { top: 18px; right: 7px; left: 7px; }
+.rcl-mode-buttons button > i.parallel::after { right: 7px; bottom: 18px; left: 7px; }
+
+.rcl-mode-buttons button > i b {
+  position: absolute;
+  z-index: 2;
+  width: 27px;
+  height: 13px;
+  border: 2px solid #9a5a31;
+  border-radius: 5px;
+  background: repeating-linear-gradient(90deg, #e5c27f 0 7px, #8c4b2d 7px 10px);
+}
+
+.rcl-mode-buttons button > i.series b:first-child { top: 24px; left: 14px; }
+.rcl-mode-buttons button > i.series b:last-child { top: 24px; right: 14px; }
+.rcl-mode-buttons button > i.parallel b:first-child { top: 12px; left: 29px; }
+.rcl-mode-buttons button > i.parallel b:last-child { right: 29px; bottom: 12px; }
+
+.rcl-mode-buttons button > span {
+  display: grid;
+  gap: 3px;
+}
+
+.rcl-mode-buttons small { color: #c86a39; font-size: 8px; font-weight: 950; letter-spacing: .12em; }
+.rcl-mode-buttons strong { color: #167d73; font-size: 19px; }
+.rcl-mode-buttons em { color: #6c8185; font-size: 9px; font-style: normal; }
+
+.rcl-builder {
+  grid-template-columns: 270px minmax(0, 1fr);
+}
+
+.rcl-builder .ohm-equipment-list > button {
+  min-height: 66px;
+}
+
+.rcl-stage {
+  min-width: 0;
+}
+
+.rcl-apparatus {
+  min-height: 610px;
+}
+
+.rcl-wire-canvas {
+  height: 100%;
+}
+
+.rcl-resistor-unit {
+  position: absolute;
+  z-index: 6;
+  top: 15%;
+  width: 19%;
+  min-width: 170px;
+  height: 21%;
+  min-height: 120px;
+  padding: 13px 15px;
+  border: 5px solid #455f68;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #eff2ea, #c5cec6);
+  box-shadow: 9px 14px 22px rgba(28, 42, 47, .18);
+  text-align: center;
+}
+
+.rcl-resistor-unit.resistor-a { left: 33%; }
+.rcl-resistor-unit.resistor-b { left: 53%; }
+
+.rcl-resistor-unit > small {
+  display: block;
+  color: #657a7e;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: .12em;
+}
+
+.rcl-real-resistor {
+  display: flex;
+  align-items: center;
+  width: 94%;
+  height: 42px;
+  margin: 10px auto 3px;
+}
+
+.rcl-real-resistor > i {
+  flex: 1;
+  height: 4px;
+  background: #737f82;
+}
+
+.rcl-real-resistor > span {
+  display: flex;
+  justify-content: space-evenly;
+  width: 58%;
+  height: 31px;
+  border: 2px solid #9c7147;
+  border-radius: 9px;
+  background: linear-gradient(#ebca92, #d3a96f);
+  box-shadow: inset 0 3px 7px rgba(255, 255, 255, .45), 0 5px 9px rgba(84, 56, 29, .15);
+}
+
+.rcl-real-resistor b { width: 8px; height: 100%; background: #843f2a; }
+.rcl-real-resistor b:nth-child(2) { background: #17191a; }
+.rcl-real-resistor b:nth-child(3) { background: #b94332; }
+.rcl-real-resistor b:last-child { width: 5px; background: #d5a626; }
+.rcl-resistor-unit.resistor-b .rcl-real-resistor b:nth-child(3) { background: #644a9c; }
+
+.rcl-resistor-unit > strong {
+  color: #173b4c;
+  font-size: 12px;
+}
+
+.rcl-resistor-unit > strong sub {
+  font-size: 7px;
+}
+
+.rcl-apparatus .ohm-power-supply {
+  top: 15%;
+}
+
+.rcl-apparatus .ohm-circuit-switch {
+  top: 22%;
+}
+
+.rcl-apparatus .ohm-meter {
+  top: 57%;
+}
+
+.rcl-controls {
+  margin-top: 18px;
+}
+
+.rcl-control-grid {
+  display: grid;
+  grid-template-columns: .7fr .7fr 1fr 1.65fr;
+  gap: 12px;
+}
+
+.rcl-control-grid > article {
+  position: relative;
+  min-height: 190px;
+  padding: 17px;
+  border: 1px solid #dce7e4;
+  border-radius: 15px;
+  background: #f8fbfa;
+}
+
+.rcl-control-grid > article > small {
+  display: block;
+  margin-bottom: 14px;
+  color: #cc6b3b;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .13em;
+}
+
+.rcl-control-grid article > label {
+  display: grid;
+  gap: 9px;
+}
+
+.rcl-control-grid article > label > span {
+  color: #173b4c;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.rcl-control-grid select {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 11px;
+  border: 1px solid #cfddda;
+  border-radius: 10px;
+  outline: none;
+  background: white;
+  color: #143a4b;
+  font: 900 15px inherit;
+}
+
+.rcl-control-grid select:disabled,
+.rcl-control-grid input:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.rcl-mini-resistor {
+  position: absolute;
+  right: 17px;
+  bottom: 18px;
+  left: 17px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  height: 31px;
+  border: 2px solid #9b7349;
+  border-radius: 9px;
+  background: #ddb77d;
+}
+
+.rcl-mini-resistor b { width: 8px; height: 100%; background: #82402b; }
+.rcl-mini-resistor b:nth-child(2) { background: #17191a; }
+.rcl-mini-resistor b:last-child { background: #c04836; }
+
+.rcl-voltage-control label > span {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.rcl-voltage-control label b { font-size: 28px; }
+.rcl-voltage-control label em { color: #74888b; font-size: 9px; font-style: normal; }
+.rcl-voltage-control input { width: 100%; accent-color: #167f75; }
+.rcl-voltage-control > div { display: flex; justify-content: space-between; margin-top: 6px; color: #7a8c8f; font-size: 8px; }
+
+.rcl-live-readings {
+  background: linear-gradient(145deg, #f4faf7, #fffaf2) !important;
+}
+
+.rcl-live-readings > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.rcl-live-readings > div > span {
+  display: grid;
+  gap: 4px;
+  padding: 9px;
+  border: 1px solid #d9e5e2;
+  border-radius: 10px;
+  background: white;
+}
+
+.rcl-live-readings > div small { color: #6f8387; font-size: 7px; font-weight: 900; text-transform: uppercase; }
+.rcl-live-readings > div b { color: #143b4b; font-size: 11px; }
+
+.rcl-live-readings > button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #167f75;
+  color: white;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.rcl-live-readings > button:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.rcl-control-note {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff4e4;
+  color: #8a5a37;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.rcl-evidence {
+  margin-top: 24px;
+}
+
+.rcl-data-card {
+  margin-top: 14px;
+}
+
+.rcl-data-card table {
+  min-width: 1030px;
+}
+
+.rcl-data-card th,
+.rcl-data-card td {
+  white-space: nowrap;
+}
+
+.rcl-analysis {
+  margin-top: 12px;
+}
+
+@media (max-width: 1180px) {
+  .rcl-mode-selector { grid-template-columns: 1fr; }
+  .rcl-builder { grid-template-columns: 240px minmax(0, 1fr); }
+  .rcl-apparatus { min-width: 900px; }
+  .rcl-control-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 850px) {
+  .rcl-mode-buttons { grid-template-columns: 1fr; }
+  .rcl-builder { grid-template-columns: 1fr; }
+  .rcl-builder .ohm-equipment-list { grid-template-columns: repeat(2, 1fr); }
+  .rcl-builder .ohm-reset-button { margin-top: 12px; }
+}
+
+@media (max-width: 620px) {
+  .rcl-mode-selector { grid-template-columns: 1fr; padding: 17px; }
+  .rcl-mode-buttons button { grid-template-columns: 76px minmax(0, 1fr); }
+  .rcl-mode-buttons button > i { width: 76px; }
+  .rcl-builder .ohm-equipment-list,
+  .rcl-control-grid { grid-template-columns: 1fr; }
+  .rcl-live-readings > div { grid-template-columns: 1fr; }
+}
