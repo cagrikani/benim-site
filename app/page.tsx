@@ -285,11 +285,12 @@ function HomeView({
           >
             <span className="portal-path-number">01</span>
             <div className="portal-path-visual" aria-hidden="true">
-              <i className="path-lab-table" />
-              <i className="path-stand" />
-              <i className="path-pendulum" />
-              <i className="path-gate" />
-              <i className="path-ray" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="./portal-guided-lab.webp"
+                alt=""
+                draggable="false"
+              />
             </div>
             <span className="portal-path-copy">
               <small>YÖNERGELİ LABORATUVAR</small>
@@ -309,11 +310,12 @@ function HomeView({
           >
             <span className="portal-path-number">02</span>
             <div className="portal-path-visual" aria-hidden="true">
-              <i className="path-orbit orbit-one" />
-              <i className="path-orbit orbit-two" />
-              <i className="path-particle particle-one" />
-              <i className="path-particle particle-two" />
-              <i className="path-wave" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="./portal-free-simulation.webp"
+                alt=""
+                draggable="false"
+              />
             </div>
             <span className="portal-path-copy">
               <small>ÖZGÜR KEŞİF ALANI</small>

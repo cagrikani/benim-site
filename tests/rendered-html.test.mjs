@@ -126,6 +126,8 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /<b>11<\/b>\s*çalışan deney/);
   assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
+  assert.match(page, /portal-guided-lab\.webp/);
+  assert.match(page, /portal-free-simulation\.webp/);
 });
 
 test("Fizik Atölyesi ana sayfası responsive portal görsellerini içerir", async () => {
@@ -134,6 +136,7 @@ test("Fizik Atölyesi ana sayfası responsive portal görsellerini içerir", asy
   assert.match(css, /\.portal-hero\s*\{/);
   assert.match(css, /\.portal-image-frame\s*\{/);
   assert.match(css, /\.portal-path-grid\s*\{/);
+  assert.match(css, /\.portal-path-visual img\s*\{/);
   assert.match(css, /\.portal-module-grid\s*\{/);
   assert.match(css, /\.portal-visual-mechanics\s*\{/);
   assert.match(css, /\.portal-visual-electricity\s*\{/);
