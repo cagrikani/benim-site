@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import { useState } from "react";
 import OhmLawLab from "./OhmLawLab";
 import ResistorConnectionsLab from "./ResistorConnectionsLab";
@@ -42,12 +44,16 @@ export default function ElectricityLabHub({ onBack }: { onBack: () => void }) {
           </div>
           <div className="electricity-experiment-grid">
             <button type="button" className={activeExperiment === "ohm" ? "active" : ""} onClick={() => setActiveExperiment("ohm")}>
-              <span className="electricity-choice-visual ohm-choice-visual" aria-hidden="true"><i /><i /><i /></span>
+              <span className="electricity-choice-visual ohm-choice-visual" aria-hidden="true">
+                <img src="./electricity-ohm.webp" alt="" draggable="false" />
+              </span>
               <span><small>DENEY 01 · FİZ.10.3.3</small><b>Ohm yasası</b><em>Devreyi kur, akım-gerilim örüntüsünü ölç</em></span>
               <strong>{activeExperiment === "ohm" ? "Açık" : "Deneyi aç"} →</strong>
             </button>
             <button type="button" className={activeExperiment === "resistor-connections" ? "active" : ""} onClick={() => setActiveExperiment("resistor-connections")}>
-              <span className="electricity-choice-visual resistor-choice-visual" aria-hidden="true"><i /><i /><i /><i /></span>
+              <span className="electricity-choice-visual resistor-choice-visual" aria-hidden="true">
+                <img src="./electricity-resistors.webp" alt="" draggable="false" />
+              </span>
               <span><small>DENEY 02 · FİZ.10.3.4</small><b>Dirençlerin bağlanması</b><em>Seri ve paralel devreleri karşılaştır</em></span>
               <strong>{activeExperiment === "resistor-connections" ? "Açık" : "Deneyi aç"} →</strong>
             </button>

@@ -4215,6 +4215,34 @@ input:focus-visible {
   overflow: hidden;
   border-radius: 17px;
   background: #edf6f2;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 11px 24px rgba(18, 54, 70, 0.16);
+}
+
+.module-choice-visual::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(5, 25, 38, 0.01), transparent 55%, rgba(5, 25, 38, 0.3)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.11), transparent 32%);
+  content: "";
+  pointer-events: none;
+}
+
+.module-choice-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 360ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  user-select: none;
+}
+
+.module-choice-grid > button:hover .module-choice-visual img,
+.module-choice-grid > button.active .module-choice-visual img {
+  transform: scale(1.045);
 }
 
 .module-choice-copy small,
@@ -14157,6 +14185,33 @@ footer > a {
   background:
     linear-gradient(rgba(255, 255, 255, 0.1), transparent),
     #123b4d;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.13),
+    0 12px 26px rgba(10, 42, 55, 0.19);
+}
+
+.portal-module-visual::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgba(8, 29, 43, 0.01), transparent 55%, rgba(8, 29, 43, 0.3)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.11), transparent 32%);
+  content: "";
+  pointer-events: none;
+}
+
+.portal-module-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 390ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  user-select: none;
+}
+
+.portal-module-grid > button:hover .portal-module-visual img {
+  transform: scale(1.045);
 }
 
 .portal-module-visual i {
@@ -21681,6 +21736,23 @@ footer > a {
   overflow: hidden;
   border-radius: 14px;
   background: linear-gradient(145deg, #edf6f4, #dcebe8);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    0 9px 21px rgba(18, 54, 70, 0.16);
+}
+
+.electricity-choice-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 340ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  user-select: none;
+}
+
+.electricity-experiment-grid > button:hover .electricity-choice-visual img,
+.electricity-experiment-grid > button.active .electricity-choice-visual img {
+  transform: scale(1.055);
 }
 
 .ohm-choice-visual i:first-child {
@@ -21716,6 +21788,11 @@ footer > a {
   left: 11px;
   right: 11px;
   content: "";
+}
+
+.resistor-choice-visual::before,
+.resistor-choice-visual::after {
+  display: none;
 }
 
 .resistor-choice-visual::before {

@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type PointerEvent as ReactPointerEvent,
   useCallback,
@@ -839,10 +841,7 @@ export default function MechanicsLabHub({
             onClick={() => setActiveModule("vectors")}
           >
             <span className="module-choice-visual vector-choice-visual" aria-hidden="true">
-              <i className="choice-grid-lines" />
-              <i className="choice-arrow choice-arrow-a" />
-              <i className="choice-arrow choice-arrow-b" />
-              <i className="choice-arrow choice-arrow-r" />
+              <img src="./mechanics-vectors.webp" alt="" draggable="false" />
             </span>
             <span className="module-choice-copy">
               <small>MODÜL 01</small>
@@ -858,10 +857,7 @@ export default function MechanicsLabHub({
             onClick={() => setActiveModule("motion")}
           >
             <span className="module-choice-visual motion-choice-visual" aria-hidden="true">
-              <i className="choice-track" />
-              <i className="choice-cart" />
-              <i className="choice-gate choice-gate-one" />
-              <i className="choice-gate choice-gate-two" />
+              <img src="./mechanics-motion.webp" alt="" draggable="false" />
             </span>
             <span className="module-choice-copy">
               <small>MODÜL 02 · DENEY 2</small>
@@ -877,11 +873,7 @@ export default function MechanicsLabHub({
             onClick={() => setActiveModule("free-fall")}
           >
             <span className="module-choice-visual freefall-choice-visual" aria-hidden="true">
-              <i className="choice-fall-rod" />
-              <i className="choice-fall-release" />
-              <i className="choice-fall-ball" />
-              <i className="choice-fall-sensor" />
-              <i className="choice-fall-timer">0.452</i>
+              <img src="./mechanics-freefall.webp" alt="" draggable="false" />
             </span>
             <span className="module-choice-copy">
               <small>MODÜL 03 · DENEY 3</small>
@@ -897,11 +889,7 @@ export default function MechanicsLabHub({
             onClick={() => setActiveModule("two-dimensional")}
           >
             <span className="module-choice-visual twod-choice-visual" aria-hidden="true">
-              <i className="choice-twod-launcher" />
-              <i className="choice-twod-path" />
-              <i className="choice-twod-ball" />
-              <i className="choice-twod-table" />
-              <i className="choice-twod-paper" />
+              <img src="./mechanics-two-dimensional.webp" alt="" draggable="false" />
             </span>
             <span className="module-choice-copy">
               <small>MODÜL 04 · DENEY 4</small>
@@ -922,11 +910,7 @@ export default function MechanicsLabHub({
               className="module-choice-visual collision-choice-visual"
               aria-hidden="true"
             >
-              <i className="choice-collision-table" />
-              <i className="choice-collision-puck-one" />
-              <i className="choice-collision-puck-two" />
-              <i className="choice-collision-path-one" />
-              <i className="choice-collision-path-two" />
+              <img src="./mechanics-collisions.webp" alt="" draggable="false" />
             </span>
             <span className="module-choice-copy">
               <small>MODÜL 05 · DENEY 5</small>
@@ -947,11 +931,7 @@ export default function MechanicsLabHub({
               className="module-choice-visual ballistic-choice-visual"
               aria-hidden="true"
             >
-              <i className="choice-ballistic-frame" />
-              <i className="choice-ballistic-launcher" />
-              <i className="choice-ballistic-protractor" />
-              <i className="choice-ballistic-pendulum" />
-              <i className="choice-ballistic-ball" />
+              <img src="./mechanics-ballistic.webp" alt="" draggable="false" />
             </span>
             <span className="module-choice-copy">
               <small>MODÜL 06 · DENEY 6</small>
@@ -972,12 +952,7 @@ export default function MechanicsLabHub({
               className="module-choice-visual torque-choice-visual"
               aria-hidden="true"
             >
-              <i className="choice-torque-table" />
-              <i className="choice-torque-base" />
-              <i className="choice-torque-disc" />
-              <i className="choice-torque-reader" />
-              <i className="choice-torque-pulley" />
-              <i className="choice-torque-pan" />
+              <img src="./mechanics-torque.webp" alt="" draggable="false" />
             </span>
             <span className="module-choice-copy">
               <small>MODÜL 07 · DENEY 7</small>

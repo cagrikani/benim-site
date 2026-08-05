@@ -31,7 +31,7 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
     title: "Mekanik",
     description: "Hareketten torka, yedi etkileşimli deney.",
     detail: "7 deney açık",
-    visual: "portal-visual-mechanics",
+    visual: "./portal-mechanics.webp",
     available: true,
   },
   {
@@ -39,7 +39,7 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
     title: "Elektrik",
     description: "Ohm yasasını ve dirençlerin seri-paralel bağlanmasını gerçek düzeneklerle incele.",
     detail: "2 deney açık",
-    visual: "portal-visual-electricity",
+    visual: "./portal-electricity.webp",
     available: true,
   },
   {
@@ -47,7 +47,7 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
     title: "Dalgalar · Optik",
     description: "Kırılmayı, prizmadaki sapmayı ve tam yansımayı deneyle.",
     detail: "1 deney açık",
-    visual: "portal-visual-waves",
+    visual: "./portal-optics.webp",
     available: true,
   },
   {
@@ -55,7 +55,7 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
     title: "Modern Fizik",
     description: "Işık ve elektronların enerji alışverişini gerçek düzenekle keşfet.",
     detail: "1 deney açık",
-    visual: "portal-visual-modern",
+    visual: "./portal-modern.webp",
     available: true,
   },
 ];
@@ -66,56 +66,56 @@ const FREE_LAB_MODULES: ModuleCard[] = [
     title: "Kuvvet ve Hareket",
     description: "Kuvveti değiştir, hareketin nasıl karşılık verdiğini gözle.",
     detail: "Serbest çalışma alanı",
-    visual: "portal-visual-force",
+    visual: "./free-force-motion.webp",
   },
   {
     key: "energy",
     title: "Enerji",
     description: "Enerji dönüşümlerini kendi koşullarınla araştır.",
     detail: "Serbest çalışma alanı",
-    visual: "portal-visual-energy",
+    visual: "./free-energy.webp",
   },
   {
     key: "pressure",
     title: "Basınç ve Kaldırma Kuvveti",
     description: "Akışkanlarla, yoğunlukla ve dengeyle denemeler yap.",
     detail: "Serbest çalışma alanı",
-    visual: "portal-visual-pressure",
+    visual: "./free-pressure.webp",
   },
   {
     key: "electric-magnetic",
     title: "Elektrik ve Manyetizma",
     description: "Alanları, devreleri ve manyetik etkileşimleri kur.",
     detail: "Serbest çalışma alanı",
-    visual: "portal-visual-magnetism",
+    visual: "./free-electric-magnetic.webp",
   },
   {
     key: "heat",
     title: "Isı ve Sıcaklık",
     description: "Maddenin ısıl davranışını karşılaştırarak keşfet.",
     detail: "Serbest çalışma alanı",
-    visual: "portal-visual-heat",
+    visual: "./free-heat.webp",
   },
   {
     key: "waves",
     title: "Dalgalar",
     description: "Genlik, frekans ve yayılma ilişkilerini serbestçe değiştir.",
     detail: "Serbest çalışma alanı",
-    visual: "portal-visual-wave-free",
+    visual: "./free-waves.webp",
   },
   {
     key: "optics",
     title: "Optik",
     description: "Işınları, aynaları ve mercekleri kendi düzeninde birleştir.",
     detail: "Serbest çalışma alanı",
-    visual: "portal-visual-optics",
+    visual: "./free-optics.webp",
   },
   {
     key: "modern",
     title: "Modern Fizik",
     description: "Görünmeyen dünyayı etkileşimli modellerle sorgula.",
     detail: "Serbest çalışma alanı",
-    visual: "portal-visual-modern-free",
+    visual: "./free-modern.webp",
   },
 ];
 
@@ -363,13 +363,11 @@ function HomeView({
   );
 }
 
-function ModuleVisual({ className }: { className: string }) {
+function ModuleVisual({ image }: { image: string }) {
   return (
-    <span className={`portal-module-visual ${className}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
-      <i />
+    <span className="portal-module-visual" aria-hidden="true">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={image} alt="" draggable="false" />
     </span>
   );
 }
@@ -393,7 +391,7 @@ function ModuleGrid({
           <span className="portal-module-index">
             {String(index + 1).padStart(2, "0")}
           </span>
-          <ModuleVisual className={module.visual} />
+          <ModuleVisual image={module.visual} />
           <span className="portal-module-copy">
             <small>{module.detail}</small>
             <b>{module.title}</b>
@@ -489,7 +487,7 @@ function PlaceholderView({
         ← Alanlara dön
       </button>
       <div className="portal-placeholder-card">
-        <ModuleVisual className={module.visual} />
+        <ModuleVisual image={module.visual} />
         <span className="portal-placeholder-status">
           <i />
           YAPIM AŞAMASINDA

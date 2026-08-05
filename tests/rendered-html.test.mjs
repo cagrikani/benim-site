@@ -12,6 +12,34 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
   assert.match(html, /\.\/assets\/index-[^"]+\.css/i);
   await access(new URL("sunucu-paketi/assets", projectRoot));
   await access(new URL("sunucu-paketi/fizik-atolyesi-hero.png", projectRoot));
+  const realisticCardImages = [
+    "portal-mechanics.webp",
+    "portal-electricity.webp",
+    "portal-optics.webp",
+    "portal-modern.webp",
+    "free-force-motion.webp",
+    "free-energy.webp",
+    "free-pressure.webp",
+    "free-electric-magnetic.webp",
+    "free-heat.webp",
+    "free-waves.webp",
+    "free-optics.webp",
+    "free-modern.webp",
+    "mechanics-vectors.webp",
+    "mechanics-motion.webp",
+    "mechanics-freefall.webp",
+    "mechanics-two-dimensional.webp",
+    "mechanics-collisions.webp",
+    "mechanics-ballistic.webp",
+    "mechanics-torque.webp",
+    "electricity-ohm.webp",
+    "electricity-resistors.webp",
+  ];
+  await Promise.all(
+    realisticCardImages.map((image) =>
+      access(new URL(`sunucu-paketi/${image}`, projectRoot)),
+    ),
+  );
 });
 
 test("vektör modülü çizim, taşıma, özellik ve yöntem araçları sunar", async () => {
@@ -76,6 +104,13 @@ test("yedi modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /Çarpışmalar/);
   assert.match(page, /Balistik sarkaç/);
   assert.match(page, /Dönme dinamiği ve tork/);
+  assert.match(page, /mechanics-vectors\.webp/);
+  assert.match(page, /mechanics-motion\.webp/);
+  assert.match(page, /mechanics-freefall\.webp/);
+  assert.match(page, /mechanics-two-dimensional\.webp/);
+  assert.match(page, /mechanics-collisions\.webp/);
+  assert.match(page, /mechanics-ballistic\.webp/);
+  assert.match(page, /mechanics-torque\.webp/);
   assert.match(page, /onPointerDown/);
   assert.match(page, /setPointerCapture/);
   assert.match(page, /pointFromPointer/);
@@ -128,6 +163,12 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /fizik-atolyesi-hero\.png/);
   assert.match(page, /portal-guided-lab\.webp/);
   assert.match(page, /portal-free-simulation\.webp/);
+  assert.match(page, /portal-mechanics\.webp/);
+  assert.match(page, /portal-electricity\.webp/);
+  assert.match(page, /portal-optics\.webp/);
+  assert.match(page, /portal-modern\.webp/);
+  assert.match(page, /free-force-motion\.webp/);
+  assert.match(page, /free-modern\.webp/);
 });
 
 test("Fizik Atölyesi ana sayfası responsive portal görsellerini içerir", async () => {
@@ -138,6 +179,9 @@ test("Fizik Atölyesi ana sayfası responsive portal görsellerini içerir", asy
   assert.match(css, /\.portal-path-grid\s*\{/);
   assert.match(css, /\.portal-path-visual img\s*\{/);
   assert.match(css, /\.portal-module-grid\s*\{/);
+  assert.match(css, /\.portal-module-visual img\s*\{/);
+  assert.match(css, /\.module-choice-visual img\s*\{/);
+  assert.match(css, /\.electricity-choice-visual img\s*\{/);
   assert.match(css, /\.portal-visual-mechanics\s*\{/);
   assert.match(css, /\.portal-visual-electricity\s*\{/);
   assert.match(css, /\.portal-visual-waves\s*\{/);
@@ -156,6 +200,8 @@ test("Elektrik alanı TYMM uyumlu Ohm yasası deneyini sunar", async () => {
   assert.match(hub, /Elektrik deney setleri/);
   assert.match(hub, /Ohm yasası/);
   assert.match(hub, /OhmLawLab/);
+  assert.match(hub, /electricity-ohm\.webp/);
+  assert.match(hub, /electricity-resistors\.webp/);
   assert.match(page, /FİZ\.10\.3\.3/);
   assert.match(page, /application\/x-ohm-equipment/);
   assert.match(page, /0-20 V doğru akım güç kaynağı/);
