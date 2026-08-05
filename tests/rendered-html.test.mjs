@@ -34,6 +34,10 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "mechanics-torque.webp",
     "electricity-ohm.webp",
     "electricity-resistors.webp",
+    "optics-mirrors.webp",
+    "optics-plane-mirror.webp",
+    "optics-concave-mirror.webp",
+    "optics-convex-mirror.webp",
   ];
   await Promise.all(
     realisticCardImages.map((image) =>
@@ -158,7 +162,7 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /module\.key === "electricity"/);
   assert.match(page, /onNavigate\("electricity"\)/);
   assert.match(page, /2 deney açık/);
-  assert.match(page, /<b>11<\/b>\s*çalışan deney/);
+  assert.match(page, /<b>12<\/b>\s*çalışan deney/);
   assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
   assert.match(page, /portal-guided-lab\.webp/);
@@ -402,6 +406,60 @@ test("optik düzeneği gerçekçi ray, lazer, açı tablası, ekran ve cam elema
   assert.match(css, /\.optics-data-table\s*\{/);
   assert.match(css, /\.optics-analysis-grid\s*\{/);
   assert.match(css, /\.optics-report\s*\{/);
+});
+
+test("Dalgalar-Optik alanı ayna seçimini ve ideal düzlem ayna deneyini sunar", async () => {
+  const hub = await readFile(
+    new URL("app/OpticsLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("app/PlaneMirrorLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(hub, /Aynalar/);
+  assert.match(hub, /Düzlem ayna/);
+  assert.match(hub, /Çukur ayna/);
+  assert.match(hub, /Tümsek ayna/);
+  assert.match(hub, /PlaneMirrorLab/);
+  assert.match(hub, /optics-mirrors\.webp/);
+  assert.match(hub, /optics-plane-mirror\.webp/);
+  assert.match(hub, /optics-concave-mirror\.webp/);
+  assert.match(hub, /optics-convex-mirror\.webp/);
+  assert.match(page, /ReflectionCanvas/);
+  assert.match(page, /ImageRayCanvas/);
+  assert.match(page, /onPointerDown/);
+  assert.match(page, /setPointerCapture/);
+  assert.match(page, /Yansıma kanunları/);
+  assert.match(page, /Görüntü oluşumu/);
+  assert.match(page, /Gelme açısı/);
+  assert.match(page, /Yansıma açısı/);
+  assert.match(page, /i = r/);
+  assert.match(page, /Eşit uzaklık/);
+  assert.match(page, /Aynı boy/);
+  assert.match(page, /Düz görüntü/);
+  assert.match(page, /Sanal görüntü/);
+  assert.match(page, /Yanal terslik/);
+  assert.match(page, /Net görüntü oluşmadı/);
+  assert.match(page, /TYMM · DENEY RAPORU/);
+  assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
+});
+
+test("düzlem ayna laboratuvarı gerçekçi seçim kartları, düzenek ve responsive görünüm içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.optics-topic-grid\s*\{/);
+  assert.match(css, /\.mirror-type-grid\s*\{/);
+  assert.match(css, /\.optics-topic-image img,/);
+  assert.match(css, /\.mirror-type-image img\s*\{/);
+  assert.match(css, /\.pm-reflection-stage\s*\{/);
+  assert.match(css, /\.pm-reflection-canvas\s*\{/);
+  assert.match(css, /\.pm-control-console\s*\{/);
+  assert.match(css, /\.pm-image-stage\s*\{/);
+  assert.match(css, /\.pm-mirror-device\s*\{/);
+  assert.match(css, /\.pm-object-marker\s*\{/);
+  assert.match(css, /\.pm-screen-device\s*\{/);
+  assert.match(css, /\.pm-evidence-section\s*\{/);
+  assert.match(css, /@media \(max-width: 620px\)/);
 });
 
 test("Modern Fizik alanı gerçek fotoelektrik düzeneği ve TYMM deney akışını sunar", async () => {
