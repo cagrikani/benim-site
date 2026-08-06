@@ -25264,7 +25264,7 @@ footer > a {
   background: linear-gradient(160deg, #f8fbfa, #eef5f2);
 }
 
-.pm-console-screen {
+.pm-angle-display {
   display: grid;
   min-height: 116px;
   place-items: center;
@@ -25275,21 +25275,21 @@ footer > a {
   box-shadow: inset 0 0 20px rgba(33, 78, 54, .22), 0 7px 0 #172b31;
 }
 
-.pm-console-screen small {
+.pm-angle-display small {
   color: #385f50;
   font-size: 7px;
   font-weight: 950;
   letter-spacing: .14em;
 }
 
-.pm-console-screen b {
+.pm-angle-display b {
   color: #173f34;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 34px;
   line-height: 1;
 }
 
-.pm-console-screen span {
+.pm-angle-display span {
   color: #4d7164;
   font-size: 7px;
 }
@@ -26016,6 +26016,407 @@ footer > a {
 
   .pm-evidence-section article,
   .pm-report-grid label.wide {
+    grid-column: auto;
+  }
+}
+
+/* Düzlem ayna · serbest çizim ve üstten görüş alanı */
+
+.pm-mode-switch {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.pm-equipment-pencil::before {
+  position: absolute;
+  top: 10px;
+  left: 2px;
+  width: 48px;
+  height: 10px;
+  transform: rotate(-13deg);
+  border-radius: 6px 2px 2px 6px;
+  background: linear-gradient(180deg, #f7ba44 0 35%, #dc8b28 36% 68%, #f6c351 69%);
+  box-shadow: 4px 4px 0 -2px rgba(27, 54, 63, .22);
+  content: "";
+}
+
+.pm-equipment-pencil::after {
+  position: absolute;
+  top: 7px;
+  right: -3px;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 13px solid #dbc09c;
+  transform: rotate(-13deg);
+  content: "";
+}
+
+.pm-equipment-eye {
+  width: 52px !important;
+  height: 28px !important;
+  border: 2px solid #58747a;
+  border-radius: 50% 50% 46% 46%;
+  background: #f1d0ae;
+}
+
+.pm-equipment-eye::before {
+  position: absolute;
+  top: 5px;
+  left: 17px;
+  width: 15px;
+  height: 15px;
+  border: 3px solid white;
+  border-radius: 50%;
+  background: #3d858b;
+  box-shadow: inset 0 0 0 4px #1b3239;
+  content: "";
+}
+
+.pm-equipment-eye::after {
+  position: absolute;
+  top: -10px;
+  left: 22px;
+  border-right: 5px solid transparent;
+  border-bottom: 11px solid #c88b68;
+  border-left: 5px solid transparent;
+  content: "";
+}
+
+.pm-console-note {
+  margin: 0;
+  padding: 10px 11px;
+  border-left: 3px solid #ef9f28;
+  border-radius: 8px;
+  background: #fff8e8;
+  color: #7c674b;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.pm-drawing-workspace,
+.pm-vision-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  min-height: 520px;
+}
+
+.pm-sketch-stage,
+.pm-vision-stage {
+  min-width: 0;
+  overflow-x: auto;
+  padding: 20px;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(44, 117, 125, .21), transparent 40%),
+    linear-gradient(155deg, #173b46, #0a242e 78%);
+}
+
+.pm-drawing-canvas,
+.pm-vision-canvas {
+  display: block;
+  width: 100%;
+  min-width: 760px;
+  height: auto;
+  border: 1px solid rgba(222, 238, 235, .25);
+  border-radius: 16px;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, .28);
+  touch-action: none;
+}
+
+.pm-drawing-canvas {
+  cursor: crosshair;
+}
+
+.pm-vision-canvas {
+  cursor: grab;
+}
+
+.pm-vision-canvas:active {
+  cursor: grabbing;
+}
+
+.pm-drawing-controls,
+.pm-vision-controls {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border-left: 1px solid #d7e3e0;
+  background: linear-gradient(160deg, #f9fcfb, #edf5f2);
+}
+
+.pm-tool-group {
+  display: grid;
+  gap: 9px;
+}
+
+.pm-tool-group > small,
+.pm-drawing-readout > small,
+.pm-field-result > small,
+.pm-vision-readout > small {
+  color: #168191;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .13em;
+}
+
+.pm-color-tools {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 7px;
+}
+
+.pm-color-tools button {
+  position: relative;
+  height: 34px;
+  padding: 0;
+  border: 3px solid white;
+  border-radius: 9px;
+  box-shadow: 0 0 0 1px #cadbd8;
+  cursor: pointer;
+}
+
+.pm-color-tools button.active {
+  box-shadow: 0 0 0 3px #173f59;
+}
+
+.pm-color-tools button.active::after {
+  position: absolute;
+  top: 8px;
+  left: 11px;
+  color: #fff;
+  content: "✓";
+  font-size: 11px;
+  font-weight: 950;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+}
+
+.pm-width-tools {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.pm-width-tools button {
+  display: grid;
+  min-width: 0;
+  min-height: 47px;
+  place-items: center;
+  gap: 4px;
+  padding: 7px 3px;
+  border: 1px solid #cadbd8;
+  border-radius: 9px;
+  background: #fff;
+  color: #6b8084;
+  cursor: pointer;
+  font-size: 7px;
+  font-weight: 850;
+}
+
+.pm-width-tools button i {
+  display: block;
+  width: 28px;
+  max-height: 9px;
+  border-radius: 999px;
+  background: #263f58;
+}
+
+.pm-width-tools button.active {
+  border-color: #168191;
+  background: #e8f4f2;
+  color: #126c78;
+}
+
+.pm-sketch-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.pm-sketch-actions button,
+.pm-vision-controls > button {
+  min-height: 39px;
+  padding: 8px 9px;
+  border: 1px solid #cadbd8;
+  border-radius: 9px;
+  background: #fff;
+  color: #526e73;
+  cursor: pointer;
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.pm-sketch-actions button:last-child {
+  grid-column: 1 / -1;
+}
+
+.pm-sketch-actions button.active,
+.pm-vision-controls > button.active {
+  border-color: #168191;
+  background: #e5f3f0;
+  color: #126e79;
+}
+
+.pm-sketch-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .4;
+}
+
+.pm-drawing-readout {
+  display: grid;
+  gap: 7px;
+  padding: 13px;
+  border: 1px solid #d4e2df;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.pm-drawing-readout > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #e2eae8;
+}
+
+.pm-drawing-readout em {
+  color: #6d8387;
+  font-size: 7px;
+  font-style: normal;
+}
+
+.pm-drawing-readout b {
+  color: #173f59;
+  font-size: 10px;
+}
+
+.pm-drawing-controls > .pm-record-button {
+  margin-top: auto;
+}
+
+.pm-vision-controls label {
+  display: grid;
+  gap: 8px;
+  color: #587176;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.pm-vision-controls label span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pm-vision-controls label b {
+  color: #168191;
+}
+
+.pm-vision-controls input {
+  width: 100%;
+  accent-color: #168191;
+}
+
+.pm-vision-readout {
+  display: grid;
+  gap: 6px;
+  padding: 15px;
+  border: 6px solid #263f46;
+  border-radius: 12px;
+  background: linear-gradient(#d8edd3, #b3cdae);
+  box-shadow: inset 0 0 18px rgba(39, 82, 55, .18), 0 6px 0 #172c32;
+}
+
+.pm-vision-readout b {
+  color: #244a3c;
+  font-size: 18px;
+}
+
+.pm-vision-readout span {
+  color: #527160;
+  font-size: 7px;
+  line-height: 1.4;
+}
+
+.pm-field-result {
+  display: grid;
+  gap: 4px;
+  padding: 13px;
+  border-left: 4px solid #ef9f28;
+  border-radius: 10px;
+  background: #fff8e9;
+}
+
+.pm-field-result small {
+  color: #a16e32;
+}
+
+.pm-field-result b {
+  color: #7d512b;
+  font-size: 24px;
+}
+
+.pm-field-result span,
+.pm-vision-controls > p {
+  color: #7e7768;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+.pm-vision-controls > p {
+  margin: 0;
+  padding: 10px 11px;
+  border-radius: 9px;
+  background: #e7f3f1;
+  color: #527276;
+}
+
+@media (max-width: 960px) {
+  .pm-drawing-workspace,
+  .pm-vision-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-drawing-controls,
+  .pm-vision-controls {
+    border-top: 1px solid #d7e3e0;
+    border-left: 0;
+  }
+
+  .pm-tool-group,
+  .pm-sketch-actions,
+  .pm-drawing-readout,
+  .pm-vision-controls label,
+  .pm-vision-readout,
+  .pm-field-result {
+    max-width: 620px;
+    width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .pm-mode-switch {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-sketch-stage,
+  .pm-vision-stage {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 620px) {
+  .pm-color-tools {
+    grid-template-columns: repeat(5, 38px);
+  }
+
+  .pm-sketch-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pm-sketch-actions button:last-child {
     grid-column: auto;
   }
 }
