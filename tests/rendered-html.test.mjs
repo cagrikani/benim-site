@@ -162,7 +162,8 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /module\.key === "electricity"/);
   assert.match(page, /onNavigate\("electricity"\)/);
   assert.match(page, /2 deney açık/);
-  assert.match(page, /<b>12<\/b>\s*çalışan deney/);
+  assert.match(page, /3 deney açık/);
+  assert.match(page, /<b>13<\/b>\s*çalışan deney/);
   assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
   assert.match(page, /portal-guided-lab\.webp/);
@@ -489,6 +490,67 @@ test("düzlem ayna laboratuvarı gerçekçi seçim kartları, düzenek ve respon
   assert.match(css, /\.pm-field-result\s*\{/);
   assert.match(css, /\.pm-evidence-section\s*\{/);
   assert.match(css, /@media \(max-width: 620px\)/);
+});
+
+test("çukur ayna laboratuvarı döndürülebilir küresel ayna, lazer ve serbest çizim sunar", async () => {
+  const hub = await readFile(
+    new URL("app/OpticsLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("app/ConcaveMirrorLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(hub, /ConcaveMirrorLab/);
+  assert.match(hub, /DENEY 02 · HAZIR/);
+  assert.match(hub, /activeMirror === "concave" && <ConcaveMirrorLab/);
+  assert.match(page, /ConcaveReflectionCanvas/);
+  assert.match(page, /ConcaveImageCanvas/);
+  assert.match(page, /RADIUS_OF_CURVATURE/);
+  assert.match(page, /reflectVector/);
+  assert.match(page, /incomingVector\.x - 2 \* incomingDotNormal/);
+  assert.match(page, /reflectionMirrorAngle/);
+  assert.match(page, /imageMirrorAngle/);
+  assert.match(page, /hitOffset/);
+  assert.match(page, /Ayna dönüş açısı/);
+  assert.match(page, /Yüzey normali/);
+  assert.match(page, /i = r/);
+  assert.match(page, /Odak uzaklığı · f/);
+  assert.match(page, /objectDistance/);
+  assert.match(page, /focalLength/);
+  assert.match(page, /imageDistance/);
+  assert.match(page, /magnification/);
+  assert.match(page, /CİSMİ BU ALANA ÇİZ/);
+  assert.match(page, /Görüntü sonsuzda/);
+  assert.match(page, /Gerçek · ters · küçük/);
+  assert.match(page, /Gerçek · ters · büyük/);
+  assert.match(page, /Sanal görüntü · düz · büyük/);
+  assert.match(page, /F–C HARİTASI/);
+  assert.match(page, /onPointerDown/);
+  assert.match(page, /setPointerCapture/);
+  assert.match(page, /Cetvel ölçümünü kaydet/);
+  assert.match(page, /TYMM · DENEY RAPORU/);
+  assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
+  assert.doesNotMatch(page, /Görüş alanı|saydam olmayan|saydam cisim/i);
+});
+
+test("çukur ayna laboratuvarı gerçekçi düzenek, kontrol paneli ve responsive görünüm içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.cm-lab\s*\{/);
+  assert.match(css, /\.cm-hero\s*\{/);
+  assert.match(css, /\.cm-equipment-strip\s*\{/);
+  assert.match(css, /\.cm-mode-switch\s*\{/);
+  assert.match(css, /\.cm-workspace\s*\{/);
+  assert.match(css, /\.cm-canvas\s*\{/);
+  assert.match(css, /\.cm-reflection-canvas\s*\{/);
+  assert.match(css, /\.cm-image-canvas\s*\{/);
+  assert.match(css, /\.cm-control-console\s*\{/);
+  assert.match(css, /\.cm-digital-display\s*\{/);
+  assert.match(css, /\.cm-image-summary\s*\{/);
+  assert.match(css, /\.cm-drawing-tools\s*\{/);
+  assert.match(css, /\.cm-evidence-grid\s*\{/);
+  assert.match(css, /\.cm-report-grid\s*\{/);
+  assert.match(css, /@media \(max-width: 980px\)/);
 });
 
 test("Modern Fizik alanı gerçek fotoelektrik düzeneği ve TYMM deney akışını sunar", async () => {

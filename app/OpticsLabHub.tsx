@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState } from "react";
+import ConcaveMirrorLab from "./ConcaveMirrorLab";
 import PlaneMirrorLab from "./PlaneMirrorLab";
 import PrismLab from "./PrismLab";
 
@@ -70,7 +71,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
             <div className="mirror-type-heading">
               <span>AYNALAR</span>
               <h2>Deney yapmak istediğin aynayı seç.</h2>
-              <p>Düzlem ayna deneyi hazırdır. Çukur ve tümsek ayna butonları sonraki deneyler için yerleştirildi.</p>
+              <p>Düzlem ve çukur ayna deneyleri hazırdır. Tümsek ayna butonu sonraki deney için yerleştirildi.</p>
             </div>
             <div className="mirror-type-grid">
               <button className={activeMirror === "plane" ? "active" : ""} type="button" onClick={() => setActiveMirror("plane")}>
@@ -80,8 +81,8 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
               </button>
               <button className={activeMirror === "concave" ? "active" : ""} type="button" onClick={() => setActiveMirror("concave")}>
                 <span className="mirror-type-image"><img src="./optics-concave-mirror.webp" alt="" draggable="false" /></span>
-                <span><small>DENEY 02 · SIRADAKİ</small><b>Çukur ayna</b><em>Odak, ışınlar ve görüntü oluşumu</em></span>
-                <strong>Butonu aç →</strong>
+                <span><small>DENEY 02 · HAZIR</small><b>Çukur ayna</b><em>Odak, ışınlar ve görüntü oluşumu</em></span>
+                <strong>{activeMirror === "concave" ? "Açık" : "Deneyi aç"} →</strong>
               </button>
               <button className={activeMirror === "convex" ? "active" : ""} type="button" onClick={() => setActiveMirror("convex")}>
                 <span className="mirror-type-image"><img src="./optics-convex-mirror.webp" alt="" draggable="false" /></span>
@@ -94,12 +95,13 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
 
         {activeTopic === "prism" && <PrismLab />}
         {activeTopic === "mirrors" && activeMirror === "plane" && <PlaneMirrorLab />}
-        {activeTopic === "mirrors" && (activeMirror === "concave" || activeMirror === "convex") && (
+        {activeTopic === "mirrors" && activeMirror === "concave" && <ConcaveMirrorLab />}
+        {activeTopic === "mirrors" && activeMirror === "convex" && (
           <section className="mirror-placeholder">
             <span>AYNALAR · SONRAKİ DENEY</span>
-            <h2>{activeMirror === "concave" ? "Çukur ayna" : "Tümsek ayna"}</h2>
+            <h2>Tümsek ayna</h2>
             <p>Buton ve görsel hazır. Bu deney, düzlem ayna çalışmasından sonra aynı ayrıntı düzeyinde hazırlanacak.</p>
-            <button type="button" onClick={() => setActiveMirror("plane")}>Önce düzlem ayna deneyini aç →</button>
+            <button type="button" onClick={() => setActiveMirror("concave")}>Çukur ayna deneyini aç →</button>
           </section>
         )}
       </div>
