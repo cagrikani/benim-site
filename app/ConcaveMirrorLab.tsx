@@ -21,6 +21,8 @@ type ReflectionReading = {
   id: number;
   mirrorAngle: number;
   hitOffset: number;
+  laserX: number;
+  laserY: number;
   incidenceAngle: number;
 };
 type ImageReading = {
@@ -288,20 +290,22 @@ function drawAxisAndMarkers(
 }
 
 function ConcaveReflectionCanvas({
-  laserAngle,
+  laserPosition,
   mirrorAngle,
   hitOffset,
   laserOn,
-  onLaserAngleChange,
+  onLaserPositionChange,
+  onHitOffsetChange,
 }: {
-  laserAngle: number;
+  laserPosition: Point;
   mirrorAngle: number;
   hitOffset: number;
   laserOn: boolean;
-  onLaserAngleChange: (value: number) => void;
+  onLaserPositionChange: (position: Point) => void;
+  onHitOffsetChange: (value: number) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const draggingLaserRef = useRef(false);
+  const draggingRef = useRef<"laser" | "hit" | null>(null);
 
   const geometry = useMemo(() => {
     const vertex = { x: 660, y: 205 };
@@ -312,11 +316,8 @@ function ConcaveReflectionCanvas({
       Math.sqrt(RADIUS_OF_CURVATURE ** 2 - hitOffset ** 2);
     const hit = localToWorld(vertex, axis, up, { x: sag, y: hitOffset });
     const normal = normalize(subtract(center, hit));
-    const sourceDirection = {
-      x: -Math.cos(toRadians(laserAngle)),
-      y: -Math.sin(toRadians(laserAngle)),
-    };
-    const source = add(hit, sourceDirection, 275);
+    const source = laserPosition;
+    const sourceDirection = normalize(subtract(source, hit));
     const incomingVector = normalize(subtract(hit, source));
     const reflectedVector = reflectVector(incomingVector, normal);
     const incidenceAngle = toDegrees(
@@ -334,7 +335,7 @@ function ConcaveReflectionCanvas({
       reflectedVector,
       incidenceAngle,
     };
-  }, [hitOffset, laserAngle, mirrorAngle]);
+  }, [hitOffset, laserPosition, mirrorAngle]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -404,15 +405,35 @@ function ConcaveReflectionCanvas({
       context.fill();
       context.restore();
 
+      context.save();
+      context.strokeStyle = "rgba(225, 143, 29, 0.9)";
+      context.lineWidth = 2;
+      context.setLineDash([5, 5]);
+      context.beginPath();
+      context.arc(source.x, source.y, 34, 0, Math.PI * 2);
+      context.stroke();
+      context.setLineDash([]);
+      context.fillStyle = "#a96616";
+      context.font = "900 10px Arial";
+      context.textAlign = "center";
+      context.fillText("LAZERİ TAŞI", source.x, source.y + 49);
+      context.restore();
+
       drawConcaveMirror(context, vertex, axis, up, RADIUS_OF_CURVATURE, 102);
       context.fillStyle = "#ef9f28";
       context.beginPath();
       context.arc(hit.x, hit.y, 7, 0, Math.PI * 2);
       context.fill();
 
+      const hitLabel = add(hit, up, hitOffset > 42 ? -22 : 24);
+      context.fillStyle = "#a96616";
+      context.font = "900 9px Arial";
+      context.textAlign = "center";
+      context.fillText("ÇARPMA NOKTASI", hitLabel.x, hitLabel.y);
+
       context.fillStyle = "rgba(255,255,255,0.92)";
       context.beginPath();
-      context.roundRect(24, 22, 246, 54, 12);
+      context.roundRect(24, 22, 330, 66, 12);
       context.fill();
       context.fillStyle = "#264e52";
       context.font = "900 13px Arial";
@@ -420,41 +441,63 @@ function ConcaveReflectionCanvas({
       context.fillText("KÜRESEL ÇUKUR AYNA DÜZENEĞİ", 40, 44);
       context.fillStyle = "#668084";
       context.font = "700 11px Arial";
-      context.fillText("Lazeri tutup sürükleyebilirsin.", 40, 63);
+      context.fillText("Lazeri istediğin başlangıç noktasına sürükle.", 40, 63);
+      context.fillText("Turuncu noktayı ayna üzerinde ayrıca taşı.", 40, 79);
     };
 
     draw();
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [geometry, laserOn]);
+  }, [geometry, hitOffset, laserOn]);
 
-  const updateLaser = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+  const updateInteraction = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const point = pointerToLogical(event, REFLECTION_WIDTH, REFLECTION_HEIGHT);
-    const vector = subtract(geometry.hit, point);
-    const value = toDegrees(Math.atan2(vector.y, vector.x));
-    onLaserAngleChange(clamp(-value, -38, 38));
+    if (draggingRef.current === "hit") {
+      const local = worldToLocal(
+        geometry.vertex,
+        geometry.axis,
+        geometry.up,
+        point,
+      );
+      onHitOffsetChange(clamp(local.y, -75, 75));
+      return;
+    }
+    onLaserPositionChange({
+      x: clamp(point.x, 75, 555),
+      y: clamp(point.y, 82, 355),
+    });
   };
 
   return (
     <canvas
       ref={canvasRef}
       className="cm-canvas cm-reflection-canvas"
-      aria-label="Döndürülebilir küresel çukur ayna ve lazer düzeneği"
+      aria-label="Lazerin serbestçe taşındığı, çarpma noktası ve küresel çukur aynası ayarlanabilen düzenek"
       onPointerDown={(event) => {
-        draggingLaserRef.current = true;
+        const point = pointerToLogical(event, REFLECTION_WIDTH, REFLECTION_HEIGHT);
+        const local = worldToLocal(
+          geometry.vertex,
+          geometry.axis,
+          geometry.up,
+          point,
+        );
+        const nearMirror = Math.abs(local.x) < 55 && Math.abs(local.y) < 115;
+        draggingRef.current = nearMirror ? "hit" : "laser";
         event.currentTarget.setPointerCapture(event.pointerId);
-        updateLaser(event);
+        updateInteraction(event);
       }}
       onPointerMove={(event) => {
-        if (draggingLaserRef.current) updateLaser(event);
+        if (draggingRef.current) updateInteraction(event);
       }}
       onPointerUp={(event) => {
-        draggingLaserRef.current = false;
-        event.currentTarget.releasePointerCapture(event.pointerId);
+        draggingRef.current = null;
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
       }}
       onPointerCancel={() => {
-        draggingLaserRef.current = false;
+        draggingRef.current = null;
       }}
     />
   );
@@ -857,7 +900,7 @@ const formatNumber = (value: number, digits = 1) =>
 
 export default function ConcaveMirrorLab() {
   const [mode, setMode] = useState<ExperimentMode>("reflection");
-  const [laserAngle, setLaserAngle] = useState(0);
+  const [laserPosition, setLaserPosition] = useState<Point>({ x: 260, y: 205 });
   const [reflectionMirrorAngle, setReflectionMirrorAngle] = useState(0);
   const [hitOffset, setHitOffset] = useState(0);
   const [laserOn, setLaserOn] = useState(true);
@@ -882,16 +925,13 @@ export default function ConcaveMirrorLab() {
       Math.sqrt(RADIUS_OF_CURVATURE ** 2 - hitOffset ** 2);
     const hit = localToWorld(vertex, axis, up, { x: sag, y: hitOffset });
     const normal = normalize(subtract(center, hit));
-    const sourceDirection = {
-      x: -Math.cos(toRadians(laserAngle)),
-      y: -Math.sin(toRadians(laserAngle)),
-    };
+    const sourceDirection = normalize(subtract(laserPosition, hit));
     return {
       incidenceAngle: toDegrees(
         Math.acos(clamp(dot(sourceDirection, normal), -1, 1)),
       ),
     };
-  }, [hitOffset, laserAngle, reflectionMirrorAngle]);
+  }, [hitOffset, laserPosition, reflectionMirrorAngle]);
 
   const imageResult = useMemo(
     () => solveImage(objectDistance, focalLength),
@@ -905,6 +945,8 @@ export default function ConcaveMirrorLab() {
         id: Date.now(),
         mirrorAngle: reflectionMirrorAngle,
         hitOffset,
+        laserX: laserPosition.x,
+        laserY: laserPosition.y,
         incidenceAngle: reflectionGeometry.incidenceAngle,
       },
     ]);
@@ -971,16 +1013,17 @@ export default function ConcaveMirrorLab() {
           <div className="cm-panel-heading">
             <span>YANSIMA DENEYİ</span>
             <h3>Eğri yüzeyin her noktasında normal farklıdır.</h3>
-            <p>Lazeri ve aynayı döndür; ışının aynaya çarptığı noktayı değiştir.</p>
+            <p>Lazeri istediğin noktaya sürükle; ardından ayna açısını ve turuncu çarpma noktasını değiştir.</p>
           </div>
           <div className="cm-workspace">
             <div className="cm-stage">
               <ConcaveReflectionCanvas
-                laserAngle={laserAngle}
+                laserPosition={laserPosition}
                 mirrorAngle={reflectionMirrorAngle}
                 hitOffset={hitOffset}
                 laserOn={laserOn}
-                onLaserAngleChange={setLaserAngle}
+                onLaserPositionChange={setLaserPosition}
+                onHitOffsetChange={setHitOffset}
               />
               <div className="cm-stage-legend">
                 <span><i className="red" /> Gelen ve yansıyan ışın</span>
@@ -995,8 +1038,12 @@ export default function ConcaveMirrorLab() {
                 <strong>i = r</strong>
               </div>
               <label>
-                <span>Lazer yönü <b>{laserAngle}°</b></span>
-                <input type="range" min="-38" max="38" value={laserAngle} onChange={(event) => setLaserAngle(Number(event.target.value))} />
+                <span>Lazer yatay konumu <b>{formatNumber(laserPosition.x / 10)} cm</b></span>
+                <input type="range" min="75" max="555" value={laserPosition.x} onChange={(event) => setLaserPosition((position) => ({ ...position, x: Number(event.target.value) }))} />
+              </label>
+              <label>
+                <span>Lazer dikey konumu <b>üstten {formatNumber(laserPosition.y / 10)} cm</b></span>
+                <input type="range" min="82" max="355" value={laserPosition.y} onChange={(event) => setLaserPosition((position) => ({ ...position, y: Number(event.target.value) }))} />
               </label>
               <label>
                 <span>Ayna dönüş açısı <b>{reflectionMirrorAngle}°</b></span>
@@ -1008,22 +1055,22 @@ export default function ConcaveMirrorLab() {
               </label>
               <div className="cm-console-actions">
                 <button type="button" className={laserOn ? "active" : ""} onClick={() => setLaserOn((value) => !value)}>{laserOn ? "Lazeri kapat" : "Lazeri aç"}</button>
-                <button type="button" onClick={() => { setLaserAngle(0); setReflectionMirrorAngle(0); setHitOffset(0); }}>Başlangıca dön</button>
+                <button type="button" onClick={() => { setLaserPosition({ x: 260, y: 205 }); setReflectionMirrorAngle(0); setHitOffset(0); }}>Başlangıca dön</button>
               </div>
               <button className="cm-record-button" type="button" onClick={recordReflection}>Açı ölçümünü kaydet +</button>
             </aside>
           </div>
 
           <div className="cm-data-card">
-            <div><span>ÖLÇÜM TABLOSU</span><h4>Yansıma kayıtların</h4><p>Aynayı ve çarpma noktasını değiştirerek en az üç ölçüm al.</p></div>
+            <div><span>ÖLÇÜM TABLOSU</span><h4>Yansıma kayıtların</h4><p>Lazerin başlangıç yerini, aynayı ve çarpma noktasını değiştirerek en az üç ölçüm al.</p></div>
             <div className="cm-table-wrap">
               <table>
-                <thead><tr><th>#</th><th>Ayna</th><th>Çarpma noktası</th><th>i</th><th>r</th><th>Sonuç</th></tr></thead>
+                <thead><tr><th>#</th><th>Lazer konumu</th><th>Ayna</th><th>Çarpma noktası</th><th>i</th><th>r</th><th>Sonuç</th></tr></thead>
                 <tbody>
                   {reflectionReadings.length === 0 ? (
-                    <tr><td colSpan={6}>Henüz ölçüm kaydetmedin.</td></tr>
+                    <tr><td colSpan={7}>Henüz ölçüm kaydetmedin.</td></tr>
                   ) : reflectionReadings.map((reading, index) => (
-                    <tr key={reading.id}><td>{index + 1}</td><td>{reading.mirrorAngle}°</td><td>{reading.hitOffset === 0 ? "Merkez" : `${Math.abs(reading.hitOffset)} px ${reading.hitOffset > 0 ? "üst" : "alt"}`}</td><td>{formatNumber(reading.incidenceAngle)}°</td><td>{formatNumber(reading.incidenceAngle)}°</td><td><b className="cm-equal-chip">i = r</b></td></tr>
+                    <tr key={reading.id}><td>{index + 1}</td><td>{formatNumber(reading.laserX / 10)} · {formatNumber(reading.laserY / 10)} cm</td><td>{reading.mirrorAngle}°</td><td>{reading.hitOffset === 0 ? "Merkez" : `${Math.abs(reading.hitOffset)} px ${reading.hitOffset > 0 ? "üst" : "alt"}`}</td><td>{formatNumber(reading.incidenceAngle)}°</td><td>{formatNumber(reading.incidenceAngle)}°</td><td><b className="cm-equal-chip">i = r</b></td></tr>
                   ))}
                 </tbody>
               </table>

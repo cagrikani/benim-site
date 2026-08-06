@@ -512,6 +512,13 @@ test("çukur ayna laboratuvarı döndürülebilir küresel ayna, lazer ve serbes
   assert.match(page, /reflectionMirrorAngle/);
   assert.match(page, /imageMirrorAngle/);
   assert.match(page, /hitOffset/);
+  assert.match(page, /laserPosition/);
+  assert.match(page, /onLaserPositionChange/);
+  assert.match(page, /onHitOffsetChange/);
+  assert.match(page, /Lazeri istediğin başlangıç noktasına sürükle/);
+  assert.match(page, /Lazer yatay konumu/);
+  assert.match(page, /Lazer dikey konumu/);
+  assert.match(page, /nearMirror \? "hit" : "laser"/);
   assert.match(page, /Ayna dönüş açısı/);
   assert.match(page, /Yüzey normali/);
   assert.match(page, /i = r/);
