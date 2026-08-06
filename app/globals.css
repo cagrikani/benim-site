@@ -26771,6 +26771,11 @@ footer > a {
   border-radius: 50%;
 }
 
+.cm-convex-lab .cm-tool-mirror::after,
+.cm-convex-lab .cm-hero-badge::before {
+  transform: scaleX(-1) rotate(-7deg);
+}
+
 .cm-tool-table::before {
   content: "";
   position: absolute;

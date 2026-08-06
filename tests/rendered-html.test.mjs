@@ -162,8 +162,8 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /module\.key === "electricity"/);
   assert.match(page, /onNavigate\("electricity"\)/);
   assert.match(page, /2 deney açık/);
-  assert.match(page, /3 deney açık/);
-  assert.match(page, /<b>13<\/b>\s*çalışan deney/);
+  assert.match(page, /4 deney açık/);
+  assert.match(page, /<b>14<\/b>\s*çalışan deney/);
   assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
   assert.match(page, /portal-guided-lab\.webp/);
@@ -558,6 +558,42 @@ test("çukur ayna laboratuvarı gerçekçi düzenek, kontrol paneli ve responsiv
   assert.match(css, /\.cm-evidence-grid\s*\{/);
   assert.match(css, /\.cm-report-grid\s*\{/);
   assert.match(css, /@media \(max-width: 980px\)/);
+});
+
+test("tümsek ayna laboratuvarı serbest lazer ve ideal sanal görüntü deneyi sunar", async () => {
+  const hub = await readFile(
+    new URL("app/OpticsLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const wrapper = await readFile(
+    new URL("app/ConvexMirrorLab.tsx", projectRoot),
+    "utf8",
+  );
+  const sharedLab = await readFile(
+    new URL("app/ConcaveMirrorLab.tsx", projectRoot),
+    "utf8",
+  );
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(hub, /ConvexMirrorLab/);
+  assert.match(hub, /DENEY 03 · HAZIR/);
+  assert.match(hub, /activeMirror === "convex" && <ConvexMirrorLab/);
+  assert.match(wrapper, /SphericalMirrorLab/);
+  assert.match(wrapper, /mirrorKind="convex"/);
+  assert.match(sharedLab, /mirrorKind === "convex"/);
+  assert.match(sharedLab, /signedFocalLength = -focalLength/);
+  assert.match(sharedLab, /objectDistance - signedFocalLength/);
+  assert.match(sharedLab, /Sanal görüntü · düz · küçük/);
+  assert.match(sharedLab, /ayna ile F arasında oluşur/);
+  assert.match(sharedLab, /markerDirection/);
+  assert.match(sharedLab, /UZAKLIK HARİTASI/);
+  assert.match(sharedLab, /Yansıyan temel ışınların uzantıları/);
+  assert.match(sharedLab, /onLaserPositionChange/);
+  assert.match(sharedLab, /onHitOffsetChange/);
+  assert.match(sharedLab, /Temel ışınları göster/);
+  assert.match(sharedLab, /Cetvel ölçümünü kaydet/);
+  assert.match(sharedLab, /TYMM · DENEY RAPORU/);
+  assert.doesNotMatch(sharedLab, /Math\.random|hata|belirsiz/i);
+  assert.match(css, /\.cm-convex-lab \.cm-tool-mirror::after/);
 });
 
 test("Modern Fizik alanı gerçek fotoelektrik düzeneği ve TYMM deney akışını sunar", async () => {
