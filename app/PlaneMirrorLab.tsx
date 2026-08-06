@@ -16,22 +16,130 @@ type DrawStroke = {
   width: number;
   points: Point[];
 };
+type ReflectionReading = {
+  id: string;
+  laserAngle: number;
+  mirrorAngle: number;
+  incidenceAngle: number;
+};
 type ImageReading = {
   id: number;
+  mirrorAngle: number;
   objectDistance: number;
   imageDistance: number;
-  objectWidth: number;
-  imageWidth: number;
-  height: number;
+  objectSize: number;
+  imageSize: number;
+};
+type VisionObjectKind = "transparent" | "opaque";
+type VisionObject = {
+  id: number;
+  kind: VisionObjectKind;
+  x: number;
+  y: number;
+  radius: number;
+};
+type VisionAnalysis = {
+  id: number;
+  visible: boolean;
+  status: "visible" | "outside" | "blocked";
+  mirrorX: number;
+  virtualY: number;
+  blockerId?: number;
 };
 
 const DRAWING_WIDTH = 900;
 const DRAWING_HEIGHT = 480;
 const DRAWING_MIRROR_X = DRAWING_WIDTH / 2;
+const DRAWING_MIRROR_Y = (DRAWING_HEIGHT - 56) / 2;
 const DRAWING_PIXELS_PER_CM = 10;
+const VISION_WIDTH = 900;
+const VISION_HEIGHT = 500;
+const VISION_MIRROR_Y = 190;
+const VISION_EYE_Y = 420;
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
+
+const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+
+function mirrorLine(angle: number) {
+  const radian = toRadians(angle);
+  const direction = { x: -Math.sin(radian), y: Math.cos(radian) };
+  const normal = { x: Math.cos(radian), y: Math.sin(radian) };
+  return { direction, normal };
+}
+
+function reflectPointAcrossMirror(point: Point, angle: number): Point {
+  const { direction } = mirrorLine(angle);
+  const relativeX = point.x - DRAWING_MIRROR_X;
+  const relativeY = point.y - DRAWING_MIRROR_Y;
+  const projection = relativeX * direction.x + relativeY * direction.y;
+  const projectedX = DRAWING_MIRROR_X + projection * direction.x;
+  const projectedY = DRAWING_MIRROR_Y + projection * direction.y;
+  return {
+    x: projectedX * 2 - point.x,
+    y: projectedY * 2 - point.y,
+  };
+}
+
+function distanceToSegment(point: Point, start: Point, end: Point) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (!lengthSquared) return Math.hypot(point.x - start.x, point.y - start.y);
+  const progress = clamp(
+    ((point.x - start.x) * dx + (point.y - start.y) * dy) /
+      lengthSquared,
+    0,
+    1,
+  );
+  return Math.hypot(
+    point.x - (start.x + progress * dx),
+    point.y - (start.y + progress * dy),
+  );
+}
+
+function analyzeVisionObjects(
+  objects: VisionObject[],
+  eyeX: number,
+  mirrorWidth: number,
+): VisionAnalysis[] {
+  const mirrorHalf = mirrorWidth * 4;
+  const mirrorLeft = VISION_WIDTH / 2 - mirrorHalf;
+  const mirrorRight = VISION_WIDTH / 2 + mirrorHalf;
+  const eye = { x: eyeX, y: VISION_EYE_Y - 25 };
+
+  return objects.map((object) => {
+    const virtualY = 2 * VISION_MIRROR_Y - object.y;
+    const denominator = virtualY - eye.y;
+    const progress = (VISION_MIRROR_Y - eye.y) / denominator;
+    const mirrorX = eye.x + (object.x - eye.x) * progress;
+    const inField = mirrorX >= mirrorLeft && mirrorX <= mirrorRight;
+    if (!inField) {
+      return { id: object.id, visible: false, status: "outside", mirrorX, virtualY };
+    }
+
+    const mirrorPoint = { x: mirrorX, y: VISION_MIRROR_Y };
+    const blocker = objects.find((candidate) => {
+      if (candidate.id === object.id || candidate.kind !== "opaque") return false;
+      const candidatePoint = { x: candidate.x, y: candidate.y };
+      const onEyePath =
+        distanceToSegment(candidatePoint, eye, mirrorPoint) < candidate.radius + 5;
+      const onObjectPath =
+        distanceToSegment(candidatePoint, mirrorPoint, object) < candidate.radius + 5;
+      return onEyePath || onObjectPath;
+    });
+
+    return {
+      id: object.id,
+      visible: !blocker,
+      status: blocker ? "blocked" : "visible",
+      mirrorX,
+      virtualY,
+      blockerId: blocker?.id,
+    };
+  });
+}
 
 function drawGlowLine(
   context: CanvasRenderingContext2D,
@@ -85,13 +193,17 @@ function drawArrowHead(
 }
 
 function ReflectionCanvas({
-  angle,
+  laserAngle,
+  mirrorAngle,
+  incidenceAngle,
   laserOn,
-  onAngleChange,
+  onLaserAngleChange,
 }: {
-  angle: number;
+  laserAngle: number;
+  mirrorAngle: number;
+  incidenceAngle: number;
   laserOn: boolean;
-  onAngleChange: (angle: number) => void;
+  onLaserAngleChange: (angle: number) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const draggingRef = useRef(false);
@@ -115,11 +227,24 @@ function ReflectionCanvas({
       const centerX = width * 0.5;
       const centerY = height * 0.73;
       const radius = Math.min(width * 0.39, height * 0.58);
-      const angleRad = (angle * Math.PI) / 180;
-      const sourceX = centerX - Math.sin(angleRad) * radius;
-      const sourceY = centerY - Math.cos(angleRad) * radius;
-      const reflectedX = centerX + Math.sin(angleRad) * (radius + 22);
-      const reflectedY = centerY - Math.cos(angleRad) * (radius + 22);
+      const laserRadian = toRadians(laserAngle);
+      const mirrorRadian = toRadians(mirrorAngle);
+      const sourceVector = {
+        x: -Math.sin(laserRadian),
+        y: -Math.cos(laserRadian),
+      };
+      const incomingVector = { x: -sourceVector.x, y: -sourceVector.y };
+      const normal = { x: Math.sin(mirrorRadian), y: -Math.cos(mirrorRadian) };
+      const incomingDotNormal =
+        incomingVector.x * normal.x + incomingVector.y * normal.y;
+      const reflectedVector = {
+        x: incomingVector.x - 2 * incomingDotNormal * normal.x,
+        y: incomingVector.y - 2 * incomingDotNormal * normal.y,
+      };
+      const sourceX = centerX + sourceVector.x * radius;
+      const sourceY = centerY + sourceVector.y * radius;
+      const reflectedX = centerX + reflectedVector.x * (radius + 22);
+      const reflectedY = centerY + reflectedVector.y * (radius + 22);
 
       context.save();
       context.strokeStyle = "rgba(216, 234, 230, 0.22)";
@@ -162,20 +287,30 @@ function ReflectionCanvas({
       context.strokeStyle = "rgba(255,255,255,0.75)";
       context.lineWidth = 1.4;
       context.beginPath();
-      context.moveTo(centerX, centerY + 16);
-      context.lineTo(centerX, centerY - radius - 30);
+      context.moveTo(centerX - normal.x * 22, centerY - normal.y * 22);
+      context.lineTo(
+        centerX + normal.x * (radius + 30),
+        centerY + normal.y * (radius + 30),
+      );
       context.stroke();
       context.setLineDash([]);
 
       context.strokeStyle = "rgba(255, 255, 255, 0.8)";
       context.lineWidth = 1.6;
+      const normalCanvasAngle = Math.atan2(normal.y, normal.x);
+      const sourceCanvasAngle = Math.atan2(sourceVector.y, sourceVector.x);
+      const reflectedCanvasAngle = Math.atan2(
+        reflectedVector.y,
+        reflectedVector.x,
+      );
       context.beginPath();
       context.arc(
         centerX,
         centerY,
         52,
-        -Math.PI / 2 - angleRad,
-        -Math.PI / 2,
+        sourceCanvasAngle,
+        normalCanvasAngle,
+        mirrorAngle < -laserAngle,
       );
       context.stroke();
       context.beginPath();
@@ -183,16 +318,17 @@ function ReflectionCanvas({
         centerX,
         centerY,
         52,
-        -Math.PI / 2,
-        -Math.PI / 2 + angleRad,
+        normalCanvasAngle,
+        reflectedCanvasAngle,
+        mirrorAngle < -laserAngle,
       );
       context.stroke();
 
       if (laserOn) {
         drawGlowLine(
           context,
-          sourceX + 28 * Math.cos(angleRad),
-          sourceY + 28 * Math.sin(angleRad),
+          sourceX - incomingVector.x * 31,
+          sourceY - incomingVector.y * 31,
           centerX,
           centerY,
           "#ff4e42",
@@ -209,16 +345,16 @@ function ReflectionCanvas({
           context,
           sourceX,
           sourceY,
-          centerX - 28 * Math.sin(angleRad),
-          centerY - 28 * Math.cos(angleRad),
+          centerX - incomingVector.x * 38,
+          centerY - incomingVector.y * 38,
           "#fff0d5",
         );
         drawArrowHead(
           context,
           centerX,
           centerY,
-          centerX + 85 * Math.sin(angleRad),
-          centerY - 85 * Math.cos(angleRad),
+          centerX + reflectedVector.x * 85,
+          centerY + reflectedVector.y * 85,
           "#fff0d5",
         );
         context.fillStyle = "#fff8db";
@@ -232,7 +368,7 @@ function ReflectionCanvas({
 
       context.save();
       context.translate(sourceX, sourceY);
-      context.rotate(angleRad);
+      context.rotate(Math.atan2(incomingVector.y, incomingVector.x));
       const laserGradient = context.createLinearGradient(-52, 0, 39, 0);
       laserGradient.addColorStop(0, "#071116");
       laserGradient.addColorStop(0.5, "#31474e");
@@ -254,37 +390,39 @@ function ReflectionCanvas({
       context.fillText("LAZER", -13, 3);
       context.restore();
 
-      const mirrorGradient = context.createLinearGradient(
-        centerX - 112,
-        0,
-        centerX + 112,
-        0,
-      );
+      context.save();
+      context.translate(centerX, centerY);
+      context.rotate(mirrorRadian);
+      const mirrorGradient = context.createLinearGradient(-112, 0, 112, 0);
       mirrorGradient.addColorStop(0, "#70888d");
       mirrorGradient.addColorStop(0.18, "#eff7f4");
       mirrorGradient.addColorStop(0.5, "#9db1b4");
       mirrorGradient.addColorStop(0.82, "#f4faf8");
       mirrorGradient.addColorStop(1, "#5f777c");
       context.fillStyle = "#112931";
-      context.fillRect(centerX - 122, centerY + 6, 244, 21);
+      context.fillRect(-122, 6, 244, 21);
       context.fillStyle = mirrorGradient;
-      context.fillRect(centerX - 112, centerY - 1, 224, 10);
+      context.fillRect(-112, -1, 224, 10);
       context.fillStyle = "#203b43";
       context.beginPath();
-      context.roundRect(centerX - 58, centerY + 25, 116, 18, 5);
+      context.roundRect(-58, 25, 116, 18, 5);
       context.fill();
+      context.restore();
 
       context.fillStyle = "rgba(238, 247, 244, 0.82)";
       context.font = "800 10px Arial";
       context.textAlign = "center";
-      context.fillText("NORMAL", centerX, centerY - radius - 36);
+      context.fillText(
+        "NORMAL",
+        centerX + normal.x * (radius + 38),
+        centerY + normal.y * (radius + 38),
+      );
       context.fillStyle = "#ff9187";
-      context.fillText(`i = ${angle}°`, centerX - 55, centerY - 45);
+      context.fillText(`i = ${incidenceAngle}°`, centerX - 58, centerY - 48);
       context.fillStyle = "#ffd17b";
-      context.fillText(`r = ${angle}°`, centerX + 55, centerY - 45);
+      context.fillText(`r = ${incidenceAngle}°`, centerX + 58, centerY - 48);
       context.fillStyle = "rgba(238, 247, 244, 0.7)";
-      context.fillText("GELEN IŞIN", centerX - 118, centerY - 92);
-      context.fillText("YANSIYAN IŞIN", centerX + 120, centerY - 92);
+      context.fillText(`AYNA ${mirrorAngle > 0 ? "+" : ""}${mirrorAngle}°`, centerX, centerY + 61);
       context.restore();
     };
 
@@ -292,7 +430,7 @@ function ReflectionCanvas({
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [angle, laserOn]);
+  }, [incidenceAngle, laserAngle, laserOn, mirrorAngle]);
 
   const updateAngle = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -310,7 +448,7 @@ function ReflectionCanvas({
         180) /
         Math.PI,
     );
-    onAngleChange(clamp(nextAngle, 5, 80));
+    onLaserAngleChange(clamp(nextAngle, 5, 60));
   };
 
   return (
@@ -318,7 +456,7 @@ function ReflectionCanvas({
       ref={canvasRef}
       className="pm-reflection-canvas"
       height={440}
-      aria-label={`Lazer aynaya normalden ${angle} derece açıyla geliyor ve ${angle} dereceyle yansıyor`}
+      aria-label={`Ayna ${mirrorAngle} derece döndürülmüş; lazer ${incidenceAngle} derece gelme açısıyla geliyor ve aynı açıyla yansıyor`}
       onPointerDown={(event) => {
         draggingRef.current = true;
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -338,7 +476,7 @@ function ReflectionCanvas({
   );
 }
 
-function getDrawingMeasurements(strokes: DrawStroke[]) {
+function getDrawingMeasurements(strokes: DrawStroke[], mirrorAngle: number) {
   const points = strokes.flatMap((stroke) => stroke.points);
   if (!points.length) return null;
   const minX = Math.min(...points.map((point) => point.x));
@@ -346,56 +484,67 @@ function getDrawingMeasurements(strokes: DrawStroke[]) {
   const minY = Math.min(...points.map((point) => point.y));
   const maxY = Math.max(...points.map((point) => point.y));
   const centerX = (minX + maxX) / 2;
+  const centerY = (minY + maxY) / 2;
+  const { normal } = mirrorLine(mirrorAngle);
+  const signedDistance =
+    (centerX - DRAWING_MIRROR_X) * normal.x +
+    (centerY - DRAWING_MIRROR_Y) * normal.y;
+  const mirrorFoot = {
+    x: centerX - signedDistance * normal.x,
+    y: centerY - signedDistance * normal.y,
+  };
+  const imageCenter = reflectPointAcrossMirror(
+    { x: centerX, y: centerY },
+    mirrorAngle,
+  );
   return {
     minX,
     maxX,
     minY,
     maxY,
     centerX,
-    objectDistance: Math.max(
-      0,
-      Math.round(((DRAWING_MIRROR_X - centerX) / DRAWING_PIXELS_PER_CM) * 10) /
-        10,
-    ),
+    centerY,
+    mirrorFoot,
+    imageCenter,
+    objectDistance:
+      Math.round((Math.abs(signedDistance) / DRAWING_PIXELS_PER_CM) * 10) / 10,
     width:
       Math.round(((maxX - minX) / DRAWING_PIXELS_PER_CM) * 10) / 10,
     height:
       Math.round(((maxY - minY) / DRAWING_PIXELS_PER_CM) * 10) / 10,
+    size:
+      Math.round(
+        (Math.hypot(maxX - minX, maxY - minY) / DRAWING_PIXELS_PER_CM) *
+          10,
+      ) / 10,
   };
 }
 
 function drawDimension(
   context: CanvasRenderingContext2D,
-  fromX: number,
-  toX: number,
-  y: number,
+  start: Point,
+  end: Point,
   label: string,
   color: string,
 ) {
+  const angle = Math.atan2(end.y - start.y, end.x - start.x);
   context.save();
   context.strokeStyle = color;
   context.fillStyle = color;
   context.lineWidth = 1.5;
   context.setLineDash([5, 4]);
   context.beginPath();
-  context.moveTo(fromX, y);
-  context.lineTo(toX, y);
+  context.moveTo(start.x, start.y);
+  context.lineTo(end.x, end.y);
   context.stroke();
   context.setLineDash([]);
-  for (const [x, direction] of [
-    [fromX, 1],
-    [toX, -1],
-  ] as const) {
-    context.beginPath();
-    context.moveTo(x, y);
-    context.lineTo(x + direction * 9, y - 4);
-    context.lineTo(x + direction * 9, y + 4);
-    context.closePath();
-    context.fill();
-  }
+  drawArrowHead(context, end.x, end.y, start.x, start.y, color);
+  drawArrowHead(context, start.x, start.y, end.x, end.y, color);
   context.font = "800 10px Arial";
   context.textAlign = "center";
-  context.fillText(label, (fromX + toX) / 2, y - 7);
+  context.translate((start.x + end.x) / 2, (start.y + end.y) / 2);
+  context.rotate(angle);
+  context.fillText(label, 0, -8);
   context.restore();
 }
 
@@ -403,12 +552,14 @@ function DrawingMirrorCanvas({
   strokes,
   color,
   penWidth,
+  mirrorAngle,
   showMeasurements,
   onStrokesChange,
 }: {
   strokes: DrawStroke[];
   color: string;
   penWidth: number;
+  mirrorAngle: number;
   showMeasurements: boolean;
   onStrokesChange: (update: (current: DrawStroke[]) => DrawStroke[]) => void;
 }) {
@@ -447,8 +598,6 @@ function DrawingMirrorCanvas({
       context.stroke();
     }
 
-    context.fillStyle = "rgba(22, 126, 145, 0.08)";
-    context.fillRect(DRAWING_MIRROR_X + 10, 0, DRAWING_WIDTH / 2 - 10, DRAWING_HEIGHT - 56);
     context.fillStyle = "#49676d";
     context.font = "900 10px Arial";
     context.textAlign = "center";
@@ -466,14 +615,18 @@ function DrawingMirrorCanvas({
       context.lineJoin = "round";
       context.beginPath();
       stroke.points.forEach((point, index) => {
-        const x = mirrored ? DRAWING_WIDTH - point.x : point.x;
-        if (index === 0) context.moveTo(x, point.y);
-        else context.lineTo(x, point.y);
+        const drawnPoint = mirrored
+          ? reflectPointAcrossMirror(point, mirrorAngle)
+          : point;
+        if (index === 0) context.moveTo(drawnPoint.x, drawnPoint.y);
+        else context.lineTo(drawnPoint.x, drawnPoint.y);
       });
       if (stroke.points.length === 1) {
         const point = stroke.points[0];
-        const x = mirrored ? DRAWING_WIDTH - point.x : point.x;
-        context.lineTo(x + 0.1, point.y + 0.1);
+        const drawnPoint = mirrored
+          ? reflectPointAcrossMirror(point, mirrorAngle)
+          : point;
+        context.lineTo(drawnPoint.x + 0.1, drawnPoint.y + 0.1);
       }
       context.stroke();
       context.restore();
@@ -482,49 +635,65 @@ function DrawingMirrorCanvas({
     strokes.forEach((stroke) => drawStroke(stroke, false));
     strokes.forEach((stroke) => drawStroke(stroke, true));
 
-    const measurements = getDrawingMeasurements(strokes);
+    const measurements = getDrawingMeasurements(strokes, mirrorAngle);
     if (showMeasurements && measurements) {
-      const imageCenterX = DRAWING_WIDTH - measurements.centerX;
-      const dimensionY = Math.min(DRAWING_HEIGHT - 82, measurements.maxY + 32);
       drawDimension(
         context,
-        measurements.centerX,
-        DRAWING_MIRROR_X,
-        dimensionY,
+        { x: measurements.centerX, y: measurements.centerY },
+        measurements.mirrorFoot,
         `${measurements.objectDistance.toFixed(1)} cm`,
         "#167e91",
       );
       drawDimension(
         context,
-        DRAWING_MIRROR_X,
-        imageCenterX,
-        dimensionY,
+        measurements.mirrorFoot,
+        measurements.imageCenter,
         `${measurements.objectDistance.toFixed(1)} cm`,
         "#d47c21",
       );
       context.strokeStyle = "rgba(22, 126, 145, 0.62)";
       context.setLineDash([4, 4]);
       context.beginPath();
-      context.moveTo(measurements.centerX, measurements.minY);
-      context.lineTo(imageCenterX, measurements.minY);
+      context.moveTo(measurements.centerX, measurements.centerY);
+      context.lineTo(measurements.imageCenter.x, measurements.imageCenter.y);
       context.stroke();
       context.setLineDash([]);
     }
 
-    const mirrorGradient = context.createLinearGradient(
-      DRAWING_MIRROR_X - 7,
-      0,
-      DRAWING_MIRROR_X + 7,
-      0,
-    );
+    context.save();
+    context.translate(DRAWING_MIRROR_X, DRAWING_MIRROR_Y);
+    context.rotate(toRadians(mirrorAngle));
+    const mirrorGradient = context.createLinearGradient(-7, 0, 7, 0);
     mirrorGradient.addColorStop(0, "#425d63");
     mirrorGradient.addColorStop(0.35, "#eef9f7");
     mirrorGradient.addColorStop(0.58, "#93aaae");
     mirrorGradient.addColorStop(1, "#253f46");
     context.fillStyle = mirrorGradient;
-    context.fillRect(DRAWING_MIRROR_X - 8, 0, 16, DRAWING_HEIGHT - 56);
+    context.fillRect(-8, -190, 16, 380);
     context.fillStyle = "#1a353d";
-    context.fillRect(DRAWING_MIRROR_X - 23, DRAWING_HEIGHT - 64, 46, 9);
+    context.fillRect(-23, 183, 46, 9);
+    context.restore();
+
+    context.strokeStyle = "rgba(23, 63, 89, 0.45)";
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.arc(
+      DRAWING_MIRROR_X,
+      DRAWING_MIRROR_Y,
+      38,
+      Math.PI / 2,
+      Math.PI / 2 + toRadians(mirrorAngle),
+      mirrorAngle < 0,
+    );
+    context.stroke();
+    context.fillStyle = "#173f59";
+    context.font = "900 9px Arial";
+    context.textAlign = "center";
+    context.fillText(
+      `${mirrorAngle > 0 ? "+" : ""}${mirrorAngle}°`,
+      DRAWING_MIRROR_X + 48,
+      DRAWING_MIRROR_Y + 7,
+    );
 
     const rulerY = DRAWING_HEIGHT - 48;
     context.fillStyle = "#e8c883";
@@ -552,15 +721,15 @@ function DrawingMirrorCanvas({
     context.fillStyle = "#173f59";
     context.textAlign = "center";
     context.fillText("AYNA · 0", DRAWING_MIRROR_X, DRAWING_HEIGHT - 7);
-  }, [showMeasurements, strokes]);
+  }, [mirrorAngle, showMeasurements, strokes]);
 
   const pointFromEvent = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    return {
+    const rawPoint = {
       x: clamp(
         ((event.clientX - rect.left) / rect.width) * DRAWING_WIDTH,
         12,
-        DRAWING_MIRROR_X - 18,
+        DRAWING_WIDTH - 12,
       ),
       y: clamp(
         ((event.clientY - rect.top) / rect.height) * DRAWING_HEIGHT,
@@ -568,12 +737,30 @@ function DrawingMirrorCanvas({
         DRAWING_HEIGHT - 70,
       ),
     };
+    const { normal } = mirrorLine(mirrorAngle);
+    const signedDistance =
+      (rawPoint.x - DRAWING_MIRROR_X) * normal.x +
+      (rawPoint.y - DRAWING_MIRROR_Y) * normal.y;
+    if (signedDistance > -18) {
+      return {
+        x: rawPoint.x - normal.x * (signedDistance + 18),
+        y: rawPoint.y - normal.y * (signedDistance + 18),
+      };
+    }
+    return rawPoint;
   };
 
   const startDrawing = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    const logicalX = ((event.clientX - rect.left) / rect.width) * DRAWING_WIDTH;
-    if (logicalX >= DRAWING_MIRROR_X - 12) return;
+    const logicalPoint = {
+      x: ((event.clientX - rect.left) / rect.width) * DRAWING_WIDTH,
+      y: ((event.clientY - rect.top) / rect.height) * DRAWING_HEIGHT,
+    };
+    const { normal } = mirrorLine(mirrorAngle);
+    const signedDistance =
+      (logicalPoint.x - DRAWING_MIRROR_X) * normal.x +
+      (logicalPoint.y - DRAWING_MIRROR_Y) * normal.y;
+    if (signedDistance >= -12) return;
     const id = Date.now();
     activeStrokeId.current = id;
     event.currentTarget.setPointerCapture(event.pointerId);
@@ -610,7 +797,7 @@ function DrawingMirrorCanvas({
       className="pm-drawing-canvas"
       width={DRAWING_WIDTH}
       height={DRAWING_HEIGHT}
-      aria-label="Sol tarafa çizilen cismin sağ tarafta aynadaki görüntüsünü oluşturan çizim alanı"
+      aria-label={`${mirrorAngle} derece döndürülen aynada çizilen cismin görüntüsünü oluşturan çizim alanı`}
       onPointerDown={startDrawing}
       onPointerMove={continueDrawing}
       onPointerUp={finishDrawing}
@@ -625,35 +812,46 @@ function FieldOfViewCanvas({
   eyeX,
   mirrorWidth,
   showField,
+  objects,
   onEyeXChange,
+  onObjectsChange,
 }: {
   eyeX: number;
   mirrorWidth: number;
   showField: boolean;
+  objects: VisionObject[];
   onEyeXChange: (position: number) => void;
+  onObjectsChange: (update: (current: VisionObject[]) => VisionObject[]) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const draggingRef = useRef(false);
+  const draggingRef = useRef<
+    { type: "eye" } | { type: "object"; id: number } | null
+  >(null);
+  const analysis = useMemo(
+    () => analyzeVisionObjects(objects, eyeX, mirrorWidth),
+    [eyeX, mirrorWidth, objects],
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    const width = 900;
-    const height = 500;
+    const width = VISION_WIDTH;
+    const height = VISION_HEIGHT;
     canvas.width = width * ratio;
     canvas.height = height * ratio;
     const context = canvas.getContext("2d");
     if (!context) return;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-    const mirrorY = 190;
-    const eyeY = 410;
+    const mirrorY = VISION_MIRROR_Y;
+    const eyeY = VISION_EYE_Y;
     const topY = 35;
     const mirrorHalf = mirrorWidth * 4;
     const mirrorLeft = width / 2 - mirrorHalf;
     const mirrorRight = width / 2 + mirrorHalf;
-    const extensionFactor = (eyeY - topY) / (eyeY - mirrorY);
+    const pupilY = eyeY - 25;
+    const extensionFactor = (pupilY - topY) / (pupilY - mirrorY);
     const leftTopX = eyeX + (mirrorLeft - eyeX) * extensionFactor;
     const rightTopX = eyeX + (mirrorRight - eyeX) * extensionFactor;
 
@@ -701,8 +899,48 @@ function FieldOfViewCanvas({
       context.setLineDash([]);
     }
 
+    objects.forEach((object) => {
+      const result = analysis.find((entry) => entry.id === object.id);
+      if (!result) return;
+      const lineColor =
+        result.status === "visible"
+          ? object.kind === "transparent"
+            ? "#78e9e0"
+            : "#a8ed72"
+          : result.status === "blocked"
+            ? "#ff745f"
+            : "rgba(185, 202, 202, .42)";
+      context.save();
+      context.strokeStyle = lineColor;
+      context.lineWidth = result.visible ? 2 : 1.5;
+      context.setLineDash(result.visible ? [] : [6, 6]);
+      context.beginPath();
+      context.moveTo(eyeX, eyeY - 25);
+      context.lineTo(result.mirrorX, mirrorY);
+      context.lineTo(object.x, object.y);
+      context.stroke();
+      context.restore();
+
+      context.save();
+      context.globalAlpha = result.visible ? 0.5 : 0.16;
+      context.fillStyle =
+        object.kind === "transparent" ? "rgba(92, 222, 220, .38)" : "#f0aa3c";
+      context.strokeStyle = lineColor;
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc(object.x, result.virtualY, object.radius, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.setLineDash([4, 4]);
+      context.beginPath();
+      context.moveTo(result.mirrorX, mirrorY);
+      context.lineTo(object.x, result.virtualY);
+      context.stroke();
+      context.restore();
+    });
+
     context.strokeStyle = "#ffb94b";
-    context.lineWidth = 2.5;
+    context.lineWidth = 2;
     context.beginPath();
     context.moveTo(eyeX, eyeY - 24);
     context.lineTo(mirrorLeft, mirrorY);
@@ -718,6 +956,59 @@ function FieldOfViewCanvas({
     context.fillRect(mirrorLeft, mirrorY - 8, mirrorRight - mirrorLeft, 16);
     context.fillStyle = "#203d45";
     context.fillRect(mirrorLeft - 8, mirrorY + 9, mirrorRight - mirrorLeft + 16, 9);
+
+    objects.forEach((object, index) => {
+      const result = analysis.find((entry) => entry.id === object.id);
+      if (!result) return;
+      const fill =
+        object.kind === "transparent"
+          ? "rgba(87, 219, 220, .34)"
+          : "#efa43b";
+      const stroke =
+        result.status === "visible"
+          ? "#b9ef79"
+          : result.status === "blocked"
+            ? "#ff6f5c"
+            : "#778b8e";
+      context.save();
+      context.shadowColor = "rgba(0, 0, 0, .35)";
+      context.shadowBlur = 10;
+      context.fillStyle = fill;
+      context.strokeStyle = stroke;
+      context.lineWidth = 4;
+      context.beginPath();
+      context.arc(object.x, object.y, object.radius, 0, Math.PI * 2);
+      context.fill();
+      context.stroke();
+      context.shadowBlur = 0;
+      if (object.kind === "transparent") {
+        context.strokeStyle = "rgba(220, 255, 252, .7)";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.arc(
+          object.x - object.radius * 0.24,
+          object.y - object.radius * 0.23,
+          object.radius * 0.42,
+          Math.PI,
+          Math.PI * 1.62,
+        );
+        context.stroke();
+      }
+      context.fillStyle = object.kind === "transparent" ? "#eaffff" : "#38250f";
+      context.font = "950 11px Arial";
+      context.textAlign = "center";
+      context.fillText(object.kind === "transparent" ? "S" : "O", object.x, object.y + 4);
+      context.font = "850 8px Arial";
+      context.fillStyle = stroke;
+      const statusText =
+        result.status === "visible"
+          ? "GÖRÜLÜYOR"
+          : result.status === "blocked"
+            ? "ENGELLENDİ"
+            : "ALAN DIŞI";
+      context.fillText(`${index + 1} · ${statusText}`, object.x, object.y + object.radius + 17);
+      context.restore();
+    });
 
     context.save();
     context.translate(eyeX, eyeY);
@@ -752,17 +1043,67 @@ function FieldOfViewCanvas({
     context.fillStyle = "rgba(230, 241, 239, 0.78)";
     context.font = "900 9px Arial";
     context.textAlign = "center";
-    context.fillText("AYNANIN ARKASINDAKİ GÖRÜŞ ALANI", width / 2, 23);
+    context.fillText("SANAL GÖRÜNTÜLER VE GÖRÜŞ ALANI", width / 2, 23);
     context.fillText(`AYNA GENİŞLİĞİ · ${mirrorWidth} cm`, width / 2, mirrorY + 35);
     context.fillStyle = "#ffcf78";
     context.fillText("ÜSTTEN GÖZ · TUT VE YATAYDA SÜRÜKLE", eyeX, eyeY + 53);
-  }, [eyeX, mirrorWidth, showField]);
+  }, [analysis, eyeX, mirrorWidth, objects, showField]);
 
-  const updateEye = (event: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!draggingRef.current) return;
+  const logicalPoint = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
-    const logicalX = ((event.clientX - rect.left) / rect.width) * 900;
-    onEyeXChange(Math.round(clamp(logicalX, 140, 760)));
+    return {
+      x: ((event.clientX - rect.left) / rect.width) * VISION_WIDTH,
+      y: ((event.clientY - rect.top) / rect.height) * VISION_HEIGHT,
+    };
+  };
+
+  const startDragging = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const point = logicalPoint(event);
+    const selectedObject = [...objects]
+      .reverse()
+      .find(
+        (object) =>
+          Math.hypot(point.x - object.x, point.y - object.y) <=
+          object.radius + 15,
+      );
+    if (selectedObject) {
+      draggingRef.current = { type: "object", id: selectedObject.id };
+    } else if (Math.hypot(point.x - eyeX, point.y - VISION_EYE_Y) <= 74) {
+      draggingRef.current = { type: "eye" };
+    } else {
+      return;
+    }
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const continueDragging = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    const target = draggingRef.current;
+    if (!target) return;
+    const point = logicalPoint(event);
+    if (target.type === "eye") {
+      onEyeXChange(Math.round(clamp(point.x, 140, 760)));
+      return;
+    }
+    onObjectsChange((current) =>
+      current.map((object) =>
+        object.id === target.id
+          ? {
+              ...object,
+              x: Math.round(clamp(point.x, 55, VISION_WIDTH - 55)),
+              y: Math.round(
+                clamp(point.y, VISION_MIRROR_Y + 50, VISION_EYE_Y - 75),
+              ),
+            }
+          : object,
+      ),
+    );
+  };
+
+  const finishDragging = (event: ReactPointerEvent<HTMLCanvasElement>) => {
+    draggingRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
   };
 
   return (
@@ -771,21 +1112,12 @@ function FieldOfViewCanvas({
       className="pm-vision-canvas"
       width={900}
       height={500}
-      aria-label="Üstten görülen gözün düzlem aynadaki görüş alanı"
-      onPointerDown={(event) => {
-        draggingRef.current = true;
-        event.currentTarget.setPointerCapture(event.pointerId);
-        updateEye(event);
-      }}
-      onPointerMove={updateEye}
-      onPointerUp={(event) => {
-        draggingRef.current = false;
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }
-      }}
+      aria-label="Üstten görülen gözün, saydam ve saydam olmayan cisimlerin düzlem aynadaki görüş alanı"
+      onPointerDown={startDragging}
+      onPointerMove={continueDragging}
+      onPointerUp={finishDragging}
       onPointerCancel={() => {
-        draggingRef.current = false;
+        draggingRef.current = null;
       }}
     />
   );
@@ -793,34 +1125,59 @@ function FieldOfViewCanvas({
 
 export default function PlaneMirrorLab() {
   const nextImageReadingId = useRef(0);
+  const nextVisionObjectId = useRef(1);
   const [mode, setMode] = useState<ExperimentMode>("reflection");
   const [laserOn, setLaserOn] = useState(true);
-  const [angle, setAngle] = useState(25);
-  const [angleReadings, setAngleReadings] = useState<number[]>([]);
+  const [laserAngle, setLaserAngle] = useState(25);
+  const [reflectionMirrorAngle, setReflectionMirrorAngle] = useState(0);
+  const [angleReadings, setAngleReadings] = useState<ReflectionReading[]>([]);
   const [showReflectionResult, setShowReflectionResult] = useState(false);
   const [strokes, setStrokes] = useState<DrawStroke[]>([]);
   const [drawColor, setDrawColor] = useState("#ef634f");
   const [penWidth, setPenWidth] = useState(6);
+  const [imageMirrorAngle, setImageMirrorAngle] = useState(0);
   const [showMeasurements, setShowMeasurements] = useState(true);
   const [imageReadings, setImageReadings] = useState<ImageReading[]>([]);
   const [showImageResult, setShowImageResult] = useState(false);
   const [eyeX, setEyeX] = useState(450);
   const [mirrorWidth, setMirrorWidth] = useState(50);
   const [showField, setShowField] = useState(true);
+  const [visionObjects, setVisionObjects] = useState<VisionObject[]>([]);
 
   const drawingMeasurements = useMemo(
-    () => getDrawingMeasurements(strokes),
-    [strokes],
+    () => getDrawingMeasurements(strokes, imageMirrorAngle),
+    [imageMirrorAngle, strokes],
+  );
+  const incidenceAngle = Math.round(
+    Math.abs(laserAngle + reflectionMirrorAngle),
+  );
+  const visionAnalysis = useMemo(
+    () => analyzeVisionObjects(visionObjects, eyeX, mirrorWidth),
+    [eyeX, mirrorWidth, visionObjects],
   );
   const reflectionReady = angleReadings.length >= 3;
   const imageReady = imageReadings.length >= 1;
-  const allEvidenceReady = reflectionReady && imageReady;
+  const visionReady =
+    visionObjects.some((object) => object.kind === "transparent") &&
+    visionObjects.some((object) => object.kind === "opaque");
+  const allEvidenceReady = reflectionReady && imageReady && visionReady;
   const eyePositionCm = Math.round(((eyeX - 450) / 8) * 10) / 10;
-  const fieldWidthAt20Cm = Math.round(mirrorWidth * (1 + 20 / 27.5));
+  const fieldWidthAt20Cm = Math.round(mirrorWidth * (1 + 20 / 25.625));
 
   const recordAngle = () => {
+    const id = `${laserAngle}:${reflectionMirrorAngle}`;
     setAngleReadings((current) =>
-      current.includes(angle) ? current : [...current, angle],
+      current.some((reading) => reading.id === id)
+        ? current
+        : [
+            ...current,
+            {
+              id,
+              laserAngle,
+              mirrorAngle: reflectionMirrorAngle,
+              incidenceAngle,
+            },
+          ],
     );
   };
 
@@ -830,11 +1187,28 @@ export default function PlaneMirrorLab() {
       ...current,
       {
         id: nextImageReadingId.current++,
+        mirrorAngle: imageMirrorAngle,
         objectDistance: drawingMeasurements.objectDistance,
         imageDistance: drawingMeasurements.objectDistance,
-        objectWidth: drawingMeasurements.width,
-        imageWidth: drawingMeasurements.width,
-        height: drawingMeasurements.height,
+        objectSize: drawingMeasurements.size,
+        imageSize: drawingMeasurements.size,
+      },
+    ]);
+  };
+
+  const addVisionObject = (kind: VisionObjectKind) => {
+    const id = nextVisionObjectId.current++;
+    const sameKindCount = visionObjects.filter(
+      (object) => object.kind === kind,
+    ).length;
+    setVisionObjects((current) => [
+      ...current,
+      {
+        id,
+        kind,
+        x: kind === "transparent" ? 310 + sameKindCount * 55 : 575 - sameKindCount * 55,
+        y: 295 + ((id % 2) * 42),
+        radius: kind === "transparent" ? 26 : 29,
       },
     ]);
   };
@@ -846,9 +1220,9 @@ export default function PlaneMirrorLab() {
           <span>AYNALAR · DÜZLEM AYNA · İDEAL DENEY</span>
           <h1>Lazeri yönlendir, cismini çiz, görüş alanını keşfet.</h1>
           <p>
-            Yansımayı açı tablasında ölç; sonra boş alana istediğin cismi çiz ve
-            aynadaki karşılığını anında incele. Cetvelle uzaklık ve boy
-            ölçümlerini yap, üstten göz düzeneğinde görüş sınırlarını değiştir.
+            Lazeri ve aynayı ayrı ayrı döndür; sonra istediğin cismi çizerek
+            dönen aynadaki karşılığını incele. Üstten göz düzeneğine saydam ve
+            saydam olmayan cisimler yerleştirip hangilerinin görüldüğünü sınayarak keşfet.
           </p>
         </div>
         <aside>
@@ -875,7 +1249,7 @@ export default function PlaneMirrorLab() {
         >
           <small>DENEY 1</small>
           <b>Lazerle yansıma kanunları</b>
-          <span>Lazeri sürükle; gelen ve yansıyan ışını ölç.</span>
+          <span>Lazeri ve aynayı döndür; ışının yönünü ölç.</span>
         </button>
         <button
           type="button"
@@ -884,7 +1258,7 @@ export default function PlaneMirrorLab() {
         >
           <small>DENEY 2</small>
           <b>Çiz ve görüntüyü gör</b>
-          <span>Serbest çiz; görüntüyü ve ölçüleri anında gör.</span>
+          <span>Serbest çiz; aynayı döndür ve görüntüyü izle.</span>
         </button>
         <button
           type="button"
@@ -893,7 +1267,7 @@ export default function PlaneMirrorLab() {
         >
           <small>DENEY 3</small>
           <b>Görüş alanı</b>
-          <span>Üstten gözü taşı; sınır ışınlarını incele.</span>
+          <span>Cisim ekle, taşı; görülme durumunu karşılaştır.</span>
         </button>
       </div>
 
@@ -902,7 +1276,7 @@ export default function PlaneMirrorLab() {
           <div className="pm-panel-heading">
             <div>
               <span>1 · LAZER VE AÇI TABLASI</span>
-              <h2>Lazeri tablanın üzerinde sürükleyerek geliş açısını değiştir.</h2>
+              <h2>Lazeri ve aynayı ayrı ayrı döndürerek yansıyan ışını yönlendir.</h2>
             </div>
             <strong className={laserOn ? "on" : ""}>
               <i /> {laserOn ? "Lazer açık" : "Lazer kapalı"}
@@ -912,28 +1286,41 @@ export default function PlaneMirrorLab() {
           <div className="pm-reflection-layout">
             <div className="pm-reflection-stage">
               <ReflectionCanvas
-                angle={angle}
+                laserAngle={laserAngle}
+                mirrorAngle={reflectionMirrorAngle}
+                incidenceAngle={incidenceAngle}
                 laserOn={laserOn}
-                onAngleChange={setAngle}
+                onLaserAngleChange={setLaserAngle}
               />
-              <span className="pm-drag-hint">Lazeri tut ve yarım daire boyunca sürükle</span>
+              <span className="pm-drag-hint">Lazeri sürükle; aynayı sağdaki kumandadan döndür</span>
             </div>
 
             <aside className="pm-control-console">
               <div className="pm-angle-display">
                 <small>NORMALE GÖRE AÇI</small>
-                <b>{angle}°</b>
-                <span>i ve r aynı anda gösterilir</span>
+                <b>{incidenceAngle}°</b>
+                <span>Ayna dönünce normal ve ışın birlikte güncellenir</span>
               </div>
               <label>
-                <span>Lazerin geliş açısı</span>
+                <span>Lazerin tabla konumu <b>{laserAngle}°</b></span>
                 <input
                   type="range"
                   min="5"
-                  max="80"
+                  max="60"
                   step="1"
-                  value={angle}
-                  onChange={(event) => setAngle(Number(event.target.value))}
+                  value={laserAngle}
+                  onChange={(event) => setLaserAngle(Number(event.target.value))}
+                />
+              </label>
+              <label>
+                <span>Ayna dönüş açısı <b>{reflectionMirrorAngle > 0 ? "+" : ""}{reflectionMirrorAngle}°</b></span>
+                <input
+                  type="range"
+                  min="-25"
+                  max="25"
+                  step="1"
+                  value={reflectionMirrorAngle}
+                  onChange={(event) => setReflectionMirrorAngle(Number(event.target.value))}
                 />
               </label>
               <button
@@ -944,8 +1331,8 @@ export default function PlaneMirrorLab() {
                 <i /> Lazeri {laserOn ? "kapat" : "aç"}
               </button>
               <div className="pm-live-measurement">
-                <span><small>Gelme açısı · i</small><b>{laserOn ? `${angle}°` : "—"}</b></span>
-                <span><small>Yansıma açısı · r</small><b>{laserOn ? `${angle}°` : "—"}</b></span>
+                <span><small>Gelme açısı · i</small><b>{laserOn ? `${incidenceAngle}°` : "—"}</b></span>
+                <span><small>Yansıma açısı · r</small><b>{laserOn ? `${incidenceAngle}°` : "—"}</b></span>
               </div>
               <p className="pm-console-note">
                 Açı, aynanın yüzeyinden değil çarpma noktasındaki normalden ölçülür.
@@ -953,7 +1340,14 @@ export default function PlaneMirrorLab() {
               <button
                 className="pm-record-button"
                 type="button"
-                disabled={!laserOn || angleReadings.includes(angle)}
+                disabled={
+                  !laserOn ||
+                  angleReadings.some(
+                    (reading) =>
+                      reading.laserAngle === laserAngle &&
+                      reading.mirrorAngle === reflectionMirrorAngle,
+                  )
+                }
                 onClick={recordAngle}
               >
                 Ölçümü kaydet
@@ -967,14 +1361,14 @@ export default function PlaneMirrorLab() {
               <strong>{angleReadings.length}/3 gerekli ölçüm</strong>
             </div>
             <table>
-              <thead><tr><th>Deneme</th><th>Gelme açısı · i</th><th>Yansıma açısı · r</th><th>Sonuç</th></tr></thead>
+              <thead><tr><th>Deneme</th><th>Ayna açısı</th><th>Gelme açısı · i</th><th>Yansıma açısı · r</th><th>Sonuç</th></tr></thead>
               <tbody>
                 {angleReadings.length ? angleReadings.map((reading, index) => (
-                  <tr key={reading}>
-                    <td>{index + 1}</td><td>{reading}°</td><td>{reading}°</td><td>i = r</td>
+                  <tr key={reading.id}>
+                    <td>{index + 1}</td><td>{reading.mirrorAngle > 0 ? "+" : ""}{reading.mirrorAngle}°</td><td>{reading.incidenceAngle}°</td><td>{reading.incidenceAngle}°</td><td>i = r</td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={4}>Lazeri farklı bir açıya getirip ilk ölçümünü kaydet.</td></tr>
+                  <tr><td colSpan={5}>Lazeri veya aynayı döndürüp ilk ölçümünü kaydet.</td></tr>
                 )}
               </tbody>
             </table>
@@ -1001,7 +1395,7 @@ export default function PlaneMirrorLab() {
           <div className="pm-panel-heading">
             <div>
               <span>2 · SERBEST CİSİM ÇİZİMİ VE CETVEL</span>
-              <h2>Sol alana istediğin cismi çiz; görüntüsü aynanın arkasında oluşsun.</h2>
+              <h2>İstediğin cismi çiz; aynayı döndürerek görüntünün yönünü değiştir.</h2>
             </div>
             <strong className={strokes.length ? "on" : ""}><i /> {strokes.length ? "Görüntü oluştu" : "Çizim bekleniyor"}</strong>
           </div>
@@ -1012,12 +1406,21 @@ export default function PlaneMirrorLab() {
                 strokes={strokes}
                 color={drawColor}
                 penWidth={penWidth}
+                mirrorAngle={imageMirrorAngle}
                 showMeasurements={showMeasurements}
                 onStrokesChange={(update) => setStrokes(update)}
               />
             </div>
 
             <aside className="pm-drawing-controls">
+              <div className="pm-tool-group pm-mirror-rotation-control">
+                <small>AYNAYI DÖNDÜR</small>
+                <label>
+                  <span>Ayna açısı <b>{imageMirrorAngle > 0 ? "+" : ""}{imageMirrorAngle}°</b></span>
+                  <input type="range" min="-25" max="25" step="1" value={imageMirrorAngle} onChange={(event) => setImageMirrorAngle(Number(event.target.value))} />
+                </label>
+                <button type="button" onClick={() => setImageMirrorAngle(0)}>Aynayı dik konuma getir</button>
+              </div>
               <div className="pm-tool-group">
                 <small>KALEM RENGİ</small>
                 <div className="pm-color-tools">
@@ -1053,10 +1456,10 @@ export default function PlaneMirrorLab() {
               </div>
               <div className="pm-drawing-readout">
                 <small>CANLI CETVEL ÖLÇÜMÜ</small>
+                <span><em>Ayna açısı</em><b>{imageMirrorAngle > 0 ? "+" : ""}{imageMirrorAngle}°</b></span>
                 <span><em>Cisim merkezi</em><b>{drawingMeasurements ? `${drawingMeasurements.objectDistance.toFixed(1)} cm` : "—"}</b></span>
                 <span><em>Görüntü merkezi</em><b>{drawingMeasurements ? `${drawingMeasurements.objectDistance.toFixed(1)} cm` : "—"}</b></span>
-                <span><em>Çizimin genişliği</em><b>{drawingMeasurements ? `${drawingMeasurements.width.toFixed(1)} cm` : "—"}</b></span>
-                <span><em>Çizimin yüksekliği</em><b>{drawingMeasurements ? `${drawingMeasurements.height.toFixed(1)} cm` : "—"}</b></span>
+                <span><em>Çizimin boyutu</em><b>{drawingMeasurements ? `${drawingMeasurements.size.toFixed(1)} cm` : "—"}</b></span>
               </div>
               <button className="pm-record-button" type="button" disabled={!drawingMeasurements} onClick={recordImage}>
                 Cetvel ölçümünü kaydet
@@ -1070,11 +1473,11 @@ export default function PlaneMirrorLab() {
               <strong>{imageReadings.length ? `${imageReadings.length} ölçüm kaydedildi` : "En az 1 ölçüm gerekli"}</strong>
             </div>
             <table>
-              <thead><tr><th>Cisim merkez uzaklığı</th><th>Görüntü merkez uzaklığı</th><th>Cisim genişliği</th><th>Görüntü genişliği</th><th>Yükseklik</th></tr></thead>
+              <thead><tr><th>Ayna açısı</th><th>Cisim merkez uzaklığı</th><th>Görüntü merkez uzaklığı</th><th>Cisim boyutu</th><th>Görüntü boyutu</th></tr></thead>
               <tbody>
                 {imageReadings.length ? imageReadings.map((reading) => (
                   <tr key={reading.id}>
-                    <td>{reading.objectDistance.toFixed(1)} cm</td><td>{reading.imageDistance.toFixed(1)} cm</td><td>{reading.objectWidth.toFixed(1)} cm</td><td>{reading.imageWidth.toFixed(1)} cm</td><td>{reading.height.toFixed(1)} cm</td>
+                    <td>{reading.mirrorAngle > 0 ? "+" : ""}{reading.mirrorAngle}°</td><td>{reading.objectDistance.toFixed(1)} cm</td><td>{reading.imageDistance.toFixed(1)} cm</td><td>{reading.objectSize.toFixed(1)} cm</td><td>{reading.imageSize.toFixed(1)} cm</td>
                   </tr>
                 )) : (
                   <tr><td colSpan={5}>Boş alana bir cisim çiz; cetvel sonucu burada kaydedilsin.</td></tr>
@@ -1088,7 +1491,7 @@ export default function PlaneMirrorLab() {
               <div className="pm-image-result-grid">
                 <span><b>Eşit uzaklık</b><small>Her çizgi noktası aynanın arkasında, aynaya eşit uzaklıkta oluşur.</small></span>
                 <span><b>Aynı boy</b><small>Çizimin ve aynadaki görüntüsünün bütün ölçüleri eşittir.</small></span>
-                <span><b>Düz görüntü</b><small>Görüntü baş aşağı dönmez; çizimle aynı doğrultudadır.</small></span>
+                <span><b>Aynaya göre simetri</b><small>Ayna döndükçe görüntünün yönü değişir; şeklin bütün ölçüleri korunur.</small></span>
                 <span><b>Sanal görüntü</b><small>Yansıyan ışınların geriye uzantıları görüntü konumunda kesişir.</small></span>
                 <span><b>Yanal terslik</b><small>Çizimin sağ ve sol tarafları aynadaki karşılığında yer değiştirir.</small></span>
               </div>
@@ -1102,7 +1505,7 @@ export default function PlaneMirrorLab() {
           <div className="pm-panel-heading">
             <div>
               <span>3 · ÜSTTEN GÖZ VE GÖRÜŞ ALANI</span>
-              <h2>Gözü yatayda sürükle; ayna uçlarından geçen sınır ışınlarını izle.</h2>
+              <h2>Saydam ve saydam olmayan cisimleri yerleştir; hangisinin görüldüğünü sınay.</h2>
             </div>
             <strong className={showField ? "on" : ""}><i /> {showField ? "Görüş alanı çizili" : "Sınır ışınları açık"}</strong>
           </div>
@@ -1112,7 +1515,9 @@ export default function PlaneMirrorLab() {
                 eyeX={eyeX}
                 mirrorWidth={mirrorWidth}
                 showField={showField}
+                objects={visionObjects}
                 onEyeXChange={setEyeX}
+                onObjectsChange={(update) => setVisionObjects(update)}
               />
             </div>
             <aside className="pm-vision-controls">
@@ -1120,6 +1525,33 @@ export default function PlaneMirrorLab() {
                 <small>ÜSTTEN GÖZ KONUMU</small>
                 <b>{eyePositionCm === 0 ? "Merkezde" : `${Math.abs(eyePositionCm).toFixed(1)} cm ${eyePositionCm < 0 ? "solda" : "sağda"}`}</b>
                 <span>Gözü doğrudan çizim üzerinde de sürükleyebilirsin.</span>
+              </div>
+              <div className="pm-vision-object-tools">
+                <small>CİSİM EKLE VE SÜRÜKLE</small>
+                <div>
+                  <button type="button" disabled={visionObjects.length >= 6} onClick={() => addVisionObject("transparent")}><i className="transparent" />Saydam cisim ekle</button>
+                  <button type="button" disabled={visionObjects.length >= 6} onClick={() => addVisionObject("opaque")}><i className="opaque" />Saydam olmayan cisim ekle</button>
+                </div>
+                <button type="button" disabled={!visionObjects.length} onClick={() => setVisionObjects([])}>Tüm cisimleri kaldır</button>
+              </div>
+              <div className="pm-vision-object-list">
+                <small>GÖRÜLME DURUMU</small>
+                {visionObjects.length ? visionObjects.map((object, index) => {
+                  const result = visionAnalysis.find((entry) => entry.id === object.id);
+                  const status = result?.status === "visible"
+                    ? "Aynada görülüyor"
+                    : result?.status === "blocked"
+                      ? "Saydam olmayan cisim engelliyor"
+                      : "Görüş alanının dışında";
+                  return (
+                    <span key={object.id} className={result?.status ?? "outside"}>
+                      <i className={object.kind} />
+                      <em>{index + 1}. {object.kind === "transparent" ? "Saydam" : "Saydam olmayan"}</em>
+                      <b>{status}</b>
+                      <button type="button" aria-label={`${index + 1}. cismi kaldır`} onClick={() => setVisionObjects((current) => current.filter((entry) => entry.id !== object.id))}>×</button>
+                    </span>
+                  );
+                }) : <p>Önce iki farklı cisim ekle; sonra aynanın önünde istediğin yere sürükle.</p>}
               </div>
               <label>
                 <span>Gözün yatay konumu <b>{eyePositionCm.toFixed(1)} cm</b></span>
@@ -1137,7 +1569,7 @@ export default function PlaneMirrorLab() {
                 <b>{fieldWidthAt20Cm} cm</b>
                 <span>İki sınır ışını arasındaki ideal görüş genişliği</span>
               </div>
-              <p>Ayna genişledikçe görüş alanı büyür. Göz yatayda hareket ettiğinde alanın yönü değişir; genişliği değişmez.</p>
+              <p>Saydam cisim ışığın geçmesine izin verir. Saydam olmayan cisim görüş ışınının üzerine gelirse arkasındaki cismin aynada görülmesini engeller.</p>
             </aside>
           </div>
         </div>
@@ -1152,16 +1584,16 @@ export default function PlaneMirrorLab() {
         <div className="pm-evidence-progress">
           <span className={reflectionReady ? "done" : ""}><i>{reflectionReady ? "✓" : angleReadings.length}</i>Lazerle yansıma ölçümleri</span>
           <span className={imageReady ? "done" : ""}><i>{imageReady ? "✓" : imageReadings.length}</i>Çizim ve görüntü ölçümü</span>
-          <span className={showField ? "done" : ""}><i>{showField ? "✓" : "—"}</i>Üstten görüş alanı</span>
+          <span className={visionReady ? "done" : ""}><i>{visionReady ? "✓" : visionObjects.length}</i>Saydamlık ve görüş alanı</span>
         </div>
         {allEvidenceReady && (
           <article>
             <strong>DENEY SONUCU</strong>
             <p>
               Düzlem aynada gelme ve yansıma açıları eşittir. Çizilen cismin
-              görüntüsü aynanın arkasında eşit uzaklıkta, eşit boyda, düz,
-              yanal ters ve sanal oluşur. Gözün görebildiği bölge ayna
-              uçlarından geçen sınır ışınlarıyla belirlenir.
+              görüntüsü aynanın arkasında eşit uzaklıkta, eşit boyda, aynaya
+              göre simetrik, yanal ters ve sanal oluşur. Saydam cisim ışığı
+              geçirirken saydam olmayan cisim görüş ışınını engelleyebilir.
             </p>
           </article>
         )}
@@ -1170,11 +1602,11 @@ export default function PlaneMirrorLab() {
       <section className="pm-report">
         <div><span>TYMM · DENEY RAPORU</span><h2>Çizimlerini ve ölçümlerini kanıt olarak kullan.</h2></div>
         <div className="pm-report-grid">
-          <label><span>Lazerin farklı geliş açılarında gelme ve yansıma açılarını karşılaştır.</span><textarea rows={4} /></label>
+          <label><span>Ayna döndüğünde normal, gelme açısı ve yansıyan ışının yönü nasıl değişti?</span><textarea rows={4} /></label>
           <label><span>Normal çizgisinin açı ölçümündeki görevini açıkla.</span><textarea rows={4} /></label>
-          <label><span>Çizdiğin cismin hangi bölümleri aynadaki görüntüde yer değiştirdi?</span><textarea rows={4} /></label>
+          <label><span>Aynayı döndürdüğünde çizdiğin cismin görüntüsünün konumu ve yönü nasıl değişti?</span><textarea rows={4} /></label>
           <label><span>Cetvel ölçümleri cisim ve görüntü uzaklıkları hakkında ne gösterdi?</span><textarea rows={4} /></label>
-          <label><span>Göz ve ayna genişliği görüş alanını nasıl etkiledi?</span><textarea rows={4} /></label>
+          <label><span>Saydam ve saydam olmayan cisimlerin konumu görülme durumunu nasıl etkiledi?</span><textarea rows={4} /></label>
           <label className="wide"><span>Düzlem aynadaki yansıma, görüntü ve görüş alanı özelliklerini deney kanıtlarına dayanarak özetle.</span><textarea rows={5} /></label>
         </div>
       </section>

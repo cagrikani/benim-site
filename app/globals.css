@@ -26152,11 +26152,55 @@ footer > a {
 .pm-tool-group > small,
 .pm-drawing-readout > small,
 .pm-field-result > small,
-.pm-vision-readout > small {
+.pm-vision-readout > small,
+.pm-vision-object-tools > small,
+.pm-vision-object-list > small {
   color: #168191;
   font-size: 7px;
   font-weight: 950;
   letter-spacing: .13em;
+}
+
+.pm-mirror-rotation-control {
+  padding: 12px;
+  border: 1px solid #d4e2df;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.pm-mirror-rotation-control label {
+  display: grid;
+  gap: 7px;
+  color: #627a7e;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.pm-mirror-rotation-control label span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pm-mirror-rotation-control label b,
+.pm-control-console > label b {
+  color: #168191;
+}
+
+.pm-mirror-rotation-control input {
+  width: 100%;
+  accent-color: #168191;
+}
+
+.pm-mirror-rotation-control button {
+  padding: 8px;
+  border: 1px solid #cadbd8;
+  border-radius: 8px;
+  background: #eef6f4;
+  color: #527176;
+  cursor: pointer;
+  font-size: 7px;
+  font-weight: 900;
 }
 
 .pm-color-tools {
@@ -26361,6 +26405,139 @@ footer > a {
   color: #7e7768;
   font-size: 7px;
   line-height: 1.5;
+}
+
+.pm-vision-object-tools {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #d5e3e0;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.pm-vision-object-tools > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.pm-vision-object-tools button {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid #cadbd8;
+  border-radius: 8px;
+  background: #f7faf9;
+  color: #506d72;
+  cursor: pointer;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.pm-vision-object-tools > button {
+  min-height: 30px;
+  background: #fff3ed;
+  color: #9a5a49;
+}
+
+.pm-vision-object-tools button:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+.pm-vision-object-tools i,
+.pm-vision-object-list span > i {
+  display: block;
+  width: 19px;
+  height: 19px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.pm-vision-object-tools i.transparent,
+.pm-vision-object-list span > i.transparent {
+  border: 2px solid #47bab9;
+  background: rgba(93, 224, 223, .25);
+  box-shadow: inset 4px 4px rgba(255, 255, 255, .55);
+}
+
+.pm-vision-object-tools i.opaque,
+.pm-vision-object-list span > i.opaque {
+  border: 2px solid #b87423;
+  background: #efa43b;
+}
+
+.pm-vision-object-list {
+  display: grid;
+  max-height: 206px;
+  gap: 7px;
+  overflow-y: auto;
+  padding: 12px;
+  border: 1px solid #d5e3e0;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.pm-vision-object-list > p {
+  margin: 0;
+  color: #768a8e;
+  font-size: 7px;
+  line-height: 1.5;
+}
+
+.pm-vision-object-list > span {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2px 7px;
+  padding: 7px;
+  border: 1px solid #dfe8e6;
+  border-radius: 8px;
+  background: #f9fcfb;
+}
+
+.pm-vision-object-list span > i {
+  grid-row: 1 / 3;
+}
+
+.pm-vision-object-list em {
+  color: #526d72;
+  font-size: 7px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.pm-vision-object-list b {
+  color: #75898c;
+  font-size: 6px;
+}
+
+.pm-vision-object-list span.visible b {
+  color: #39844f;
+}
+
+.pm-vision-object-list span.blocked b {
+  color: #c65443;
+}
+
+.pm-vision-object-list span > button {
+  grid-row: 1 / 3;
+  grid-column: 3;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: #edf3f1;
+  color: #6d8185;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 900;
 }
 
 .pm-vision-controls > p {
