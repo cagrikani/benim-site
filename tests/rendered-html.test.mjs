@@ -400,13 +400,12 @@ test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sun
   assert.match(page, /RippleTankCanvas/);
   assert.match(page, /RippleTankSetup/);
   assert.match(page, /SETUP_ORDER/);
-  assert.match(page, /SETUP_MIME/);
   assert.match(page, /installedCount/);
-  assert.match(page, /onDragStart/);
-  assert.match(page, /onDrop/);
-  assert.match(page, /SIRADAKİ PARÇAYI BURAYA BIRAK/);
-  assert.match(page, /Tüm bağlantılar tamamlandı/);
-  assert.match(page, /Yayılma ve yansıma/);
+  assert.equal((page.match(/<RippleTankCanvas/g) ?? []).length, 1);
+  assert.match(page, /TEK DENEY MASASI/);
+  assert.match(page, /rt-inline-setup/);
+  assert.match(page, /Aynı masa üzerinde deneye başla/);
+  assert.match(page, /Yansıma/);
   assert.match(page, /Dalga ölçümü/);
   assert.match(page, /Kırınım/);
   assert.match(page, /Kırılma/);
@@ -418,8 +417,8 @@ test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sun
   assert.match(page, /Parabolik engel/);
   assert.match(page, /Düz dalga → odak/);
   assert.match(page, /Odak → düz dalga/);
-  assert.match(page, /Stroboskop frekansı/);
   assert.match(page, /duran dalga/);
+  assert.match(page, /CETVELLE DALGA ÖLÇÜMÜ/);
   assert.match(page, /Engel kenarı/);
   assert.match(page, /Ayarlı yarık/);
   assert.match(page, /Derin bölge/);
@@ -439,6 +438,7 @@ test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sun
   assert.match(page, /setPointerCapture/);
   assert.match(page, /İDEAL ÖLÇÜM TABLOSU/);
   assert.match(page, /TYMM · DENEY RAPORU/);
+  assert.doesNotMatch(page, /stroboskop/i);
   assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
 });
 
@@ -446,11 +446,9 @@ test("dalga leğeni gerçekçi düzenek, güç kaynağı ve responsive deney pan
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
   assert.match(css, /\.rt-lab\s*\{/);
   assert.match(css, /\.rt-hero\s*\{/);
-  assert.match(css, /\.rt-setup-builder\s*\{/);
-  assert.match(css, /\.rt-material-rack\s*\{/);
-  assert.match(css, /\.rt-setup-scene\s*\{/);
-  assert.match(css, /\.rt-setup-slot\s*\{/);
-  assert.match(css, /\.rt-locked-experiment\s*\{/);
+  assert.match(css, /\.rt-inline-setup\s*\{/);
+  assert.match(css, /\.rt-inline-setup li\s*\{/);
+  assert.match(css, /\.rt-install-next\s*\{/);
   assert.match(css, /\.rt-mode-switch\s*\{/);
   assert.match(css, /\.rt-workspace\s*\{/);
   assert.match(css, /\.rt-canvas\s*\{/);

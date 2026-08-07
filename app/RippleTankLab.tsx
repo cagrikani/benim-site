@@ -20,7 +20,6 @@ type SourceType = "plane" | "circular" | "pulse";
 type SourceBarType = SourceType | "double";
 type ReflectorType = "straight" | "parabolic";
 type DiffractionType = "edge" | "slit";
-type SetupKind = "tank" | "motor" | "source" | "power" | "strobe" | "apparatus";
 
 type ReflectionReading = {
   id: number;
@@ -67,8 +66,8 @@ const CANVAS_WIDTH = 920;
 const CANVAS_HEIGHT = 560;
 const TANK = { x: 48, y: 52, width: 660, height: 454 };
 const GRAVITY = 9.81;
-const SETUP_ORDER: SetupKind[] = ["tank", "motor", "source", "power", "strobe", "apparatus"];
-const SETUP_MIME = "application/x-ripple-tank-setup";
+const SETUP_ORDER = ["tank", "motor", "source", "power", "apparatus"] as const;
+type SetupKind = (typeof SETUP_ORDER)[number];
 
 const clamp = (value: number, minimum: number, maximum: number) =>
   Math.min(maximum, Math.max(minimum, value));
@@ -146,28 +145,50 @@ function clipTank(context: CanvasRenderingContext2D) {
 }
 
 function drawLabBench(context: CanvasRenderingContext2D) {
-  const background = context.createLinearGradient(0, 0, 0, CANVAS_HEIGHT);
-  background.addColorStop(0, "#eef6f4");
-  background.addColorStop(0.73, "#dfe9e6");
-  background.addColorStop(0.735, "#a8754f");
-  background.addColorStop(1, "#70452f");
-  context.fillStyle = background;
+  const wood = context.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+  wood.addColorStop(0, "#9d704f");
+  wood.addColorStop(0.48, "#b9865d");
+  wood.addColorStop(1, "#83583e");
+  context.fillStyle = wood;
   context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
-  context.strokeStyle = "rgba(29, 72, 75, 0.055)";
-  context.lineWidth = 1;
-  for (let x = 0; x < CANVAS_WIDTH; x += 44) {
+  context.strokeStyle = "rgba(77,45,29,0.11)";
+  context.lineWidth = 2;
+  for (let x = 28; x < CANVAS_WIDTH; x += 82) {
     context.beginPath();
     context.moveTo(x, 0);
-    context.lineTo(x, 405);
+    context.bezierCurveTo(x - 8, 170, x + 8, 370, x, CANVAS_HEIGHT);
     context.stroke();
   }
-  for (let y = 0; y < 405; y += 44) {
+  context.save();
+  context.shadowColor = "rgba(50,31,20,0.34)";
+  context.shadowBlur = 22;
+  context.fillStyle = "#e7ecea";
+  context.beginPath();
+  context.roundRect(22, 20, CANVAS_WIDTH - 44, CANVAS_HEIGHT - 40, 24);
+  context.fill();
+  context.shadowBlur = 0;
+  const mat = context.createLinearGradient(22, 20, 22, CANVAS_HEIGHT - 20);
+  mat.addColorStop(0, "#eef4f2");
+  mat.addColorStop(1, "#d7e1de");
+  context.fillStyle = mat;
+  context.beginPath();
+  context.roundRect(30, 28, CANVAS_WIDTH - 60, CANVAS_HEIGHT - 56, 19);
+  context.fill();
+  context.strokeStyle = "rgba(57,91,94,0.08)";
+  context.lineWidth = 1;
+  for (let x = 46; x < CANVAS_WIDTH - 30; x += 42) {
     context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(CANVAS_WIDTH, y);
+    context.moveTo(x, 28);
+    context.lineTo(x, CANVAS_HEIGHT - 28);
     context.stroke();
   }
+  for (let y = 42; y < CANVAS_HEIGHT - 28; y += 42) {
+    context.beginPath();
+    context.moveTo(30, y);
+    context.lineTo(CANVAS_WIDTH - 30, y);
+    context.stroke();
+  }
+  context.restore();
 }
 
 function drawTankFrame(context: CanvasRenderingContext2D) {
@@ -192,15 +213,28 @@ function drawTankFrame(context: CanvasRenderingContext2D) {
   context.stroke();
   context.fillStyle = "rgba(255,255,255,0.16)";
   context.fillRect(TANK.x + 24, TANK.y + 24, TANK.width - 48, 24);
+  [
+    { x: TANK.x + 17, y: TANK.y + 17 },
+    { x: TANK.x + TANK.width - 17, y: TANK.y + 17 },
+    { x: TANK.x + 17, y: TANK.y + TANK.height - 17 },
+    { x: TANK.x + TANK.width - 17, y: TANK.y + TANK.height - 17 },
+  ].forEach((foot) => {
+    context.fillStyle = "#233f43";
+    context.beginPath();
+    context.arc(foot.x, foot.y, 10, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#c9d4d2";
+    context.beginPath();
+    context.arc(foot.x, foot.y, 4, 0, Math.PI * 2);
+    context.fill();
+  });
   context.restore();
 }
 
 function drawPowerUnit(
   context: CanvasRenderingContext2D,
   frequency: number,
-  strobeFrequency: number,
   running: boolean,
-  time: number,
 ) {
   context.save();
   context.shadowColor = "rgba(21, 48, 51, 0.32)";
@@ -224,8 +258,7 @@ function drawPowerUnit(
   context.fillText(`${format(frequency)} Hz`, 815, 329);
 
   [
-    { x: 779, label: "RIPPLE", value: frequency / 8 },
-    { x: 850, label: "STROBE", value: strobeFrequency / 8 },
+    { x: 815, label: "FREKANS", value: frequency / 8 },
   ].forEach((knob) => {
     context.fillStyle = "#8ba0a1";
     context.beginPath();
@@ -248,37 +281,6 @@ function drawPowerUnit(
   context.arc(815, 426, 6, 0, Math.PI * 2);
   context.fill();
   context.restore();
-
-  context.save();
-  context.translate(815, 142);
-  context.rotate(time * strobeFrequency * Math.PI * 2);
-  context.fillStyle = "rgba(38, 67, 71, 0.92)";
-  context.beginPath();
-  context.arc(0, 0, 58, 0, Math.PI * 2);
-  context.fill();
-  context.strokeStyle = "#c5d5d3";
-  context.lineWidth = 5;
-  context.beginPath();
-  context.arc(0, 0, 58, 0, Math.PI * 2);
-  context.stroke();
-  for (let index = 0; index < 6; index += 1) {
-    const angle = (index * Math.PI) / 3;
-    context.strokeStyle = "#dfe9e7";
-    context.lineWidth = 8;
-    context.beginPath();
-    context.moveTo(Math.cos(angle) * 12, Math.sin(angle) * 12);
-    context.lineTo(Math.cos(angle) * 50, Math.sin(angle) * 50);
-    context.stroke();
-  }
-  context.fillStyle = "#ea9a29";
-  context.beginPath();
-  context.arc(0, 0, 9, 0, Math.PI * 2);
-  context.fill();
-  context.restore();
-  context.fillStyle = "#355d61";
-  context.font = "900 9px Arial";
-  context.textAlign = "center";
-  context.fillText("STROBOSKOP", 815, 217);
 }
 
 function drawSourceBar(
@@ -329,21 +331,27 @@ function drawSourceBar(
 function drawMotorConnection(
   context: CanvasRenderingContext2D,
   running: boolean,
+  sourceConnected: boolean,
+  powerConnected: boolean,
 ) {
   context.save();
-  context.strokeStyle = "#243f43";
-  context.lineWidth = 5;
-  context.lineCap = "round";
-  context.beginPath();
-  context.moveTo(414, 526);
-  context.bezierCurveTo(545, 548, 666, 535, 750, 423);
-  context.stroke();
-  context.strokeStyle = "#c9d5d3";
-  context.lineWidth = 8;
-  context.beginPath();
-  context.moveTo(378, 478);
-  context.lineTo(378, 505);
-  context.stroke();
+  if (powerConnected) {
+    context.strokeStyle = "#243f43";
+    context.lineWidth = 5;
+    context.lineCap = "round";
+    context.beginPath();
+    context.moveTo(414, 526);
+    context.bezierCurveTo(545, 548, 666, 535, 750, 423);
+    context.stroke();
+  }
+  if (sourceConnected) {
+    context.strokeStyle = "#c9d5d3";
+    context.lineWidth = 8;
+    context.beginPath();
+    context.moveTo(378, 478);
+    context.lineTo(378, 505);
+    context.stroke();
+  }
   const housing = context.createLinearGradient(344, 505, 416, 542);
   housing.addColorStop(0, "#dfe7e5");
   housing.addColorStop(0.5, "#82999a");
@@ -641,21 +649,18 @@ function drawReflectionMode(
     context.setLineDash([]);
   }
   context.restore();
-  drawSourceBar(context, sourceType);
 }
 
 function drawMeasurementMode(
   context: CanvasRenderingContext2D,
   time: number,
   frequency: number,
-  strobeFrequency: number,
   wavelengthPixels: number,
   standingWave: boolean,
 ) {
   context.save();
   clipTank(context);
-  const apparentFrequency = frequency - strobeFrequency;
-  const phase = (time * apparentFrequency * wavelengthPixels) % wavelengthPixels;
+  const phase = (time * frequency * wavelengthPixels) % wavelengthPixels;
   drawParallelWavefronts(context, { x: 378, y: 445 }, { x: 0, y: -1 }, wavelengthPixels, -phase, 11, 280, "rgba(247,255,255,0.96)", 2.4);
   drawDirectionArrow(context, { x: 238, y: 420 }, { x: 238, y: 290 }, "YAYILMA YÖNÜ");
 
@@ -704,7 +709,6 @@ function drawMeasurementMode(
   context.textAlign = "left";
   context.fillText("λ", 632, (firstY + secondY) / 2 + 4);
   context.restore();
-  drawSourceBar(context, "plane");
 }
 
 function drawDiffractionMode(
@@ -763,7 +767,6 @@ function drawDiffractionMode(
     drawDirectionArrow(context, { x: centerX - 48, y: 252 }, { x: centerX - 112, y: 172 }, "KENARDAN YAYILAN DALGA", "#ffe176");
   }
   context.restore();
-  drawSourceBar(context, "plane");
 }
 
 function drawRefractionMode(
@@ -839,7 +842,6 @@ function drawRefractionMode(
     "#ffe176",
   );
   context.restore();
-  drawSourceBar(context, "plane", incidenceAngle);
 }
 
 function drawInterferenceMode(
@@ -911,14 +913,13 @@ function drawInterferenceMode(
   drawDirectionArrow(context, { x: source1.x, y: source1.y - 18 }, { x: source1.x - 55, y: source1.y - 112 }, "1. DALGA");
   drawDirectionArrow(context, { x: source2.x, y: source2.y - 18 }, { x: source2.x + 55, y: source2.y - 112 }, "2. DALGA", "#ffe176");
   context.restore();
-  drawSourceBar(context, "double");
 }
 
 function RippleTankCanvas({
   mode,
   running,
+  installedCount,
   frequency,
-  strobeFrequency,
   wavelengthPixels,
   sourceType,
   reflectorType,
@@ -939,8 +940,8 @@ function RippleTankCanvas({
 }: {
   mode: WaveMode;
   running: boolean;
+  installedCount: number;
   frequency: number;
-  strobeFrequency: number;
   wavelengthPixels: number;
   sourceType: SourceType;
   reflectorType: ReflectorType;
@@ -972,20 +973,31 @@ function RippleTankCanvas({
       if (!context) return;
       const time = running ? (now - startedAt) / 1000 : 0;
       drawLabBench(context);
-      drawTankFrame(context);
-      if (mode === "reflection") {
+      const setupReady = installedCount === SETUP_ORDER.length;
+      if (installedCount >= 1) drawTankFrame(context);
+      if (setupReady && mode === "reflection") {
         drawReflectionMode(context, time, frequency, wavelengthPixels, sourceType, reflectorType, reflectorAngle, circularSource, focusDirection);
-      } else if (mode === "measurement") {
-        drawMeasurementMode(context, time, frequency, strobeFrequency, wavelengthPixels, standingWave);
-      } else if (mode === "diffraction") {
+      } else if (setupReady && mode === "measurement") {
+        drawMeasurementMode(context, time, frequency, wavelengthPixels, standingWave);
+      } else if (setupReady && mode === "diffraction") {
         drawDiffractionMode(context, time, frequency, wavelengthPixels, diffractionType, slitWidth);
-      } else if (mode === "refraction") {
+      } else if (setupReady && mode === "refraction") {
         drawRefractionMode(context, time, frequency, wavelengthDeepPixels, wavelengthShallowPixels, incidenceAngle, refractionAngle);
-      } else {
+      } else if (setupReady) {
         drawInterferenceMode(context, time, frequency, wavelengthPixels, sourceSeparation, selectedPoint);
       }
-      drawMotorConnection(context, running);
-      drawPowerUnit(context, frequency, strobeFrequency, running, time);
+      if (installedCount >= 3) {
+        const barType: SourceBarType = mode === "interference"
+          ? "double"
+          : mode === "reflection"
+            ? sourceType
+            : "plane";
+        drawSourceBar(context, barType, mode === "refraction" ? incidenceAngle : 0);
+      }
+      if (installedCount >= 2) {
+        drawMotorConnection(context, running && setupReady, installedCount >= 3, installedCount >= 4);
+      }
+      if (installedCount >= 4) drawPowerUnit(context, frequency, running && setupReady);
       context.fillStyle = "rgba(255,255,255,0.94)";
       context.beginPath();
       context.roundRect(70, 68, 235, 38, 10);
@@ -993,12 +1005,12 @@ function RippleTankCanvas({
       context.fillStyle = "#28565a";
       context.font = "900 11px Arial";
       context.textAlign = "left";
-      context.fillText("DALGA LEĞENİ · ÜSTTEN GÖRÜNÜM", 86, 92);
+      context.fillText(installedCount === 0 ? "BOŞ DENEY MASASI" : "DALGA LEĞENİ · TEK DENEY MASASI", 86, 92);
       if (running) animationFrame = requestAnimationFrame(draw);
     };
     animationFrame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animationFrame);
-  }, [circularSource, diffractionType, focusDirection, frequency, incidenceAngle, mode, reflectorAngle, reflectorType, refractionAngle, running, selectedPoint, slitWidth, sourceSeparation, sourceType, standingWave, strobeFrequency, wavelengthDeepPixels, wavelengthPixels, wavelengthShallowPixels]);
+  }, [circularSource, diffractionType, focusDirection, frequency, incidenceAngle, installedCount, mode, reflectorAngle, reflectorType, refractionAngle, running, selectedPoint, slitWidth, sourceSeparation, sourceType, standingWave, wavelengthDeepPixels, wavelengthPixels, wavelengthShallowPixels]);
 
   const updatePointer = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const point = pointFromPointer(event);
@@ -1018,7 +1030,7 @@ function RippleTankCanvas({
     <canvas
       ref={canvasRef}
       className="rt-canvas"
-      aria-label="Dalga leğeni, ripple motor, stroboskop ve güç kaynağı düzeneği"
+      aria-label="Tek masada kurulan dalga leğeni, ripple motor ve güç kaynağı düzeneği"
       onPointerDown={(event) => {
         draggingRef.current = true;
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -1041,16 +1053,16 @@ function RippleTankCanvas({
 }
 
 const modeLabels: Record<WaveMode, { step: string; title: string; text: string }> = {
-  reflection: { step: "01", title: "Yayılma ve yansıma", text: "Düzlemsel, dairesel ve odaklanan dalgalar" },
-  measurement: { step: "02", title: "Dalga ölçümü", text: "Stroboskop, dalga boyu, periyot ve duran dalga" },
-  diffraction: { step: "03", title: "Kırınım", text: "Engel kenarı, yarık ve dalga boyu" },
-  refraction: { step: "04", title: "Kırılma", text: "Derin ve sığ bölgede hız ile dalga boyu" },
-  interference: { step: "05", title: "Girişim", text: "İki kaynak, yol farkı ve aydınlık saçak" },
+  reflection: { step: "01", title: "Yansıma", text: "Düz, dairesel ve odaklanan dalga" },
+  measurement: { step: "02", title: "Dalga ölçümü", text: "Dalga boyu, periyot ve hız" },
+  diffraction: { step: "03", title: "Kırınım", text: "Engel kenarı veya yarık" },
+  refraction: { step: "04", title: "Kırılma", text: "Derin ve sığ su bölgesi" },
+  interference: { step: "05", title: "Girişim", text: "İki noktasal kaynak" },
 };
 
 const modeApparatus: Record<WaveMode, string> = {
   reflection: "Düz ve parabolik yansıtıcı",
-  measurement: "Sönümleyici ve yansıtıcı",
+  measurement: "Sönümleyici ve ölçüm cetveli",
   diffraction: "Engel ve ayarlı yarık",
   refraction: "Cam blok",
   interference: "İkinci dairesel kaynak",
@@ -1063,96 +1075,47 @@ function SetupIcon({ kind }: { kind: SetupKind }) {
 function RippleTankSetup({
   mode,
   installedCount,
-  expanded,
-  onExpandedChange,
   onInstall,
   onReset,
 }: {
   mode: WaveMode;
   installedCount: number;
-  expanded: boolean;
-  onExpandedChange: (value: boolean) => void;
   onInstall: (index: number) => void;
   onReset: () => void;
 }) {
-  const [dragOver, setDragOver] = useState(false);
   const setupItems: Array<{ kind: SetupKind; name: string; detail: string }> = [
-    { kind: "tank", name: "Dalga leğeni", detail: "Hazneyi yerleştir ve 1,2 cm su doldur" },
-    { kind: "motor", name: "Ripple motor", detail: "Taşıyıcı kola sabitle" },
-    { kind: "source", name: "Dalga kaynağı", detail: mode === "interference" ? "Çift dairesel ucu motora tak" : "Kaynak ucunu motora tak" },
-    { kind: "power", name: "Güç kaynağı", detail: "Motor çıkışına bağla" },
-    { kind: "strobe", name: "Stroboskop", detail: "Leğenin üstüne hizala" },
-    { kind: "apparatus", name: modeApparatus[mode], detail: "Aktif deney elemanını leğene yerleştir" },
+    { kind: "tank", name: "Dalga leğeni", detail: "Leğeni masaya koy ve suyu ekle" },
+    { kind: "motor", name: "Ripple motor", detail: "Motoru taşıyıcıya tak" },
+    { kind: "source", name: "Dalga kaynağı", detail: mode === "interference" ? "İki kaynak ucunu bağla" : "Kaynak ucunu motora bağla" },
+    { kind: "power", name: "Güç kaynağı", detail: "Motor kablosunu bağla" },
+    { kind: "apparatus", name: modeApparatus[mode], detail: "Deney parçasını leğene koy" },
   ];
   const setupReady = installedCount === SETUP_ORDER.length;
+  const nextItem = setupItems[installedCount];
 
   return (
-    <section className={`rt-setup-builder ${setupReady ? "complete" : ""}`}>
-      <header className="rt-setup-heading">
-        <div><span>DÜZENEK KURULUMU</span><h3>{setupReady ? "Dalga leğeni deneye hazır." : `${installedCount + 1}. parçayı yerleştir.`}</h3><p>{setupReady ? `${modeLabels[mode].title} çalışmasına başlayabilirsin.` : "Sıradaki malzemeyi tutup deney masasına sürükle. Dokunarak da ekleyebilirsin."}</p></div>
-        <div className="rt-setup-status"><b>{installedCount}/{SETUP_ORDER.length}</b><span>{setupReady ? "HAZIR" : "KURULUYOR"}</span></div>
-        <button type="button" className="rt-setup-toggle" onClick={() => onExpandedChange(!expanded)}>{expanded ? "Kurulumu küçült" : "Kurulumu göster"}</button>
-      </header>
-
-      {expanded && (
-        <div className="rt-setup-body">
-          <aside className="rt-material-rack">
-            <small>MALZEME RAFI · SIRAYLA İLERLE</small>
-            <div>
-              {setupItems.map((item, index) => {
-                const installed = index < installedCount;
-                const next = index === installedCount;
-                return (
-                  <button
-                    key={item.kind}
-                    type="button"
-                    draggable={next}
-                    disabled={!next}
-                    className={`${installed ? "installed" : ""} ${next ? "next" : ""}`}
-                    onClick={() => onInstall(index)}
-                    onDragStart={(event) => {
-                      event.dataTransfer.setData(SETUP_MIME, String(index));
-                      event.dataTransfer.effectAllowed = "move";
-                    }}
-                  >
-                    <span className="rt-material-number">{installed ? "✓" : index + 1}</span>
-                    <SetupIcon kind={item.kind} />
-                    <span><b>{item.name}</b><small>{installed ? "Yerine yerleşti" : next ? item.detail : "Önce önceki adımı tamamla"}</small></span>
-                  </button>
-                );
-              })}
-            </div>
-            <button className="rt-setup-reset" type="button" onClick={onReset}>Düzeneği baştan kur</button>
-          </aside>
-
-          <div
-            className={`rt-setup-scene step-${installedCount} ${dragOver ? "drag-over" : ""}`}
-            onDragOver={(event) => {
-              event.preventDefault();
-              setDragOver(true);
-            }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDragOver(false);
-              const index = Number(event.dataTransfer.getData(SETUP_MIME));
-              if (Number.isFinite(index)) onInstall(index);
-            }}
-            aria-label="Dalga leğeni malzemelerinin sırayla bırakılacağı deney masası"
-          >
-            <div className="rt-setup-table-surface" />
-            {setupItems.map((item, index) => (
-              <div key={item.kind} className={`rt-setup-slot ${item.kind} ${index < installedCount ? "installed" : ""} ${index === installedCount ? "next" : ""}`}>
-                <span>{index < installedCount ? "✓" : index + 1}</span>
-                {index < installedCount && <SetupIcon kind={item.kind} />}
-                <b>{item.name}</b>
-              </div>
-            ))}
-            {!setupReady && <div className="rt-drop-hint"><b>SIRADAKİ PARÇAYI BURAYA BIRAK</b><span>{setupItems[installedCount]?.name}</span></div>}
-            {setupReady && <div className="rt-setup-ready"><i>✓</i><b>Tüm bağlantılar tamamlandı</b><span>Motoru çalıştırabilirsin.</span></div>}
-          </div>
-        </div>
+    <section className={`rt-inline-setup ${setupReady ? "complete" : ""}`}>
+      <div className="rt-inline-setup-heading">
+        <span>{setupReady ? "DÜZENEK HAZIR" : `KURULUM · ${installedCount + 1}/${SETUP_ORDER.length}`}</span>
+        <b>{setupReady ? "Aynı masa üzerinde deneye başla." : nextItem?.detail}</b>
+      </div>
+      <ol>
+        {setupItems.map((item, index) => (
+          <li key={item.kind} className={index < installedCount ? "installed" : index === installedCount ? "next" : ""}>
+            <span>{index < installedCount ? "✓" : index + 1}</span>
+            <SetupIcon kind={item.kind} />
+            <b>{item.name}</b>
+          </li>
+        ))}
+      </ol>
+      {!setupReady ? (
+        <button type="button" className="rt-install-next" onClick={() => onInstall(installedCount)}>
+          {nextItem?.name} ekle
+        </button>
+      ) : (
+        <div className="rt-setup-complete"><i>✓</i><span>Leğen, motor, kaynak ve güç bağlantısı hazır.</span></div>
       )}
+      <button className="rt-setup-reset" type="button" onClick={onReset}>Düzeneği sıfırla</button>
     </section>
   );
 }
@@ -1161,10 +1124,8 @@ export default function RippleTankLab() {
   const [mode, setMode] = useState<WaveMode>("reflection");
   const [running, setRunning] = useState(false);
   const [installedCount, setInstalledCount] = useState(0);
-  const [setupExpanded, setSetupExpanded] = useState(true);
   const previousModeRef = useRef(mode);
   const [frequency, setFrequency] = useState(4);
-  const [strobeFrequency, setStrobeFrequency] = useState(4);
   const [waterDepth, setWaterDepth] = useState(1.2);
   const [sourceType, setSourceType] = useState<SourceType>("plane");
   const [reflectorType, setReflectorType] = useState<ReflectorType>("straight");
@@ -1190,7 +1151,6 @@ export default function RippleTankLab() {
     if (previousModeRef.current === mode) return;
     previousModeRef.current = mode;
     setInstalledCount((current) => Math.min(current, SETUP_ORDER.length - 1));
-    setSetupExpanded(true);
     setRunning(false);
   }, [mode]);
 
@@ -1231,7 +1191,6 @@ export default function RippleTankLab() {
 
   const resetMode = () => {
     setFrequency(4);
-    setStrobeFrequency(4);
     setWaterDepth(1.2);
     setSourceType("plane");
     setReflectorType("straight");
@@ -1255,7 +1214,6 @@ export default function RippleTankLab() {
   const resetSetup = () => {
     setRunning(false);
     setInstalledCount(0);
-    setSetupExpanded(true);
   };
 
   const selectIdealFringe = (order: number) => {
@@ -1305,7 +1263,7 @@ export default function RippleTankLab() {
     } else if (mode === "measurement") {
       setMeasurementReadings((current) => [...current, {
         id: Date.now(), frequency, wavelength, period, speed: waveSpeed,
-        pattern: standingWave ? "Duran dalga" : strobeFrequency === frequency ? "Donmuş görünüm" : "Hareketli görünüm",
+        pattern: standingWave ? "Duran dalga" : "İlerleyen dalga",
       }]);
     } else if (mode === "diffraction") {
       setDiffractionReadings((current) => [...current, {
@@ -1337,8 +1295,8 @@ export default function RippleTankLab() {
       <div className="rt-hero">
         <div>
           <span>DALGALAR · DENEY 01 · TYMM</span>
-          <h2>Dalga leğenini çalıştır, deseni ölç, olayları karşılaştır.</h2>
-          <p>PDF’deki ripple motor, stroboskop, yansıtıcılar, yarık, cam blok ve iki kaynak aynı deney setinde çalışır. Bütün sonuçlar ideal sistem değerleridir.</p>
+          <h2>Tek masada kur, motoru çalıştır, su dalgalarını gözle.</h2>
+          <p>Leğen, ripple motor, kaynak ve güç ünitesi gerçek bir deney masasında sırayla birleşir. Kurduğun aynı düzenek üzerinde yansıma, kırınım, kırılma ve girişimi inceleyebilirsin.</p>
         </div>
         <div className="rt-hero-visual" aria-label="Dalga leğeni çizimi"><i /><i /><i /><b>λ</b><small>SU DALGALARI</small></div>
       </div>
@@ -1351,19 +1309,10 @@ export default function RippleTankLab() {
         ))}
       </div>
 
-      <RippleTankSetup
-        mode={mode}
-        installedCount={installedCount}
-        expanded={setupExpanded}
-        onExpandedChange={setSetupExpanded}
-        onInstall={installSetupStep}
-        onReset={resetSetup}
-      />
-
-      {setupReady ? <div className="rt-panel">
+      <div className="rt-panel">
         <div className="rt-panel-heading">
-          <div><span>AKTİF ÇALIŞMA · {modeLabels[mode].step}</span><h3>{modeLabels[mode].title}</h3><p>{modeLabels[mode].text}</p></div>
-          <div className="rt-live-badges"><span><b>{format(frequency)} Hz</b>frekans</span><span><b>{format(wavelength)} cm</b>dalga boyu</span><span><b>{format(waveSpeed)} cm/s</b>yayılma hızı</span></div>
+          <div><span>{setupReady ? `AKTİF ÇALIŞMA · ${modeLabels[mode].step}` : "TEK MASADA KURULUM"}</span><h3>{setupReady ? modeLabels[mode].title : "Dalga leğeni düzeneği"}</h3><p>{setupReady ? modeLabels[mode].text : "Parçaları sağdaki sırayla ekle; her parça doğrudan bu masada görünecek."}</p></div>
+          {setupReady ? <div className="rt-live-badges"><span><b>{format(frequency)} Hz</b>frekans</span><span><b>{format(wavelength)} cm</b>dalga boyu</span><span><b>{format(waveSpeed)} cm/s</b>yayılma hızı</span></div> : <div className="rt-live-badges"><span><b>{installedCount}/{SETUP_ORDER.length}</b>parça hazır</span></div>}
         </div>
 
         <div className="rt-workspace">
@@ -1371,8 +1320,8 @@ export default function RippleTankLab() {
             <RippleTankCanvas
               mode={mode}
               running={running && setupReady}
+              installedCount={installedCount}
               frequency={frequency}
-              strobeFrequency={strobeFrequency}
               wavelengthPixels={mode === "interference" ? wavelength * 8 : wavelengthPixels}
               sourceType={sourceType}
               reflectorType={reflectorType}
@@ -1392,13 +1341,22 @@ export default function RippleTankLab() {
               onSelectedPointChange={setSelectedPoint}
             />
             <div className="rt-stage-note">
-              {mode === "reflection" && sourceType !== "plane" && <span>Turuncu kaynağı leğen içinde sürükleyebilirsin.</span>}
-              {mode === "interference" && <span>Analiz etmek istediğin noktayı leğen üzerinde seçebilirsin.</span>}
-              {mode !== "reflection" && mode !== "interference" && <span>Leğendeki parlak çizgiler aynı fazdaki dalga tepelerini gösterir.</span>}
+              {!setupReady && <span>Sıradaki parça aynı deney masasına eklenecek.</span>}
+              {setupReady && mode === "reflection" && sourceType !== "plane" && <span>Turuncu kaynağı leğen içinde sürükleyebilirsin.</span>}
+              {setupReady && mode === "interference" && <span>Analiz etmek istediğin noktayı leğen üzerinde seçebilirsin.</span>}
+              {setupReady && mode !== "reflection" && mode !== "interference" && <span>Parlak çizgiler dalga tepelerini, oklar yayılma yönünü gösterir.</span>}
             </div>
           </div>
 
           <aside className="rt-controls">
+            {!setupReady ? (
+              <RippleTankSetup
+                mode={mode}
+                installedCount={installedCount}
+                onInstall={installSetupStep}
+                onReset={resetSetup}
+              />
+            ) : <>
             <div className="rt-power-row"><button type="button" className={running ? "active" : ""} onClick={() => setRunning((value) => !value)}><i />{running ? "Motor çalışıyor" : "Motor kapalı"}</button><button type="button" onClick={resetMode}>Başlangıca dön</button></div>
             <label><span>Ripple motor frekansı <b>{format(frequency)} Hz</b></span><input type="range" min="2" max="8" step="0.5" value={frequency} onChange={(event) => setFrequency(Number(event.target.value))} /></label>
             {mode === "reflection" && (
@@ -1412,9 +1370,8 @@ export default function RippleTankLab() {
 
             {mode === "measurement" && (
               <>
-                <label><span>Stroboskop frekansı <b>{format(strobeFrequency)} Hz</b></span><input type="range" min="2" max="8" step="0.5" value={strobeFrequency} onChange={(event) => setStrobeFrequency(Number(event.target.value))} /></label>
                 <label className="rt-check"><input type="checkbox" checked={standingWave} onChange={(event) => setStandingWave(event.target.checked)} /><span>Yansıtıcı engeli ekle · duran dalga</span></label>
-                <div className={`rt-result-box ${strobeFrequency === frequency ? "success" : ""}`}><small>STROBOSKOP GÖRÜNÜMÜ</small><strong>{strobeFrequency === frequency ? "Dalga deseni duruyor görünür." : `${format(Math.abs(frequency - strobeFrequency))} Hz hızla kayıyor görünür.`}</strong><span>T = {format(period, 3)} s · λ = {format(wavelength)} cm · v = {format(waveSpeed)} cm/s</span></div>
+                <div className="rt-result-box success"><small>CETVELLE DALGA ÖLÇÜMÜ</small><strong>{standingWave ? "Düğüm noktaları arasındaki uzaklık, dalga boyunun yarısıdır." : "İki komşu dalga tepesi arasındaki uzaklık dalga boyudur."}</strong><span>T = {format(period, 3)} s · λ = {format(wavelength)} cm · v = {format(waveSpeed)} cm/s</span></div>
               </>
             )}
 
@@ -1444,38 +1401,34 @@ export default function RippleTankLab() {
             )}
 
             <button className="rt-record-button" type="button" onClick={recordCurrent}>Gözlemi kaydet +</button>
+            </>}
           </aside>
         </div>
 
-        <div className="rt-data-card">
+        {setupReady && <div className="rt-data-card">
           <div><span>İDEAL ÖLÇÜM TABLOSU</span><h4>{modeLabels[mode].title} kayıtları</h4><p>Bir değişkeni değiştir, gözlemi kaydet ve sonuçları karşılaştır.</p></div>
           <div className="rt-table-wrap">
             {mode === "reflection" && <table><thead><tr><th>#</th><th>Kaynak</th><th>Yansıtıcı</th><th>Açı</th><th>Sonuç</th></tr></thead><tbody>{reflectionReadings.length ? reflectionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{reading.source}</td><td>{reading.reflector}</td><td>{reading.angle}°</td><td><b>{reading.result}</b></td></tr>) : <tr><td colSpan={5}>İlk yansıma gözlemini kaydet.</td></tr>}</tbody></table>}
-            {mode === "measurement" && <table><thead><tr><th>#</th><th>f</th><th>T</th><th>λ</th><th>v</th><th>Görünüm</th></tr></thead><tbody>{measurementReadings.length ? measurementReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.frequency)} Hz</td><td>{format(reading.period, 3)} s</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.speed)} cm/s</td><td><b>{reading.pattern}</b></td></tr>) : <tr><td colSpan={6}>Stroboskobu ayarla ve ölçümü kaydet.</td></tr>}</tbody></table>}
+            {mode === "measurement" && <table><thead><tr><th>#</th><th>f</th><th>T</th><th>λ</th><th>v</th><th>Görünüm</th></tr></thead><tbody>{measurementReadings.length ? measurementReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.frequency)} Hz</td><td>{format(reading.period, 3)} s</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.speed)} cm/s</td><td><b>{reading.pattern}</b></td></tr>) : <tr><td colSpan={6}>Dalga boyunu gözle ve ölçümü kaydet.</td></tr>}</tbody></table>}
             {mode === "diffraction" && <table><thead><tr><th>#</th><th>Düzenek</th><th>λ</th><th>Yarık</th><th>λ / yarık</th><th>Yayılma</th></tr></thead><tbody>{diffractionReadings.length ? diffractionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{reading.kind}</td><td>{format(reading.wavelength)} cm</td><td>{reading.opening === null ? "—" : `${format(reading.opening)} cm`}</td><td>{reading.ratio === null ? "—" : format(reading.ratio, 2)}</td><td>{reading.spread === null ? "Kenar boyunca" : `${format(reading.spread)}°`}</td></tr>) : <tr><td colSpan={6}>Yarığı veya frekansı değiştir ve kaydet.</td></tr>}</tbody></table>}
             {mode === "refraction" && <table><thead><tr><th>#</th><th>Derinlik 1</th><th>Derinlik 2</th><th>λ₁</th><th>λ₂</th><th>i</th><th>r</th></tr></thead><tbody>{refractionReadings.length ? refractionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.deepDepth, 2)} cm</td><td>{format(reading.shallowDepth, 2)} cm</td><td>{format(reading.wavelengthDeep)} cm</td><td>{format(reading.wavelengthShallow)} cm</td><td>{reading.incidenceAngle}°</td><td>{format(reading.refractionAngle)}°</td></tr>) : <tr><td colSpan={7}>Cam bloğun derinliğini değiştir ve kaydet.</td></tr>}</tbody></table>}
             {mode === "interference" && <table><thead><tr><th>#</th><th>d</th><th>λ</th><th>Yol farkı</th><th>n</th><th>Sonuç</th></tr></thead><tbody>{interferenceReadings.length ? interferenceReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.separation)} cm</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.pathDifference)} cm</td><td>{reading.fringeOrder}</td><td><b>{reading.result}</b></td></tr>) : <tr><td colSpan={6}>Bir aydınlık saçak seç ve kaydet.</td></tr>}</tbody></table>}
           </div>
-        </div>
-      </div> : (
-        <div className="rt-locked-experiment">
-          <span>{installedCount + 1}</span>
-          <div><b>Deney alanı henüz kapalı</b><p>Dalga kaynağının nereden başladığını ve her parçanın görevini görmek için düzeneği yukarıdaki sırayla tamamla.</p></div>
-        </div>
-      )}
+        </div>}
+      </div>
 
-      <div className="rt-report">
+      {setupReady && <div className="rt-report">
         <div><span>TYMM · DENEY RAPORU</span><h3>Desenden kanıta, kanıttan sonuca.</h3><p>Her çalışmada kaydettiğin ideal ölçümleri kullanarak kısa açıklamalar yaz.</p></div>
         <div className="rt-report-grid">
           {[
             "Düzlemsel ve dairesel dalgaların düz engelden yansıyan biçimlerini karşılaştır.",
-            "Stroboskop frekansı kaynak frekansına eşit olduğunda dalgalar neden duruyor görünür?",
+            "Frekans arttığında dalga tepeleri arasındaki uzaklık nasıl değişti?",
             "Dalga boyu ile yarık genişliğinin oranı kırınım desenini nasıl değiştirdi?",
             "Dalga sığ bölgeye geçerken hız, dalga boyu ve yön birlikte nasıl değişti?",
             "İki kaynaktan seçtiğin noktaya gelen dalgaların yol farkı aydınlık saçağı nasıl belirledi?",
           ].map((question, index) => <label key={question}><span><b>{index + 1}</b>{question}</span><textarea value={answers[index]} onChange={(event) => setAnswers((current) => current.map((answer, answerIndex) => answerIndex === index ? event.target.value : answer))} placeholder="Kendi ölçümüne ve gözlemine göre yaz..." /></label>)}
         </div>
-      </div>
+      </div>}
     </section>
   );
 }
