@@ -17,8 +17,10 @@ type WaveMode =
 type Point = { x: number; y: number };
 type Vector = { x: number; y: number };
 type SourceType = "plane" | "circular" | "pulse";
+type SourceBarType = SourceType | "double";
 type ReflectorType = "straight" | "parabolic";
 type DiffractionType = "edge" | "slit";
+type SetupKind = "tank" | "motor" | "source" | "power" | "strobe" | "apparatus";
 
 type ReflectionReading = {
   id: number;
@@ -65,6 +67,8 @@ const CANVAS_WIDTH = 920;
 const CANVAS_HEIGHT = 560;
 const TANK = { x: 48, y: 52, width: 660, height: 454 };
 const GRAVITY = 9.81;
+const SETUP_ORDER: SetupKind[] = ["tank", "motor", "source", "power", "strobe", "apparatus"];
+const SETUP_MIME = "application/x-ripple-tank-setup";
 
 const clamp = (value: number, minimum: number, maximum: number) =>
   Math.min(maximum, Math.max(minimum, value));
@@ -277,24 +281,136 @@ function drawPowerUnit(
   context.fillText("STROBOSKOP", 815, 217);
 }
 
-function drawSourceBar(context: CanvasRenderingContext2D, sourceType: SourceType) {
+function drawSourceBar(
+  context: CanvasRenderingContext2D,
+  sourceType: SourceBarType,
+  angle = 0,
+) {
   context.save();
+  context.translate(378, 469);
+  context.rotate(toRadians(angle));
   context.fillStyle = "#304d51";
   context.beginPath();
-  context.roundRect(228, 460, 300, 18, 7);
+  context.roundRect(-150, -9, 300, 18, 7);
   context.fill();
   context.fillStyle = "#d6e3e1";
-  context.fillRect(244, 464, 268, 3);
-  if (sourceType !== "plane") {
+  context.fillRect(-134, -5, 268, 3);
+  if (sourceType === "circular" || sourceType === "pulse") {
     context.fillStyle = "#ef9824";
     context.beginPath();
-    context.arc(378, 450, 10, 0, Math.PI * 2);
+    context.arc(0, -19, 10, 0, Math.PI * 2);
     context.fill();
+  }
+  if (sourceType === "double") {
+    [-34, 34].forEach((x) => {
+      context.fillStyle = "#ef9824";
+      context.beginPath();
+      context.arc(x, -19, 9, 0, Math.PI * 2);
+      context.fill();
+    });
   }
   context.fillStyle = "rgba(255,255,255,0.9)";
   context.font = "900 9px Arial";
   context.textAlign = "center";
-  context.fillText(sourceType === "plane" ? "DOĞRUSAL DALGA KAYNAĞI" : sourceType === "pulse" ? "TEK ATMA KAYNAĞI" : "DAİRESEL DALGA KAYNAĞI", 378, 493);
+  context.fillText(
+    sourceType === "plane"
+      ? "DOĞRUSAL DALGA KAYNAĞI"
+      : sourceType === "pulse"
+        ? "TEK ATMA KAYNAĞI"
+        : sourceType === "double"
+          ? "İKİ NOKTASAL DALGA KAYNAĞI"
+          : "DAİRESEL DALGA KAYNAĞI",
+    0,
+    24,
+  );
+  context.restore();
+}
+
+function drawMotorConnection(
+  context: CanvasRenderingContext2D,
+  running: boolean,
+) {
+  context.save();
+  context.strokeStyle = "#243f43";
+  context.lineWidth = 5;
+  context.lineCap = "round";
+  context.beginPath();
+  context.moveTo(414, 526);
+  context.bezierCurveTo(545, 548, 666, 535, 750, 423);
+  context.stroke();
+  context.strokeStyle = "#c9d5d3";
+  context.lineWidth = 8;
+  context.beginPath();
+  context.moveTo(378, 478);
+  context.lineTo(378, 505);
+  context.stroke();
+  const housing = context.createLinearGradient(344, 505, 416, 542);
+  housing.addColorStop(0, "#dfe7e5");
+  housing.addColorStop(0.5, "#82999a");
+  housing.addColorStop(1, "#425e62");
+  context.fillStyle = housing;
+  context.beginPath();
+  context.roundRect(341, 504, 74, 38, 8);
+  context.fill();
+  context.fillStyle = running ? "#70e29a" : "#637d7f";
+  context.beginPath();
+  context.arc(400, 522, 5, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = "#254b4f";
+  context.font = "900 8px Arial";
+  context.textAlign = "center";
+  context.fillText("RIPPLE MOTOR", 378, 537);
+  context.restore();
+}
+
+function clipToReflectorSide(
+  context: CanvasRenderingContext2D,
+  center: Point,
+  tangent: Vector,
+  referencePoint: Point,
+) {
+  const rawNormal = { x: -tangent.y, y: tangent.x };
+  const sideSign = dot(subtract(referencePoint, center), rawNormal) >= 0 ? 1 : -1;
+  const side = { x: rawNormal.x * sideSign, y: rawNormal.y * sideSign };
+  const start = add(center, tangent, -1000);
+  const end = add(center, tangent, 1000);
+  context.beginPath();
+  context.moveTo(start.x, start.y);
+  context.lineTo(end.x, end.y);
+  context.lineTo(end.x + side.x * 1400, end.y + side.y * 1400);
+  context.lineTo(start.x + side.x * 1400, start.y + side.y * 1400);
+  context.closePath();
+  context.clip();
+}
+
+function drawDirectionArrow(
+  context: CanvasRenderingContext2D,
+  start: Point,
+  end: Point,
+  label: string,
+  color = "#f39b24",
+) {
+  const direction = normalize(subtract(end, start));
+  const tangent = { x: -direction.y, y: direction.x };
+  context.save();
+  context.strokeStyle = color;
+  context.fillStyle = color;
+  context.lineWidth = 3;
+  context.lineCap = "round";
+  context.beginPath();
+  context.moveTo(start.x, start.y);
+  context.lineTo(end.x, end.y);
+  context.stroke();
+  context.beginPath();
+  context.moveTo(end.x, end.y);
+  context.lineTo(end.x - direction.x * 13 + tangent.x * 7, end.y - direction.y * 13 + tangent.y * 7);
+  context.lineTo(end.x - direction.x * 13 - tangent.x * 7, end.y - direction.y * 13 - tangent.y * 7);
+  context.closePath();
+  context.fill();
+  context.font = "900 10px Arial";
+  context.textAlign = "center";
+  context.textBaseline = "bottom";
+  context.fillText(label, (start.x + end.x) / 2 + tangent.x * 14, (start.y + end.y) / 2 + tangent.y * 14);
   context.restore();
 }
 
@@ -437,11 +553,20 @@ function drawReflectionMode(
   if (reflectorType === "parabolic") {
     const focus = { x: 378, y: 330 };
     if (focusDirection === "toward") {
+      context.save();
+      context.beginPath();
+      context.rect(92, 245, 572, 218);
+      context.clip();
       drawParallelWavefronts(context, { x: 378, y: 425 }, { x: 0, y: -1 }, wavelengthPixels, -phase, 7, 260, "rgba(244,255,255,0.9)");
+      context.restore();
       drawCircularWaves(context, focus, wavelengthPixels, phase, "rgba(255,229,127,0.92)", 170, Math.PI, Math.PI * 2);
+      drawDirectionArrow(context, { x: 270, y: 410 }, { x: 270, y: 292 }, "GELEN DÜZ DALGA");
+      drawDirectionArrow(context, { x: 246, y: 236 }, { x: 354, y: 315 }, "ODAĞA YANSIYAN DALGA", "#ffe176");
     } else {
       drawCircularWaves(context, focus, wavelengthPixels, phase, "rgba(244,255,255,0.92)", 190, Math.PI, Math.PI * 2);
       drawParallelWavefronts(context, { x: 378, y: 320 }, { x: 0, y: 1 }, wavelengthPixels, phase, 7, 260, "rgba(255,229,127,0.94)");
+      drawDirectionArrow(context, { x: 354, y: 315 }, { x: 246, y: 236 }, "ODAKTAN GELEN DALGA");
+      drawDirectionArrow(context, { x: 270, y: 285 }, { x: 270, y: 405 }, "YANSIYAN DÜZ DALGA", "#ffe176");
     }
     drawParabolicReflector(context);
     context.fillStyle = "#ffb22f";
@@ -453,20 +578,17 @@ function drawReflectionMode(
     context.textAlign = "center";
     context.fillText("ODAK", focus.x, focus.y + 24);
   } else {
-    const { center, tangent } = drawStraightReflector(context, reflectorAngle);
+    const center = { x: 378, y: 270 };
+    const radians = toRadians(reflectorAngle);
+    const tangent = { x: Math.cos(radians), y: Math.sin(radians) };
     const normal = { x: -tangent.y, y: tangent.x };
+    context.save();
+    clipToReflectorSide(context, center, tangent, { x: 378, y: 445 });
     if (sourceType === "plane") {
       const incoming = { x: 0, y: -1 };
       const reflected = reflect(incoming, normal);
       drawParallelWavefronts(context, { x: 378, y: 410 }, incoming, wavelengthPixels, -phase, 5, 250, "rgba(244,255,255,0.92)");
       drawParallelWavefronts(context, add(center, reflected, 76), reflected, wavelengthPixels, phase, 5, 155, "rgba(255,223,111,0.93)");
-      context.strokeStyle = "rgba(48,92,97,0.72)";
-      context.setLineDash([7, 6]);
-      context.beginPath();
-      context.moveTo(center.x - normal.x * 90, center.y - normal.y * 90);
-      context.lineTo(center.x + normal.x * 90, center.y + normal.y * 90);
-      context.stroke();
-      context.setLineDash([]);
     } else {
       const pulseRadius = (time * frequency * wavelengthPixels * 0.58) % 360;
       if (sourceType === "pulse") {
@@ -492,6 +614,31 @@ function drawReflectionMode(
       context.arc(circularSource.x, circularSource.y, 18, 0, Math.PI * 2);
       context.stroke();
     }
+    context.restore();
+    drawStraightReflector(context, reflectorAngle);
+
+    const sourceSideNormal = dot(subtract({ x: 378, y: 445 }, center), normal) >= 0
+      ? normal
+      : { x: -normal.x, y: -normal.y };
+    const incomingEnd = add(center, sourceSideNormal, 28);
+    if (sourceType === "plane") {
+      const incoming = { x: 0, y: -1 };
+      const reflected = reflect(incoming, normal);
+      drawDirectionArrow(context, { x: 300, y: 405 }, { x: 300, y: 310 }, "GELEN DALGA");
+      drawDirectionArrow(context, add(center, reflected, 28), add(center, reflected, 125), "YANSIYAN DALGA", "#ffe176");
+    } else {
+      const incidentDirection = normalize(subtract(incomingEnd, circularSource));
+      const reflectedDirection = reflect(incidentDirection, normal);
+      drawDirectionArrow(context, add(circularSource, incidentDirection, 24), incomingEnd, "GELEN DALGA");
+      drawDirectionArrow(context, add(center, reflectedDirection, 34), add(center, reflectedDirection, 128), "YANSIYAN DALGA", "#ffe176");
+    }
+    context.strokeStyle = "rgba(48,92,97,0.72)";
+    context.setLineDash([7, 6]);
+    context.beginPath();
+    context.moveTo(center.x - normal.x * 90, center.y - normal.y * 90);
+    context.lineTo(center.x + normal.x * 90, center.y + normal.y * 90);
+    context.stroke();
+    context.setLineDash([]);
   }
   context.restore();
   drawSourceBar(context, sourceType);
@@ -510,6 +657,7 @@ function drawMeasurementMode(
   const apparentFrequency = frequency - strobeFrequency;
   const phase = (time * apparentFrequency * wavelengthPixels) % wavelengthPixels;
   drawParallelWavefronts(context, { x: 378, y: 445 }, { x: 0, y: -1 }, wavelengthPixels, -phase, 11, 280, "rgba(247,255,255,0.96)", 2.4);
+  drawDirectionArrow(context, { x: 238, y: 420 }, { x: 238, y: 290 }, "YAYILMA YÖNÜ");
 
   if (standingWave) {
     context.strokeStyle = "#714d34";
@@ -526,6 +674,15 @@ function drawMeasurementMode(
     context.font = "900 9px Arial";
     context.textAlign = "center";
     context.fillText("DÜĞÜMLER ARASI = λ / 2", 378, 138);
+  } else {
+    context.fillStyle = "#587174";
+    context.beginPath();
+    context.roundRect(175, 112, 406, 22, 8);
+    context.fill();
+    context.fillStyle = "rgba(255,255,255,0.88)";
+    context.font = "900 9px Arial";
+    context.textAlign = "center";
+    context.fillText("DALGA SÖNÜMLEYİCİ", 378, 128);
   }
 
   const firstY = 365;
@@ -594,12 +751,16 @@ function drawDiffractionMode(
       -Math.PI / 2 - spread / 2,
       -Math.PI / 2 + spread / 2,
     );
+    drawDirectionArrow(context, { x: 245, y: 420 }, { x: 245, y: 322 }, "GELEN DALGA");
+    drawDirectionArrow(context, { x: centerX, y: 252 }, { x: centerX, y: 155 }, "KIRINAN DALGA", "#ffe176");
   } else {
     context.beginPath();
     context.moveTo(centerX - 30, barrierY);
     context.lineTo(670, barrierY);
     context.stroke();
     drawCircularWaves(context, { x: centerX - 30, y: barrierY }, wavelengthPixels, phase, "rgba(255,225,116,0.95)", 250, Math.PI, Math.PI * 2);
+    drawDirectionArrow(context, { x: 245, y: 420 }, { x: 245, y: 322 }, "GELEN DALGA");
+    drawDirectionArrow(context, { x: centerX - 48, y: 252 }, { x: centerX - 112, y: 172 }, "KENARDAN YAYILAN DALGA", "#ffe176");
   }
   context.restore();
   drawSourceBar(context, "plane");
@@ -630,10 +791,7 @@ function drawRefractionMode(
   clipTank(context);
   context.fillStyle = "rgba(239, 220, 151, 0.28)";
   context.beginPath();
-  context.moveTo(110, boundaryY);
-  context.lineTo(648, boundaryY - 44);
-  context.lineTo(648, 88);
-  context.lineTo(110, 88);
+  context.rect(105, 88, 546, boundaryY - 88);
   context.closePath();
   context.fill();
   context.strokeStyle = "rgba(202,166,80,0.8)";
@@ -666,8 +824,22 @@ function drawRefractionMode(
   context.textAlign = "left";
   context.fillText("SIĞ BÖLGE · CAM BLOK", 118, 111);
   context.fillText("DERİN BÖLGE", 118, 452);
+  const boundaryPoint = { x: 378, y: boundaryY };
+  drawDirectionArrow(
+    context,
+    add(boundaryPoint, incidentDirection, -125),
+    add(boundaryPoint, incidentDirection, -28),
+    "GELEN DALGA",
+  );
+  drawDirectionArrow(
+    context,
+    add(boundaryPoint, refractedDirection, 28),
+    add(boundaryPoint, refractedDirection, 130),
+    "KIRILAN DALGA",
+    "#ffe176",
+  );
   context.restore();
-  drawSourceBar(context, "plane");
+  drawSourceBar(context, "plane", incidenceAngle);
 }
 
 function drawInterferenceMode(
@@ -732,8 +904,14 @@ function drawInterferenceMode(
   context.beginPath();
   context.arc(selectedPoint.x, selectedPoint.y, 5, 0, Math.PI * 2);
   context.fill();
+  context.fillStyle = "#28565a";
+  context.font = "900 10px Arial";
+  context.textAlign = "center";
+  context.fillText("İKİ KAYNAKTAN ÇIKAN DALGALAR HER YÖNE YAYILIR", 378, 126);
+  drawDirectionArrow(context, { x: source1.x, y: source1.y - 18 }, { x: source1.x - 55, y: source1.y - 112 }, "1. DALGA");
+  drawDirectionArrow(context, { x: source2.x, y: source2.y - 18 }, { x: source2.x + 55, y: source2.y - 112 }, "2. DALGA", "#ffe176");
   context.restore();
-  drawSourceBar(context, "circular");
+  drawSourceBar(context, "double");
 }
 
 function RippleTankCanvas({
@@ -806,6 +984,7 @@ function RippleTankCanvas({
       } else {
         drawInterferenceMode(context, time, frequency, wavelengthPixels, sourceSeparation, selectedPoint);
       }
+      drawMotorConnection(context, running);
       drawPowerUnit(context, frequency, strobeFrequency, running, time);
       context.fillStyle = "rgba(255,255,255,0.94)";
       context.beginPath();
@@ -869,9 +1048,121 @@ const modeLabels: Record<WaveMode, { step: string; title: string; text: string }
   interference: { step: "05", title: "Girişim", text: "İki kaynak, yol farkı ve aydınlık saçak" },
 };
 
+const modeApparatus: Record<WaveMode, string> = {
+  reflection: "Düz ve parabolik yansıtıcı",
+  measurement: "Sönümleyici ve yansıtıcı",
+  diffraction: "Engel ve ayarlı yarık",
+  refraction: "Cam blok",
+  interference: "İkinci dairesel kaynak",
+};
+
+function SetupIcon({ kind }: { kind: SetupKind }) {
+  return <i className={`rt-setup-icon ${kind}`} aria-hidden="true" />;
+}
+
+function RippleTankSetup({
+  mode,
+  installedCount,
+  expanded,
+  onExpandedChange,
+  onInstall,
+  onReset,
+}: {
+  mode: WaveMode;
+  installedCount: number;
+  expanded: boolean;
+  onExpandedChange: (value: boolean) => void;
+  onInstall: (index: number) => void;
+  onReset: () => void;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+  const setupItems: Array<{ kind: SetupKind; name: string; detail: string }> = [
+    { kind: "tank", name: "Dalga leğeni", detail: "Hazneyi yerleştir ve 1,2 cm su doldur" },
+    { kind: "motor", name: "Ripple motor", detail: "Taşıyıcı kola sabitle" },
+    { kind: "source", name: "Dalga kaynağı", detail: mode === "interference" ? "Çift dairesel ucu motora tak" : "Kaynak ucunu motora tak" },
+    { kind: "power", name: "Güç kaynağı", detail: "Motor çıkışına bağla" },
+    { kind: "strobe", name: "Stroboskop", detail: "Leğenin üstüne hizala" },
+    { kind: "apparatus", name: modeApparatus[mode], detail: "Aktif deney elemanını leğene yerleştir" },
+  ];
+  const setupReady = installedCount === SETUP_ORDER.length;
+
+  return (
+    <section className={`rt-setup-builder ${setupReady ? "complete" : ""}`}>
+      <header className="rt-setup-heading">
+        <div><span>DÜZENEK KURULUMU</span><h3>{setupReady ? "Dalga leğeni deneye hazır." : `${installedCount + 1}. parçayı yerleştir.`}</h3><p>{setupReady ? `${modeLabels[mode].title} çalışmasına başlayabilirsin.` : "Sıradaki malzemeyi tutup deney masasına sürükle. Dokunarak da ekleyebilirsin."}</p></div>
+        <div className="rt-setup-status"><b>{installedCount}/{SETUP_ORDER.length}</b><span>{setupReady ? "HAZIR" : "KURULUYOR"}</span></div>
+        <button type="button" className="rt-setup-toggle" onClick={() => onExpandedChange(!expanded)}>{expanded ? "Kurulumu küçült" : "Kurulumu göster"}</button>
+      </header>
+
+      {expanded && (
+        <div className="rt-setup-body">
+          <aside className="rt-material-rack">
+            <small>MALZEME RAFI · SIRAYLA İLERLE</small>
+            <div>
+              {setupItems.map((item, index) => {
+                const installed = index < installedCount;
+                const next = index === installedCount;
+                return (
+                  <button
+                    key={item.kind}
+                    type="button"
+                    draggable={next}
+                    disabled={!next}
+                    className={`${installed ? "installed" : ""} ${next ? "next" : ""}`}
+                    onClick={() => onInstall(index)}
+                    onDragStart={(event) => {
+                      event.dataTransfer.setData(SETUP_MIME, String(index));
+                      event.dataTransfer.effectAllowed = "move";
+                    }}
+                  >
+                    <span className="rt-material-number">{installed ? "✓" : index + 1}</span>
+                    <SetupIcon kind={item.kind} />
+                    <span><b>{item.name}</b><small>{installed ? "Yerine yerleşti" : next ? item.detail : "Önce önceki adımı tamamla"}</small></span>
+                  </button>
+                );
+              })}
+            </div>
+            <button className="rt-setup-reset" type="button" onClick={onReset}>Düzeneği baştan kur</button>
+          </aside>
+
+          <div
+            className={`rt-setup-scene step-${installedCount} ${dragOver ? "drag-over" : ""}`}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDragOver(true);
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragOver(false);
+              const index = Number(event.dataTransfer.getData(SETUP_MIME));
+              if (Number.isFinite(index)) onInstall(index);
+            }}
+            aria-label="Dalga leğeni malzemelerinin sırayla bırakılacağı deney masası"
+          >
+            <div className="rt-setup-table-surface" />
+            {setupItems.map((item, index) => (
+              <div key={item.kind} className={`rt-setup-slot ${item.kind} ${index < installedCount ? "installed" : ""} ${index === installedCount ? "next" : ""}`}>
+                <span>{index < installedCount ? "✓" : index + 1}</span>
+                {index < installedCount && <SetupIcon kind={item.kind} />}
+                <b>{item.name}</b>
+              </div>
+            ))}
+            {!setupReady && <div className="rt-drop-hint"><b>SIRADAKİ PARÇAYI BURAYA BIRAK</b><span>{setupItems[installedCount]?.name}</span></div>}
+            {setupReady && <div className="rt-setup-ready"><i>✓</i><b>Tüm bağlantılar tamamlandı</b><span>Motoru çalıştırabilirsin.</span></div>}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function RippleTankLab() {
   const [mode, setMode] = useState<WaveMode>("reflection");
-  const [running, setRunning] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [installedCount, setInstalledCount] = useState(0);
+  const [setupExpanded, setSetupExpanded] = useState(true);
+  const previousModeRef = useRef(mode);
   const [frequency, setFrequency] = useState(4);
   const [strobeFrequency, setStrobeFrequency] = useState(4);
   const [waterDepth, setWaterDepth] = useState(1.2);
@@ -893,6 +1184,15 @@ export default function RippleTankLab() {
   const [refractionReadings, setRefractionReadings] = useState<RefractionReading[]>([]);
   const [interferenceReadings, setInterferenceReadings] = useState<InterferenceReading[]>([]);
   const [answers, setAnswers] = useState(["", "", "", "", ""]);
+  const setupReady = installedCount === SETUP_ORDER.length;
+
+  useEffect(() => {
+    if (previousModeRef.current === mode) return;
+    previousModeRef.current = mode;
+    setInstalledCount((current) => Math.min(current, SETUP_ORDER.length - 1));
+    setSetupExpanded(true);
+    setRunning(false);
+  }, [mode]);
 
   const waveSpeed = useMemo(() => speedForDepth(waterDepth), [waterDepth]);
   const wavelength = waveSpeed / frequency;
@@ -945,6 +1245,17 @@ export default function RippleTankLab() {
     setIncidenceAngle(28);
     setSourceSeparation(8);
     setSelectedPoint({ x: 470, y: 195 });
+  };
+
+  const installSetupStep = (index: number) => {
+    if (index !== installedCount) return;
+    setInstalledCount(index + 1);
+  };
+
+  const resetSetup = () => {
+    setRunning(false);
+    setInstalledCount(0);
+    setSetupExpanded(true);
   };
 
   const selectIdealFringe = (order: number) => {
@@ -1032,15 +1343,6 @@ export default function RippleTankLab() {
         <div className="rt-hero-visual" aria-label="Dalga leğeni çizimi"><i /><i /><i /><b>λ</b><small>SU DALGALARI</small></div>
       </div>
 
-      <div className="rt-equipment-strip" aria-label="Dalga leğeni deney araçları">
-        <span><i className="rt-tool-tank" /><b>Dalga leğeni</b><small>1,2 cm su</small></span>
-        <span><i className="rt-tool-motor" /><b>Ripple motor</b><small>Frekans ayarlı</small></span>
-        <span><i className="rt-tool-strobe" /><b>Stroboskop</b><small>Hareketi dondurur</small></span>
-        <span><i className="rt-tool-barrier" /><b>Engel takımı</b><small>Düz · parabol · yarık</small></span>
-        <span><i className="rt-tool-glass" /><b>Cam blok</b><small>Sığ bölge</small></span>
-        <span><i className="rt-tool-ruler" /><b>Cetvel</b><small>Dalga boyu ölçümü</small></span>
-      </div>
-
       <div className="rt-mode-switch" role="tablist" aria-label="Dalga leğeni deneyleri">
         {(Object.keys(modeLabels) as WaveMode[]).map((key) => (
           <button key={key} type="button" className={mode === key ? "active" : ""} onClick={() => setMode(key)}>
@@ -1049,7 +1351,16 @@ export default function RippleTankLab() {
         ))}
       </div>
 
-      <div className="rt-panel">
+      <RippleTankSetup
+        mode={mode}
+        installedCount={installedCount}
+        expanded={setupExpanded}
+        onExpandedChange={setSetupExpanded}
+        onInstall={installSetupStep}
+        onReset={resetSetup}
+      />
+
+      {setupReady ? <div className="rt-panel">
         <div className="rt-panel-heading">
           <div><span>AKTİF ÇALIŞMA · {modeLabels[mode].step}</span><h3>{modeLabels[mode].title}</h3><p>{modeLabels[mode].text}</p></div>
           <div className="rt-live-badges"><span><b>{format(frequency)} Hz</b>frekans</span><span><b>{format(wavelength)} cm</b>dalga boyu</span><span><b>{format(waveSpeed)} cm/s</b>yayılma hızı</span></div>
@@ -1059,7 +1370,7 @@ export default function RippleTankLab() {
           <div className="rt-stage">
             <RippleTankCanvas
               mode={mode}
-              running={running}
+              running={running && setupReady}
               frequency={frequency}
               strobeFrequency={strobeFrequency}
               wavelengthPixels={mode === "interference" ? wavelength * 8 : wavelengthPixels}
@@ -1146,7 +1457,12 @@ export default function RippleTankLab() {
             {mode === "interference" && <table><thead><tr><th>#</th><th>d</th><th>λ</th><th>Yol farkı</th><th>n</th><th>Sonuç</th></tr></thead><tbody>{interferenceReadings.length ? interferenceReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.separation)} cm</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.pathDifference)} cm</td><td>{reading.fringeOrder}</td><td><b>{reading.result}</b></td></tr>) : <tr><td colSpan={6}>Bir aydınlık saçak seç ve kaydet.</td></tr>}</tbody></table>}
           </div>
         </div>
-      </div>
+      </div> : (
+        <div className="rt-locked-experiment">
+          <span>{installedCount + 1}</span>
+          <div><b>Deney alanı henüz kapalı</b><p>Dalga kaynağının nereden başladığını ve her parçanın görevini görmek için düzeneği yukarıdaki sırayla tamamla.</p></div>
+        </div>
+      )}
 
       <div className="rt-report">
         <div><span>TYMM · DENEY RAPORU</span><h3>Desenden kanıta, kanıttan sonuca.</h3><p>Her çalışmada kaydettiğin ideal ölçümleri kullanarak kısa açıklamalar yaz.</p></div>
