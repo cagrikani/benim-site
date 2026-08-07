@@ -162,8 +162,8 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /module\.key === "electricity"/);
   assert.match(page, /onNavigate\("electricity"\)/);
   assert.match(page, /2 deney açık/);
-  assert.match(page, /4 deney açık/);
-  assert.match(page, /<b>14<\/b>\s*çalışan deney/);
+  assert.match(page, /5 deney açık/);
+  assert.match(page, /<b>15<\/b>\s*çalışan deney/);
   assert.match(page, /1 deney açık/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
   assert.match(page, /portal-guided-lab\.webp/);
@@ -382,6 +382,67 @@ test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla s
   assert.doesNotMatch(page, /n pleksiglas/);
   assert.match(page, /KISA DENEY RAPORU/);
   assert.match(page, /LAZER GÜVENLİĞİ/);
+});
+
+test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sunar", async () => {
+  const hub = await readFile(
+    new URL("app/OpticsLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("app/RippleTankLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(hub, /RippleTankLab/);
+  assert.match(hub, /Dalga leğeni/);
+  assert.match(hub, /activeTopic === "waves" && <RippleTankLab/);
+  assert.match(hub, /free-waves\.webp/);
+  assert.match(page, /RippleTankCanvas/);
+  assert.match(page, /Yayılma ve yansıma/);
+  assert.match(page, /Dalga ölçümü/);
+  assert.match(page, /Kırınım/);
+  assert.match(page, /Kırılma/);
+  assert.match(page, /Girişim/);
+  assert.match(page, /Düzlemsel kaynak/);
+  assert.match(page, /Dairesel kaynak/);
+  assert.match(page, /Tek atma/);
+  assert.match(page, /her doğrultuda aynı hızla yayılır/);
+  assert.match(page, /Parabolik engel/);
+  assert.match(page, /Düz dalga → odak/);
+  assert.match(page, /Odak → düz dalga/);
+  assert.match(page, /Stroboskop frekansı/);
+  assert.match(page, /duran dalga/);
+  assert.match(page, /Engel kenarı/);
+  assert.match(page, /Ayarlı yarık/);
+  assert.match(page, /Derin bölge/);
+  assert.match(page, /Sığ bölge/);
+  assert.match(page, /Kaynaklar arası uzaklık · d/);
+  assert.match(page, /Aydınlık saçağı seç/);
+  assert.match(page, /pathDifference/);
+  assert.match(page, /speedForDepth/);
+  assert.match(page, /refractionAngle/);
+  assert.match(page, /diffractionRatio/);
+  assert.match(page, /onPointerDown/);
+  assert.match(page, /setPointerCapture/);
+  assert.match(page, /İDEAL ÖLÇÜM TABLOSU/);
+  assert.match(page, /TYMM · DENEY RAPORU/);
+  assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
+});
+
+test("dalga leğeni gerçekçi düzenek, güç kaynağı ve responsive deney panelleri içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.rt-lab\s*\{/);
+  assert.match(css, /\.rt-hero\s*\{/);
+  assert.match(css, /\.rt-equipment-strip\s*\{/);
+  assert.match(css, /\.rt-mode-switch\s*\{/);
+  assert.match(css, /\.rt-workspace\s*\{/);
+  assert.match(css, /\.rt-canvas\s*\{/);
+  assert.match(css, /\.rt-controls\s*\{/);
+  assert.match(css, /\.rt-result-box\s*\{/);
+  assert.match(css, /\.rt-live-badges\s*\{/);
+  assert.match(css, /\.rt-data-card\s*\{/);
+  assert.match(css, /\.rt-report-grid\s*\{/);
+  assert.match(css, /@media \(max-width: 1080px\)/);
 });
 
 test("optik düzeneği gerçekçi ray, lazer, açı tablası, ekran ve cam elemanları gösterir", async () => {

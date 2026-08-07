@@ -7,8 +7,9 @@ import ConcaveMirrorLab from "./ConcaveMirrorLab";
 import ConvexMirrorLab from "./ConvexMirrorLab";
 import PlaneMirrorLab from "./PlaneMirrorLab";
 import PrismLab from "./PrismLab";
+import RippleTankLab from "./RippleTankLab";
 
-type OpticsTopic = "prism" | "mirrors" | null;
+type OpticsTopic = "waves" | "prism" | "mirrors" | null;
 type MirrorType = "plane" | "concave" | "convex" | null;
 
 export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
@@ -39,6 +40,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
           </span>
         </a>
         <nav aria-label="Dalgalar ve Optik deneyleri">
+          <button className={activeTopic === "waves" ? "active" : ""} type="button" onClick={() => openTopic("waves")}>Dalga leğeni</button>
           <button className={activeTopic === "prism" ? "active" : ""} type="button" onClick={() => openTopic("prism")}>Kırılma ve prizma</button>
           <button className={activeTopic === "mirrors" ? "active" : ""} type="button" onClick={() => openTopic("mirrors")}>Aynalar</button>
         </nav>
@@ -54,6 +56,11 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className="optics-topic-grid">
+            <button className={activeTopic === "waves" ? "active" : ""} type="button" onClick={() => openTopic("waves")}>
+              <span className="optics-topic-image"><img src="./free-waves.webp" alt="" draggable="false" /></span>
+              <span><small>DALGALAR · DENEY 01</small><b>Dalga leğeni</b><em>Yansıma, ölçüm, kırınım, kırılma ve girişim.</em></span>
+              <strong>{activeTopic === "waves" ? "Açık" : "Deneyi aç"} →</strong>
+            </button>
             <button className={activeTopic === "prism" ? "active" : ""} type="button" onClick={() => openTopic("prism")}>
               <span className="optics-topic-image"><img src="./portal-optics.webp" alt="" draggable="false" /></span>
               <span><small>OPTİK ALANI 01</small><b>Kırılma ve prizma</b><em>Işın rengini, açıyı ve prizmayı değiştir.</em></span>
@@ -94,6 +101,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
           </section>
         )}
 
+        {activeTopic === "waves" && <RippleTankLab />}
         {activeTopic === "prism" && <PrismLab />}
         {activeTopic === "mirrors" && activeMirror === "plane" && <PlaneMirrorLab />}
         {activeTopic === "mirrors" && activeMirror === "concave" && <ConcaveMirrorLab />}
@@ -108,7 +116,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
             <small>Dalgalar - Optik deney setleri</small>
           </span>
         </div>
-        <p>Kırılma, prizma ve ayna deneyleri TYMM lise düzeyine uygun ideal ölçümlerle hazırlanır.</p>
+        <p>Dalga leğeni, kırılma, prizma ve ayna deneyleri TYMM lise düzeyine uygun ideal ölçümlerle hazırlanır.</p>
         <a href="#optik-ust">Başa dön ↑</a>
       </footer>
     </main>
