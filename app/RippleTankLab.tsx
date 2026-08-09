@@ -303,20 +303,6 @@ function drawSourceBar(
   context.fill();
   context.fillStyle = "#d6e3e1";
   context.fillRect(-134, -5, 268, 3);
-  if (sourceType === "circular" || sourceType === "pulse") {
-    context.fillStyle = "#ef9824";
-    context.beginPath();
-    context.arc(0, -19, 10, 0, Math.PI * 2);
-    context.fill();
-  }
-  if (sourceType === "double") {
-    [-34, 34].forEach((x) => {
-      context.fillStyle = "#ef9824";
-      context.beginPath();
-      context.arc(x, -19, 9, 0, Math.PI * 2);
-      context.fill();
-    });
-  }
   context.fillStyle = "rgba(255,255,255,0.9)";
   context.font = "900 9px Arial";
   context.textAlign = "center";
@@ -516,30 +502,106 @@ function drawCircularWaves(
   context.restore();
 }
 
-function drawSinglePulse(
+const WAVE_FIELD_WIDTH = 320;
+const WAVE_FIELD_HEIGHT = 214;
+let waveFieldCanvas: HTMLCanvasElement | null = null;
+let waveFieldImage: ImageData | null = null;
+
+function smoothStep(value: number) {
+  const amount = clamp(value, 0, 1);
+  return amount * amount * (3 - 2 * amount);
+}
+
+function frontEnvelope(distance: number, travel: number, softness = 24) {
+  if (distance < 0 || travel <= 0) return 0;
+  return smoothStep((travel - distance + softness) / softness) * smoothStep(distance / 12);
+}
+
+function edgeDamping(x: number, y: number, dampBottom = false) {
+  const left = TANK.x + 22;
+  const right = TANK.x + TANK.width - 22;
+  const top = TANK.y + 22;
+  const bottom = TANK.y + TANK.height - 22;
+  const horizontal = smoothStep((x - left) / 42) * smoothStep((right - x) / 42);
+  const upper = smoothStep((y - top) / 56);
+  const lower = dampBottom ? smoothStep((bottom - y) / 48) : 1;
+  return horizontal * upper * lower;
+}
+
+function periodicWave(distance: number, spacing: number, travel: number) {
+  if (distance < 0) return 0;
+  return Math.sin(((distance - travel) * Math.PI * 2) / spacing) * frontEnvelope(distance, travel);
+}
+
+function pulseWave(distance: number, travel: number) {
+  if (distance < 0 || travel <= 0) return 0;
+  const difference = distance - travel;
+  return Math.sin((difference * Math.PI) / 13) * Math.exp(-(difference * difference) / 520);
+}
+
+function drawWaterSurface(
   context: CanvasRenderingContext2D,
-  source: Point,
-  radius: number,
-  color: string,
+  sampleHeight: (x: number, y: number) => number,
 ) {
+  if (typeof document === "undefined") return;
+  if (!waveFieldCanvas) {
+    waveFieldCanvas = document.createElement("canvas");
+    waveFieldCanvas.width = WAVE_FIELD_WIDTH;
+    waveFieldCanvas.height = WAVE_FIELD_HEIGHT;
+  }
+  const fieldContext = waveFieldCanvas.getContext("2d");
+  if (!fieldContext) return;
+  if (!waveFieldImage) {
+    waveFieldImage = fieldContext.createImageData(WAVE_FIELD_WIDTH, WAVE_FIELD_HEIGHT);
+  }
+  const pixels = waveFieldImage.data;
+  const innerX = TANK.x + 13;
+  const innerY = TANK.y + 13;
+  const innerWidth = TANK.width - 26;
+  const innerHeight = TANK.height - 26;
+  let offset = 0;
+  for (let row = 0; row < WAVE_FIELD_HEIGHT; row += 1) {
+    const y = innerY + (row / (WAVE_FIELD_HEIGHT - 1)) * innerHeight;
+    for (let column = 0; column < WAVE_FIELD_WIDTH; column += 1) {
+      const x = innerX + (column / (WAVE_FIELD_WIDTH - 1)) * innerWidth;
+      const height = clamp(sampleHeight(x, y), -1.45, 1.45);
+      const crest = Math.max(0, height);
+      const trough = Math.max(0, -height);
+      const shimmer = Math.sin(x * 0.037 + y * 0.021) * 4;
+      pixels[offset] = clamp(73 + crest * 92 - trough * 31 + shimmer, 22, 235);
+      pixels[offset + 1] = clamp(157 + crest * 75 - trough * 53 + shimmer, 58, 242);
+      pixels[offset + 2] = clamp(178 + crest * 68 - trough * 40 + shimmer, 78, 249);
+      pixels[offset + 3] = 218;
+      offset += 4;
+    }
+  }
+  fieldContext.putImageData(waveFieldImage, 0, 0);
   context.save();
-  context.strokeStyle = color;
-  context.lineWidth = 4;
-  context.shadowColor = color;
-  context.shadowBlur = 8;
-  context.strokeStyle = "rgba(16, 78, 96, 0.4)";
-  context.lineWidth = 2;
-  context.shadowBlur = 0;
+  clipTank(context);
+  context.imageSmoothingEnabled = true;
+  context.drawImage(waveFieldCanvas, innerX, innerY, innerWidth, innerHeight);
+  context.restore();
+}
+
+function drawTankAbsorbers(context: CanvasRenderingContext2D) {
+  context.save();
+  const foam = context.createLinearGradient(0, TANK.y + 12, 0, TANK.y + 40);
+  foam.addColorStop(0, "#263d40");
+  foam.addColorStop(0.55, "#536a69");
+  foam.addColorStop(1, "rgba(87,108,106,0.46)");
+  context.fillStyle = foam;
   context.beginPath();
-  context.arc(source.x, source.y, Math.max(1, radius - 6), 0, Math.PI * 2);
-  context.stroke();
-  context.strokeStyle = color;
-  context.lineWidth = 4;
-  context.shadowColor = color;
-  context.shadowBlur = 8;
+  context.roundRect(TANK.x + 13, TANK.y + 13, TANK.width - 26, 26, 10);
+  context.fill();
+  context.fillStyle = "rgba(43,65,67,0.86)";
   context.beginPath();
-  context.arc(source.x, source.y, radius, 0, Math.PI * 2);
-  context.stroke();
+  context.roundRect(TANK.x + 13, TANK.y + 13, 22, TANK.height - 26, 9);
+  context.roundRect(TANK.x + TANK.width - 35, TANK.y + 13, 22, TANK.height - 26, 9);
+  context.fill();
+  context.fillStyle = "rgba(255,255,255,0.86)";
+  context.font = "900 8px Arial";
+  context.textAlign = "center";
+  context.fillText("DALGA SÖNÜMLEYİCİ", TANK.x + TANK.width / 2, TANK.y + 31);
   context.restore();
 }
 
@@ -602,6 +664,7 @@ function drawReflectionMode(
   context.save();
   clipTank(context);
   const phase = (time * frequency * wavelengthPixels) % wavelengthPixels;
+  const travel = time * frequency * wavelengthPixels;
   if (reflectorType === "parabolic") {
     const focus = { x: 378, y: 330 };
     if (focusDirection === "toward") {
@@ -635,27 +698,35 @@ function drawReflectionMode(
     const tangent = { x: Math.cos(radians), y: Math.sin(radians) };
     const normal = { x: -tangent.y, y: tangent.x };
     context.save();
-    clipToReflectorSide(context, center, tangent, { x: 378, y: 445 });
+    clipToReflectorSide(context, center, tangent, { x: 378, y: 450 });
     if (sourceType === "plane") {
       const incoming = { x: 0, y: -1 };
       const reflected = reflect(incoming, normal);
-      drawParallelWavefronts(context, { x: 378, y: 410 }, incoming, wavelengthPixels, phase, 5, 250, "rgba(244,255,255,0.92)");
-      drawParallelWavefronts(context, add(center, reflected, 76), reflected, wavelengthPixels, phase, 5, 155, "rgba(255,223,111,0.93)");
+      const sourcePoint = { x: 378, y: 450 };
+      const sourceToReflector = Math.abs(dot(subtract(center, sourcePoint), incoming));
+      drawWaterSurface(context, (x, y) => {
+        const point = { x, y };
+        const incomingDistance = dot(subtract(point, sourcePoint), incoming);
+        const reflectedDistance = dot(subtract(point, center), reflected);
+        const incomingWave = periodicWave(incomingDistance, wavelengthPixels, travel);
+        const reflectedWave = periodicWave(reflectedDistance, wavelengthPixels, travel - sourceToReflector);
+        return (incomingWave * 0.76 + reflectedWave * 0.7) * edgeDamping(x, y, false);
+      });
     } else {
-      const pulseRadius = (time * frequency * wavelengthPixels * 0.58) % 360;
-      if (sourceType === "pulse") {
-        drawSinglePulse(context, circularSource, pulseRadius, "rgba(244,255,255,0.95)");
-      } else {
-        drawCircularWaves(context, circularSource, wavelengthPixels, phase, "rgba(244,255,255,0.92)", 360);
-      }
       const relative = subtract(circularSource, center);
       const projection = dot(relative, normal);
       const virtualCenter = add(circularSource, normal, -2 * projection);
-      if (sourceType === "pulse") {
-        drawSinglePulse(context, virtualCenter, pulseRadius, "rgba(255,223,111,0.88)");
-      } else {
-        drawCircularWaves(context, virtualCenter, wavelengthPixels, phase, "rgba(255,223,111,0.85)", 330);
-      }
+      drawWaterSurface(context, (x, y) => {
+        const realDistance = Math.hypot(x - circularSource.x, y - circularSource.y);
+        const imageDistance = Math.hypot(x - virtualCenter.x, y - virtualCenter.y);
+        const realWave = sourceType === "pulse"
+          ? pulseWave(realDistance, travel * 0.58)
+          : periodicWave(realDistance, wavelengthPixels, travel);
+        const imageWave = sourceType === "pulse"
+          ? pulseWave(imageDistance, travel * 0.58)
+          : periodicWave(imageDistance, wavelengthPixels, travel);
+        return (realWave * 0.82 + imageWave * 0.66) * edgeDamping(x, y, true);
+      });
       context.fillStyle = "#f29b28";
       context.beginPath();
       context.arc(circularSource.x, circularSource.y, 9, 0, Math.PI * 2);
@@ -669,7 +740,7 @@ function drawReflectionMode(
     context.restore();
     drawStraightReflector(context, reflectorAngle);
 
-    const sourceSideNormal = dot(subtract({ x: 378, y: 445 }, center), normal) >= 0
+    const sourceSideNormal = dot(subtract({ x: 378, y: 450 }, center), normal) >= 0
       ? normal
       : { x: -normal.x, y: -normal.y };
     const incomingEnd = add(center, sourceSideNormal, 28);
@@ -705,18 +776,22 @@ function drawMeasurementMode(
 ) {
   context.save();
   clipTank(context);
-  const phase = (time * frequency * wavelengthPixels) % wavelengthPixels;
-  drawParallelWavefronts(
-    context,
-    { x: 378, y: 445 },
-    { x: 0, y: -1 },
-    wavelengthPixels,
-    phase,
-    11,
-    280,
-    `rgba(247,255,255,${clamp(0.58 + amplitude * 0.16, 0.65, 0.98)})`,
-    1.5 + amplitude * 0.8,
-  );
+  const travel = time * frequency * wavelengthPixels;
+  const sourceY = 450;
+  const reflectorY = 165;
+  const amplitudeScale = clamp(amplitude / 1.4, 0.38, 1.45);
+  drawWaterSurface(context, (x, y) => {
+    const incidentDistance = sourceY - y;
+    const incident = periodicWave(incidentDistance, wavelengthPixels, travel);
+    let height = incident;
+    if (standingWave) {
+      const reflectedTravel = travel - (sourceY - reflectorY);
+      const reflectedDistance = y - reflectorY;
+      height += periodicWave(reflectedDistance, wavelengthPixels, reflectedTravel);
+      height *= 0.62;
+    }
+    return height * amplitudeScale * edgeDamping(x, y, false);
+  });
   drawDirectionArrow(context, { x: 238, y: 420 }, { x: 238, y: 290 }, "YAYILMA YÖNÜ");
 
   if (standingWave) {
@@ -734,15 +809,6 @@ function drawMeasurementMode(
     context.font = "900 9px Arial";
     context.textAlign = "center";
     context.fillText("DÜĞÜMLER ARASI = λ / 2", 378, 138);
-  } else {
-    context.fillStyle = "#587174";
-    context.beginPath();
-    context.roundRect(175, 112, 406, 22, 8);
-    context.fill();
-    context.fillStyle = "rgba(255,255,255,0.88)";
-    context.font = "900 9px Arial";
-    context.textAlign = "center";
-    context.fillText("DALGA SÖNÜMLEYİCİ", 378, 128);
   }
 
   const firstY = 365;
@@ -782,15 +848,29 @@ function drawDiffractionMode(
   const centerX = 378;
   const slitPixels = slitWidthCm * 14;
   const spread = 2 * Math.asin(clamp((wavelengthPixels / 7) / slitWidthCm, 0, 1));
-  const phase = (time * frequency * wavelengthPixels) % wavelengthPixels;
+  const travel = time * frequency * wavelengthPixels;
+  const sourceY = 450;
+  const sourceToBarrier = sourceY - barrierY;
   context.save();
   clipTank(context);
-  context.save();
-  context.beginPath();
-  context.rect(TANK.x + 13, barrierY, TANK.width - 26, TANK.y + TANK.height - barrierY);
-  context.clip();
-  drawParallelWavefronts(context, { x: centerX, y: 445 }, { x: 0, y: -1 }, wavelengthPixels, phase, 8, 280, "rgba(247,255,255,0.94)");
-  context.restore();
+  drawWaterSurface(context, (x, y) => {
+    let height = 0;
+    if (y >= barrierY) {
+      height = periodicWave(sourceY - y, wavelengthPixels, travel);
+    } else if (diffractionType === "slit") {
+      const distance = Math.hypot(x - centerX, y - barrierY);
+      const angleFromForward = Math.abs(Math.atan2(x - centerX, barrierY - y));
+      const angularEnvelope = 1 - smoothStep((angleFromForward - spread / 2 + 0.12) / 0.24);
+      height = periodicWave(distance, wavelengthPixels, travel - sourceToBarrier) * angularEnvelope;
+    } else {
+      const edgeX = centerX - 30;
+      const distance = Math.hypot(x - edgeX, y - barrierY);
+      const diffracted = periodicWave(distance, wavelengthPixels, travel - sourceToBarrier) * 0.74;
+      const openSide = periodicWave(sourceY - y, wavelengthPixels, travel) * (1 - smoothStep((x - edgeX + 35) / 70));
+      height = diffracted + openSide;
+    }
+    return height * edgeDamping(x, y, false);
+  });
 
   context.strokeStyle = "#6c4a31";
   context.lineWidth = 18;
@@ -804,16 +884,6 @@ function drawDiffractionMode(
     context.moveTo(centerX + slitPixels / 2, barrierY);
     context.lineTo(670, barrierY);
     context.stroke();
-    drawCircularWaves(
-      context,
-      { x: centerX, y: barrierY },
-      wavelengthPixels,
-      phase,
-      "rgba(255,225,116,0.95)",
-      260,
-      -Math.PI / 2 - spread / 2,
-      -Math.PI / 2 + spread / 2,
-    );
     drawDirectionArrow(context, { x: 245, y: 420 }, { x: 245, y: 322 }, "GELEN DALGA");
     drawDirectionArrow(context, { x: centerX, y: 252 }, { x: centerX, y: 155 }, "KIRINAN DALGA", "#ffe176");
   } else {
@@ -821,7 +891,6 @@ function drawDiffractionMode(
     context.moveTo(centerX - 30, barrierY);
     context.lineTo(670, barrierY);
     context.stroke();
-    drawCircularWaves(context, { x: centerX - 30, y: barrierY }, wavelengthPixels, phase, "rgba(255,225,116,0.95)", 250, Math.PI, Math.PI * 2);
     drawDirectionArrow(context, { x: 245, y: 420 }, { x: 245, y: 322 }, "GELEN DALGA");
     drawDirectionArrow(context, { x: centerX - 48, y: 252 }, { x: centerX - 112, y: 172 }, "KENARDAN YAYILAN DALGA", "#ffe176");
   }
@@ -846,8 +915,12 @@ function drawRefractionMode(
     x: Math.sin(toRadians(refractionAngle)),
     y: -Math.cos(toRadians(refractionAngle)),
   };
-  const deepPhase = (time * frequency * wavelengthDeepPixels) % wavelengthDeepPixels;
-  const shallowPhase = (time * frequency * wavelengthShallowPixels) % wavelengthShallowPixels;
+  const sourcePoint = { x: 378, y: 469 };
+  const deepTravel = time * frequency * wavelengthDeepPixels;
+  const distanceToBoundary = (sourcePoint.y - boundaryY) / Math.max(0.2, -incidentDirection.y);
+  const boundaryPoint = add(sourcePoint, incidentDirection, distanceToBoundary);
+  const crossingTime = distanceToBoundary / (frequency * wavelengthDeepPixels);
+  const shallowTravel = Math.max(0, time - crossingTime) * frequency * wavelengthShallowPixels;
 
   context.save();
   clipTank(context);
@@ -860,25 +933,21 @@ function drawRefractionMode(
   context.lineWidth = 3;
   context.stroke();
 
-  context.save();
-  context.beginPath();
-  context.rect(70, boundaryY - 3, 620, 205);
-  context.clip();
-  drawParallelWavefronts(context, { x: 330, y: 430 }, incidentDirection, wavelengthDeepPixels, deepPhase, 8, 300, "rgba(247,255,255,0.95)");
-  context.restore();
-
-  context.save();
-  context.beginPath();
-  context.rect(70, 70, 620, boundaryY - 65);
-  context.clip();
-  drawParallelWavefronts(context, { x: 410, y: 238 }, refractedDirection, wavelengthShallowPixels, shallowPhase, 11, 300, "rgba(255,225,118,0.96)");
-  context.restore();
+  drawWaterSurface(context, (x, y) => {
+    const point = { x, y };
+    const height = y >= boundaryY
+      ? periodicWave(dot(subtract(point, sourcePoint), incidentDirection), wavelengthDeepPixels, deepTravel)
+      : periodicWave(dot(subtract(point, boundaryPoint), refractedDirection), wavelengthShallowPixels, shallowTravel);
+    return height * edgeDamping(x, y, false);
+  });
+  context.fillStyle = "rgba(241, 211, 116, 0.13)";
+  context.fillRect(105, 88, 546, boundaryY - 88);
 
   context.strokeStyle = "rgba(46,87,91,0.7)";
   context.setLineDash([7, 6]);
   context.beginPath();
-  context.moveTo(378, boundaryY - 100);
-  context.lineTo(378, boundaryY + 100);
+  context.moveTo(boundaryPoint.x, boundaryY - 100);
+  context.lineTo(boundaryPoint.x, boundaryY + 100);
   context.stroke();
   context.setLineDash([]);
   context.fillStyle = "#2b595d";
@@ -886,7 +955,6 @@ function drawRefractionMode(
   context.textAlign = "left";
   context.fillText("SIĞ BÖLGE · CAM BLOK", 118, 111);
   context.fillText("DERİN BÖLGE", 118, 452);
-  const boundaryPoint = { x: 378, y: boundaryY };
   drawDirectionArrow(
     context,
     add(boundaryPoint, incidentDirection, -125),
@@ -912,29 +980,19 @@ function drawInterferenceMode(
   selectedPoint: Point,
 ) {
   const separationPixels = sourceSeparationCm * 8;
-  const source1 = { x: 378 - separationPixels / 2, y: 445 };
-  const source2 = { x: 378 + separationPixels / 2, y: 445 };
-  const phase = time * frequency * Math.PI * 2;
-  const waveNumber = (Math.PI * 2) / wavelengthPixels;
+  const source1 = { x: 378 - separationPixels / 2, y: 450 };
+  const source2 = { x: 378 + separationPixels / 2, y: 450 };
+  const travel = time * frequency * wavelengthPixels;
 
   context.save();
   clipTank(context);
-  for (let y = 85; y < 445; y += 7) {
-    for (let x = 82; x < 675; x += 7) {
-      const firstDistance = Math.hypot(x - source1.x, y - source1.y);
-      const secondDistance = Math.hypot(x - source2.x, y - source2.y);
-      const amplitude =
-        Math.cos(waveNumber * firstDistance - phase) +
-        Math.cos(waveNumber * secondDistance - phase);
-      const intensity = Math.min(1, Math.abs(amplitude) / 2);
-      context.fillStyle = amplitude >= 0
-        ? `rgba(255, 239, 152, ${0.04 + intensity * 0.24})`
-        : `rgba(26, 105, 128, ${0.03 + intensity * 0.2})`;
-      context.fillRect(x, y, 7, 7);
-    }
-  }
-  drawCircularWaves(context, source1, wavelengthPixels, (phase / (Math.PI * 2)) * wavelengthPixels, "rgba(255,255,255,0.3)", 430);
-  drawCircularWaves(context, source2, wavelengthPixels, (phase / (Math.PI * 2)) * wavelengthPixels, "rgba(255,255,255,0.3)", 430);
+  drawWaterSurface(context, (x, y) => {
+    const firstDistance = Math.hypot(x - source1.x, y - source1.y);
+    const secondDistance = Math.hypot(x - source2.x, y - source2.y);
+    const firstWave = periodicWave(firstDistance, wavelengthPixels, travel);
+    const secondWave = periodicWave(secondDistance, wavelengthPixels, travel);
+    return (firstWave + secondWave) * 0.62 * edgeDamping(x, y, true);
+  });
 
   [source1, source2].forEach((source, index) => {
     context.fillStyle = "#ef9b25";
@@ -1047,6 +1105,7 @@ function RippleTankCanvas({
       } else if (setupReady) {
         drawInterferenceMode(context, time, frequency, wavelengthPixels, sourceSeparation, selectedPoint);
       }
+      if (installedCount >= 1) drawTankAbsorbers(context);
       if (installedCount >= 2) {
         const barType: SourceBarType = mode === "interference"
           ? "double"
@@ -1061,12 +1120,12 @@ function RippleTankCanvas({
       }
       context.fillStyle = "rgba(255,255,255,0.94)";
       context.beginPath();
-      context.roundRect(70, 68, 235, 38, 10);
+      context.roundRect(736, 64, 156, 42, 10);
       context.fill();
       context.fillStyle = "#28565a";
-      context.font = "900 11px Arial";
-      context.textAlign = "left";
-      context.fillText(installedCount === 0 ? "BOŞ DENEY MASASI" : "DALGA LEĞENİ · TEK DENEY MASASI", 86, 92);
+      context.font = "900 9px Arial";
+      context.textAlign = "center";
+      context.fillText(installedCount === 0 ? "BOŞ DENEY MASASI" : "GERÇEK DALGA LEĞENİ", 814, 89);
       if (running) animationFrame = requestAnimationFrame(draw);
     };
     animationFrame = requestAnimationFrame(draw);
@@ -1082,7 +1141,7 @@ function RippleTankCanvas({
       point.y <= TANK.y + TANK.height - 45;
     if (!insideTank) return;
     if (mode === "reflection" && sourceType !== "plane") {
-      onCircularSourceChange(point);
+      onCircularSourceChange({ x: clamp(point.x, 120, 636), y: 450 });
     }
     if (mode === "interference") onSelectedPointChange(point);
   };
@@ -1198,7 +1257,7 @@ export default function RippleTankLab() {
   const [sourceType, setSourceType] = useState<SourceType>("plane");
   const [reflectorType, setReflectorType] = useState<ReflectorType>("straight");
   const [reflectorAngle, setReflectorAngle] = useState(0);
-  const [circularSource, setCircularSource] = useState<Point>({ x: 378, y: 405 });
+  const [circularSource, setCircularSource] = useState<Point>({ x: 378, y: 450 });
   const [focusDirection, setFocusDirection] = useState<"toward" | "from">("toward");
   const [standingWave, setStandingWave] = useState(false);
   const [diffractionType, setDiffractionType] = useState<DiffractionType>("slit");
@@ -1239,8 +1298,8 @@ export default function RippleTankLab() {
   );
   const interferenceGeometry = useMemo(() => {
     const separationPixels = sourceSeparation * 8;
-    const source1 = { x: 378 - separationPixels / 2, y: 445 };
-    const source2 = { x: 378 + separationPixels / 2, y: 445 };
+    const source1 = { x: 378 - separationPixels / 2, y: 450 };
+    const source2 = { x: 378 + separationPixels / 2, y: 450 };
     const pixelToCm = 1 / 8;
     const firstDistance = Math.hypot(selectedPoint.x - source1.x, selectedPoint.y - source1.y) * pixelToCm;
     const secondDistance = Math.hypot(selectedPoint.x - source2.x, selectedPoint.y - source2.y) * pixelToCm;
@@ -1264,7 +1323,7 @@ export default function RippleTankLab() {
     setSourceType("plane");
     setReflectorType("straight");
     setReflectorAngle(0);
-    setCircularSource({ x: 378, y: 405 });
+    setCircularSource({ x: 378, y: 450 });
     setFocusDirection("toward");
     setStandingWave(false);
     setDiffractionType("slit");
@@ -1308,8 +1367,8 @@ export default function RippleTankLab() {
     let high = 675;
     for (let iteration = 0; iteration < 36; iteration += 1) {
       const middle = (low + high) / 2;
-      const firstDistance = Math.hypot(middle - firstSourceX, y - 445) / 8;
-      const secondDistance = Math.hypot(middle - secondSourceX, y - 445) / 8;
+      const firstDistance = Math.hypot(middle - firstSourceX, y - 450) / 8;
+      const secondDistance = Math.hypot(middle - secondSourceX, y - 450) / 8;
       if (Math.abs(firstDistance - secondDistance) < targetDifference) low = middle;
       else high = middle;
     }
@@ -1412,7 +1471,7 @@ export default function RippleTankLab() {
             />
             <div className="rt-stage-note">
               {!setupReady && <span>Sıradaki parça aynı deney masasına eklenecek.</span>}
-              {setupReady && mode === "reflection" && sourceType !== "plane" && <span>Turuncu kaynağı leğen içinde sürükleyebilirsin.</span>}
+              {setupReady && mode === "reflection" && sourceType !== "plane" && <span>Turuncu kaynak ucunu taşıyıcı üzerinde sağa-sola sürükleyebilirsin.</span>}
               {setupReady && mode === "interference" && <span>Analiz etmek istediğin noktayı leğen üzerinde seçebilirsin.</span>}
               {setupReady && mode !== "reflection" && mode !== "interference" && <span>Parlak çizgiler dalga tepelerini, oklar yayılma yönünü gösterir.</span>}
             </div>

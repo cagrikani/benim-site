@@ -402,7 +402,7 @@ test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sun
   assert.match(page, /SETUP_ORDER/);
   assert.match(page, /installedCount/);
   assert.equal((page.match(/<RippleTankCanvas/g) ?? []).length, 1);
-  assert.match(page, /TEK DENEY MASASI/);
+  assert.match(page, /GERÇEK DALGA LEĞENİ/);
   assert.match(page, /rt-inline-setup/);
   assert.match(page, /Aynı masa üzerinde deneye başla/);
   assert.match(page, /\["tank", "motor", "apparatus"\]/);
@@ -441,11 +441,14 @@ test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sun
   assert.match(page, /KIRILAN DALGA/);
   assert.match(page, /KIRINAN DALGA/);
   assert.match(page, /İKİ NOKTASAL DALGA KAYNAĞI/);
-  assert.match(page, /rgba\(16, 78, 96, 0\.36\)/);
-  assert.match(page, /incidentDirection, wavelengthDeepPixels, deepPhase/);
-  assert.match(page, /refractedDirection, wavelengthShallowPixels, shallowPhase/);
-  assert.doesNotMatch(page, /incidentDirection, wavelengthDeepPixels, -deepPhase/);
-  assert.doesNotMatch(page, /\{ x: centerX, y: 445 \}, \{ x: 0, y: -1 \}, wavelengthPixels, -phase/);
+  assert.match(page, /WAVE_FIELD_WIDTH/);
+  assert.match(page, /function drawWaterSurface/);
+  assert.match(page, /function periodicWave/);
+  assert.match(page, /function frontEnvelope/);
+  assert.match(page, /function edgeDamping/);
+  assert.match(page, /DALGA SÖNÜMLEYİCİ/);
+  assert.match(page, /const sourceY = 450/);
+  assert.ok((page.match(/drawWaterSurface\(context/g) ?? []).length >= 5);
   assert.match(page, /onPointerDown/);
   assert.match(page, /setPointerCapture/);
   assert.match(page, /İDEAL ÖLÇÜM TABLOSU/);
