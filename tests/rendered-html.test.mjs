@@ -416,8 +416,11 @@ test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sun
   assert.match(page, /Düz cetvel/);
   assert.match(page, /Noktasal damlatıcı/);
   assert.match(page, /Tek dokunuş/);
-  assert.match(page, /Tek dokunuşun oluşturduğu dalga duvara ulaşıp geri döner/);
-  assert.match(page, /Liman duvarının açısı/);
+  assert.match(page, /Açılar engelle değil, normalle ölçülür/);
+  assert.match(page, /Düz engelin yönü/);
+  assert.match(page, /YANSIMA AÇILARI/);
+  assert.match(page, /drawReflectionAngleGuide/);
+  assert.match(page, /calculateReflectionGeometry/);
   assert.match(page, /duran dalga/);
   assert.match(page, /TEMEL DALGA KAVRAMLARI/);
   assert.match(page, /Kaynak genliği/);
@@ -428,8 +431,12 @@ test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sun
   assert.match(page, /Aynı anda düşen iki damla/);
   assert.match(page, /Engel kenarı/);
   assert.match(page, /Ayarlı yarık/);
-  assert.match(page, /Derin bölge/);
+  assert.match(page, /DERİN BÖLGE/);
   assert.match(page, /Sığ bölge/);
+  assert.match(page, /Leğendeki su derinliği/);
+  assert.match(page, /DERİNLİK ETKİSİ/);
+  assert.match(page, /CAM LEVHAYA GEÇİŞ/);
+  assert.match(page, /boundaryArrival/);
   assert.match(page, /Kaynaklar arası uzaklık · d/);
   assert.match(page, /Aydınlık saçağı seç/);
   assert.match(page, /pathDifference/);
@@ -469,6 +476,7 @@ test("dalga leğeni gerçekçi düzenek, güç kaynağı ve responsive deney pan
   assert.match(css, /\.rt-canvas\s*\{/);
   assert.match(css, /\.rt-controls\s*\{/);
   assert.match(css, /\.rt-real-life-card\s*\{/);
+  assert.match(css, /\.rt-depth-effect\s*\{/);
   assert.match(css, /\.rt-result-box\s*\{/);
   assert.match(css, /\.rt-live-badges\s*\{/);
   assert.match(css, /\.rt-data-card\s*\{/);

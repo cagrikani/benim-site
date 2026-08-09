@@ -27895,6 +27895,54 @@ footer > a {
   accent-color: #168c9b;
 }
 
+.rt-depth-effect {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  overflow: hidden;
+  padding: 12px 13px 12px 44px;
+  border: 1px solid #c6e1e2;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e9f8f8, #f7fbfa);
+  color: #28585e;
+}
+
+.rt-depth-effect::before {
+  position: absolute;
+  left: 13px;
+  top: 15px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 32px;
+  border: 2px solid #2a929d;
+  border-radius: 5px 5px 9px 9px;
+  background: linear-gradient(to top, #5fc0ca 64%, transparent 64%);
+  color: #176d76;
+  content: "h";
+  font-size: 9px;
+  font-weight: 950;
+}
+
+.rt-depth-effect span {
+  display: block !important;
+  color: #168797 !important;
+  font-size: 7px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em;
+}
+
+.rt-depth-effect strong {
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.rt-depth-effect small {
+  color: #58787c;
+  font-size: 8px;
+  font-weight: 800;
+}
+
 .rt-real-life-card {
   position: relative;
   display: grid;

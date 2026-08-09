@@ -25,11 +25,13 @@ type ReflectionReading = {
   id: number;
   source: string;
   reflector: string;
-  angle: number;
+  obstacleAngle: number;
+  incidenceAngle: number;
   result: string;
 };
 type MeasurementReading = {
   id: number;
+  depth: number;
   frequency: number;
   amplitude: number;
   wavelength: number;
@@ -100,6 +102,42 @@ function reflect(direction: Vector, normal: Vector): Vector {
     x: direction.x - 2 * projection * normal.x,
     y: direction.y - 2 * projection * normal.y,
   });
+}
+
+function angleBetween(first: Vector, second: Vector) {
+  return toDegrees(Math.acos(clamp(dot(normalize(first), normalize(second)), -1, 1)));
+}
+
+function calculateReflectionGeometry(
+  sourceType: SourceType,
+  reflectorAngle: number,
+  circularSource: Point,
+) {
+  const center = { x: 378, y: 270 };
+  const tangent = {
+    x: Math.cos(toRadians(reflectorAngle)),
+    y: Math.sin(toRadians(reflectorAngle)),
+  };
+  const rawNormal = { x: -tangent.y, y: tangent.x };
+  const sourcePoint = sourceType === "plane" ? { x: 378, y: 450 } : circularSource;
+  const sourceSideNormal = dot(subtract(sourcePoint, center), rawNormal) >= 0
+    ? rawNormal
+    : { x: -rawNormal.x, y: -rawNormal.y };
+  const incidentDirection = sourceType === "plane"
+    ? { x: 0, y: -1 }
+    : normalize(subtract(center, sourcePoint));
+  const reflectedDirection = reflect(incidentDirection, sourceSideNormal);
+  const backToSource = { x: -incidentDirection.x, y: -incidentDirection.y };
+  const incidenceAngle = angleBetween(backToSource, sourceSideNormal);
+  return {
+    center,
+    tangent,
+    sourceSideNormal,
+    incidentDirection,
+    reflectedDirection,
+    backToSource,
+    incidenceAngle,
+  };
 }
 
 function speedForDepth(depthCm: number) {
@@ -414,6 +452,94 @@ function drawDirectionArrow(
   context.restore();
 }
 
+function drawAngleArcLabel(
+  context: CanvasRenderingContext2D,
+  center: Point,
+  first: Vector,
+  second: Vector,
+  radius: number,
+  label: string,
+  color: string,
+) {
+  const startAngle = Math.atan2(first.y, first.x);
+  const endAngle = Math.atan2(second.y, second.x);
+  let delta = ((endAngle - startAngle + Math.PI) % (Math.PI * 2)) - Math.PI;
+  if (delta < -Math.PI) delta += Math.PI * 2;
+  const visibleDelta = Math.abs(delta) < 0.025 ? (delta < 0 ? -0.12 : 0.12) : delta;
+  context.save();
+  context.strokeStyle = color;
+  context.fillStyle = color;
+  context.lineWidth = 3;
+  context.beginPath();
+  context.arc(
+    center.x,
+    center.y,
+    radius,
+    startAngle,
+    startAngle + visibleDelta,
+    visibleDelta < 0,
+  );
+  context.stroke();
+  const middle = startAngle + visibleDelta / 2;
+  context.font = "900 11px Arial";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(
+    label,
+    center.x + Math.cos(middle) * (radius + 18),
+    center.y + Math.sin(middle) * (radius + 18),
+  );
+  context.restore();
+}
+
+function drawReflectionAngleGuide(
+  context: CanvasRenderingContext2D,
+  geometry: ReturnType<typeof calculateReflectionGeometry>,
+) {
+  const {
+    center,
+    sourceSideNormal,
+    backToSource,
+    reflectedDirection,
+    incidenceAngle,
+  } = geometry;
+  const angleLabel = format(incidenceAngle);
+  context.save();
+  context.strokeStyle = "rgba(34,78,83,0.82)";
+  context.lineWidth = 2;
+  context.setLineDash([7, 6]);
+  context.beginPath();
+  context.moveTo(center.x - sourceSideNormal.x * 100, center.y - sourceSideNormal.y * 100);
+  context.lineTo(center.x + sourceSideNormal.x * 116, center.y + sourceSideNormal.y * 116);
+  context.stroke();
+  context.setLineDash([]);
+  context.fillStyle = "#28565a";
+  context.font = "900 9px Arial";
+  context.textAlign = "center";
+  context.fillText(
+    "NORMAL",
+    center.x + sourceSideNormal.x * 116,
+    center.y + sourceSideNormal.y * 116,
+  );
+  context.restore();
+
+  drawAngleArcLabel(context, center, sourceSideNormal, backToSource, 42, `i = ${angleLabel}°`, "#ef8f22");
+  drawAngleArcLabel(context, center, sourceSideNormal, reflectedDirection, 67, `r = ${angleLabel}°`, "#ffe176");
+
+  context.save();
+  context.fillStyle = "rgba(255,255,255,0.9)";
+  context.beginPath();
+  context.roundRect(523, 93, 139, 50, 10);
+  context.fill();
+  context.fillStyle = "#2b595d";
+  context.font = "900 9px Arial";
+  context.textAlign = "center";
+  context.fillText("YANSIMA KANUNU", 592, 109);
+  context.font = "900 12px Arial";
+  context.fillText(`i = ${angleLabel}°   ·   r = ${angleLabel}°`, 592, 128);
+  context.restore();
+}
+
 function drawParallelWavefronts(
   context: CanvasRenderingContext2D,
   center: Point,
@@ -693,29 +819,31 @@ function drawReflectionMode(
     context.textAlign = "center";
     context.fillText("ODAK", focus.x, focus.y + 24);
   } else {
-    const center = { x: 378, y: 270 };
-    const radians = toRadians(reflectorAngle);
-    const tangent = { x: Math.cos(radians), y: Math.sin(radians) };
-    const normal = { x: -tangent.y, y: tangent.x };
+    const geometry = calculateReflectionGeometry(sourceType, reflectorAngle, circularSource);
+    const {
+      center,
+      tangent,
+      sourceSideNormal,
+      incidentDirection,
+      reflectedDirection,
+    } = geometry;
     context.save();
     clipToReflectorSide(context, center, tangent, { x: 378, y: 450 });
     if (sourceType === "plane") {
-      const incoming = { x: 0, y: -1 };
-      const reflected = reflect(incoming, normal);
       const sourcePoint = { x: 378, y: 450 };
-      const sourceToReflector = Math.abs(dot(subtract(center, sourcePoint), incoming));
+      const sourceToReflector = Math.abs(dot(subtract(center, sourcePoint), incidentDirection));
       drawWaterSurface(context, (x, y) => {
         const point = { x, y };
-        const incomingDistance = dot(subtract(point, sourcePoint), incoming);
-        const reflectedDistance = dot(subtract(point, center), reflected);
+        const incomingDistance = dot(subtract(point, sourcePoint), incidentDirection);
+        const reflectedDistance = dot(subtract(point, center), reflectedDirection);
         const incomingWave = periodicWave(incomingDistance, wavelengthPixels, travel);
         const reflectedWave = periodicWave(reflectedDistance, wavelengthPixels, travel - sourceToReflector);
         return (incomingWave * 0.76 + reflectedWave * 0.7) * edgeDamping(x, y, false);
       });
     } else {
       const relative = subtract(circularSource, center);
-      const projection = dot(relative, normal);
-      const virtualCenter = add(circularSource, normal, -2 * projection);
+      const projection = dot(relative, sourceSideNormal);
+      const virtualCenter = add(circularSource, sourceSideNormal, -2 * projection);
       drawWaterSurface(context, (x, y) => {
         const realDistance = Math.hypot(x - circularSource.x, y - circularSource.y);
         const imageDistance = Math.hypot(x - virtualCenter.x, y - virtualCenter.y);
@@ -740,28 +868,29 @@ function drawReflectionMode(
     context.restore();
     drawStraightReflector(context, reflectorAngle);
 
-    const sourceSideNormal = dot(subtract({ x: 378, y: 450 }, center), normal) >= 0
-      ? normal
-      : { x: -normal.x, y: -normal.y };
-    const incomingEnd = add(center, sourceSideNormal, 28);
     if (sourceType === "plane") {
-      const incoming = { x: 0, y: -1 };
-      const reflected = reflect(incoming, normal);
-      drawDirectionArrow(context, { x: 300, y: 405 }, { x: 300, y: 310 }, "GELEN DALGA");
-      drawDirectionArrow(context, add(center, reflected, 28), add(center, reflected, 125), "YANSIYAN DALGA", "#ffe176");
+      drawDirectionArrow(
+        context,
+        add(center, incidentDirection, -125),
+        add(center, incidentDirection, -30),
+        "GELEN DALGA",
+      );
     } else {
-      const incidentDirection = normalize(subtract(incomingEnd, circularSource));
-      const reflectedDirection = reflect(incidentDirection, normal);
-      drawDirectionArrow(context, add(circularSource, incidentDirection, 24), incomingEnd, "GELEN DALGA");
-      drawDirectionArrow(context, add(center, reflectedDirection, 34), add(center, reflectedDirection, 128), "YANSIYAN DALGA", "#ffe176");
+      drawDirectionArrow(
+        context,
+        add(circularSource, incidentDirection, 24),
+        add(center, incidentDirection, -30),
+        "GELEN DALGA",
+      );
     }
-    context.strokeStyle = "rgba(48,92,97,0.72)";
-    context.setLineDash([7, 6]);
-    context.beginPath();
-    context.moveTo(center.x - normal.x * 90, center.y - normal.y * 90);
-    context.lineTo(center.x + normal.x * 90, center.y + normal.y * 90);
-    context.stroke();
-    context.setLineDash([]);
+    drawDirectionArrow(
+      context,
+      add(center, reflectedDirection, 30),
+      add(center, reflectedDirection, 128),
+      "YANSIYAN DALGA",
+      "#ffe176",
+    );
+    drawReflectionAngleGuide(context, geometry);
   }
   context.restore();
 }
@@ -905,8 +1034,11 @@ function drawRefractionMode(
   wavelengthShallowPixels: number,
   incidenceAngle: number,
   refractionAngle: number,
+  deepDepth: number,
+  shallowDepth: number,
 ) {
   const boundaryY = 285;
+  const sourceY = 469;
   const incidentDirection = {
     x: Math.sin(toRadians(incidenceAngle)),
     y: -Math.cos(toRadians(incidenceAngle)),
@@ -915,33 +1047,60 @@ function drawRefractionMode(
     x: Math.sin(toRadians(refractionAngle)),
     y: -Math.cos(toRadians(refractionAngle)),
   };
-  const sourcePoint = { x: 378, y: 469 };
-  const deepTravel = time * frequency * wavelengthDeepPixels;
+  const sourcePoint = { x: 378, y: sourceY };
+  const deepPixelSpeed = frequency * wavelengthDeepPixels;
+  const shallowPixelSpeed = frequency * wavelengthShallowPixels;
   const distanceToBoundary = (sourcePoint.y - boundaryY) / Math.max(0.2, -incidentDirection.y);
   const boundaryPoint = add(sourcePoint, incidentDirection, distanceToBoundary);
-  const crossingTime = distanceToBoundary / (frequency * wavelengthDeepPixels);
-  const shallowTravel = Math.max(0, time - crossingTime) * frequency * wavelengthShallowPixels;
+  const boundaryArrival = distanceToBoundary / deepPixelSpeed;
+  const plate = {
+    x: TANK.x + 31,
+    y: TANK.y + 31,
+    width: TANK.width - 62,
+    height: boundaryY - (TANK.y + 31),
+  };
 
   context.save();
   clipTank(context);
-  context.fillStyle = "rgba(239, 220, 151, 0.28)";
+  context.fillStyle = "rgba(239, 220, 151, 0.3)";
   context.beginPath();
-  context.rect(105, 88, 546, boundaryY - 88);
-  context.closePath();
+  context.roundRect(plate.x, plate.y, plate.width, plate.height, 10);
   context.fill();
-  context.strokeStyle = "rgba(202,166,80,0.8)";
-  context.lineWidth = 3;
-  context.stroke();
 
   drawWaterSurface(context, (x, y) => {
     const point = { x, y };
-    const height = y >= boundaryY
-      ? periodicWave(dot(subtract(point, sourcePoint), incidentDirection), wavelengthDeepPixels, deepTravel)
-      : periodicWave(dot(subtract(point, boundaryPoint), refractedDirection), wavelengthShallowPixels, shallowTravel);
+    let height = 0;
+    if (y >= boundaryY) {
+      const distanceFromSourceRow = (sourceY - y) / Math.max(0.2, -incidentDirection.y);
+      if (distanceFromSourceRow >= 0) {
+        const arrivalTime = distanceFromSourceRow / deepPixelSpeed;
+        const age = time - arrivalTime;
+        if (age >= 0) {
+          const phaseCycles = frequency * time
+            - dot(subtract(point, sourcePoint), incidentDirection) / wavelengthDeepPixels;
+          height = Math.sin(phaseCycles * Math.PI * 2) * smoothStep(age / 0.16);
+        }
+      }
+    } else {
+      const shallowDistance = (boundaryY - y) / Math.max(0.2, -refractedDirection.y);
+      const arrivalTime = boundaryArrival + shallowDistance / shallowPixelSpeed;
+      const age = time - arrivalTime;
+      if (age >= 0) {
+        const phaseCycles = frequency * time
+          - distanceToBoundary / wavelengthDeepPixels
+          - dot(subtract(point, boundaryPoint), refractedDirection) / wavelengthShallowPixels;
+        height = Math.sin(phaseCycles * Math.PI * 2) * smoothStep(age / 0.16) * 1.06;
+      }
+    }
     return height * edgeDamping(x, y, false);
   });
-  context.fillStyle = "rgba(241, 211, 116, 0.13)";
-  context.fillRect(105, 88, 546, boundaryY - 88);
+  context.fillStyle = "rgba(241, 211, 116, 0.12)";
+  context.beginPath();
+  context.roundRect(plate.x, plate.y, plate.width, plate.height, 10);
+  context.fill();
+  context.strokeStyle = "rgba(197,153,58,0.92)";
+  context.lineWidth = 4;
+  context.stroke();
 
   context.strokeStyle = "rgba(46,87,91,0.7)";
   context.setLineDash([7, 6]);
@@ -953,8 +1112,8 @@ function drawRefractionMode(
   context.fillStyle = "#2b595d";
   context.font = "900 10px Arial";
   context.textAlign = "left";
-  context.fillText("SIĞ BÖLGE · CAM BLOK", 118, 111);
-  context.fillText("DERİN BÖLGE", 118, 452);
+  context.fillText(`SIĞ BÖLGE · CAM LEVHA · h₂ = ${format(shallowDepth, 2)} cm`, 95, 111);
+  context.fillText(`DERİN BÖLGE · h₁ = ${format(deepDepth, 2)} cm`, 95, 452);
   drawDirectionArrow(
     context,
     add(boundaryPoint, incidentDirection, -125),
@@ -966,6 +1125,24 @@ function drawRefractionMode(
     add(boundaryPoint, refractedDirection, 28),
     add(boundaryPoint, refractedDirection, 130),
     "KIRILAN DALGA",
+    "#ffe176",
+  );
+  drawAngleArcLabel(
+    context,
+    boundaryPoint,
+    { x: 0, y: 1 },
+    { x: -incidentDirection.x, y: -incidentDirection.y },
+    42,
+    `i = ${incidenceAngle}°`,
+    "#ef8f22",
+  );
+  drawAngleArcLabel(
+    context,
+    boundaryPoint,
+    { x: 0, y: -1 },
+    refractedDirection,
+    56,
+    `r = ${format(refractionAngle)}°`,
     "#ffe176",
   );
   context.restore();
@@ -1051,6 +1228,8 @@ function RippleTankCanvas({
   wavelengthShallowPixels,
   incidenceAngle,
   refractionAngle,
+  waterDepth,
+  shallowDepth,
   sourceSeparation,
   selectedPoint,
   onCircularSourceChange,
@@ -1074,6 +1253,8 @@ function RippleTankCanvas({
   wavelengthShallowPixels: number;
   incidenceAngle: number;
   refractionAngle: number;
+  waterDepth: number;
+  shallowDepth: number;
   sourceSeparation: number;
   selectedPoint: Point;
   onCircularSourceChange: (point: Point) => void;
@@ -1101,7 +1282,17 @@ function RippleTankCanvas({
       } else if (setupReady && mode === "diffraction") {
         drawDiffractionMode(context, time, frequency, wavelengthPixels, diffractionType, slitWidth);
       } else if (setupReady && mode === "refraction") {
-        drawRefractionMode(context, time, frequency, wavelengthDeepPixels, wavelengthShallowPixels, incidenceAngle, refractionAngle);
+        drawRefractionMode(
+          context,
+          time,
+          frequency,
+          wavelengthDeepPixels,
+          wavelengthShallowPixels,
+          incidenceAngle,
+          refractionAngle,
+          waterDepth,
+          shallowDepth,
+        );
       } else if (setupReady) {
         drawInterferenceMode(context, time, frequency, wavelengthPixels, sourceSeparation, selectedPoint);
       }
@@ -1130,7 +1321,7 @@ function RippleTankCanvas({
     };
     animationFrame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animationFrame);
-  }, [amplitude, circularSource, diffractionType, focusDirection, frequency, incidenceAngle, installedCount, mode, reflectorAngle, reflectorType, refractionAngle, running, selectedPoint, slitWidth, sourceSeparation, sourceType, standingWave, wavelengthDeepPixels, wavelengthPixels, wavelengthShallowPixels]);
+  }, [amplitude, circularSource, diffractionType, focusDirection, frequency, incidenceAngle, installedCount, mode, reflectorAngle, reflectorType, refractionAngle, running, selectedPoint, shallowDepth, slitWidth, sourceSeparation, sourceType, standingWave, waterDepth, wavelengthDeepPixels, wavelengthPixels, wavelengthShallowPixels]);
 
   const updatePointer = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const point = pointFromPointer(event);
@@ -1292,6 +1483,13 @@ export default function RippleTankLab() {
       clamp((shallowSpeed / waveSpeed) * Math.sin(toRadians(incidenceAngle)), -1, 1),
     ),
   );
+  const reflectionGeometry = calculateReflectionGeometry(sourceType, reflectorAngle, circularSource);
+  const reflectionIncidenceAngle = reflectionGeometry.incidenceAngle;
+  const depthEffectText = waterDepth < 1.05
+    ? "Sığ su: dalga daha yavaş ilerler ve tepeler birbirine yaklaşır."
+    : waterDepth > 1.55
+      ? "Daha derin su: dalga hızlanır ve dalga boyu büyür."
+      : "Orta derinlik: hız ve dalga boyu seçilen derinliğe göre birlikte değişir.";
   const diffractionRatio = wavelength / slitWidth;
   const diffractionSpread = toDegrees(
     2 * Math.asin(clamp(diffractionRatio, 0, 1)),
@@ -1381,16 +1579,17 @@ export default function RippleTankLab() {
         id: Date.now(),
         source: sourceType === "plane" ? "Düzlemsel" : sourceType === "pulse" ? "Tek atma" : "Dairesel",
         reflector: reflectorType === "straight" ? "Düz engel" : "Parabolik engel",
-        angle: reflectorAngle,
+        obstacleAngle: reflectorAngle,
+        incidenceAngle: reflectionIncidenceAngle,
         result: sourceType === "pulse"
-          ? "Her doğrultuda aynı hız"
+          ? "Seçilen ışın için i = r"
           : reflectorType === "parabolic"
             ? (focusDirection === "toward" ? "Odakta toplandı" : "Düzlemsel yansıdı")
             : "Gelme açısı = yansıma açısı",
       }]);
     } else if (mode === "measurement") {
       setMeasurementReadings((current) => [...current, {
-        id: Date.now(), frequency, amplitude, wavelength, period, speed: waveSpeed,
+        id: Date.now(), depth: waterDepth, frequency, amplitude, wavelength, period, speed: waveSpeed,
         pattern: standingWave ? "Duran dalga" : "İlerleyen dalga",
       }]);
     } else if (mode === "diffraction") {
@@ -1464,6 +1663,8 @@ export default function RippleTankLab() {
               wavelengthShallowPixels={clamp(shallowWavelength * 6.2, 18, 84)}
               incidenceAngle={incidenceAngle}
               refractionAngle={refractionAngle}
+              waterDepth={waterDepth}
+              shallowDepth={shallowDepth}
               sourceSeparation={sourceSeparation}
               selectedPoint={selectedPoint}
               onCircularSourceChange={setCircularSource}
@@ -1473,7 +1674,8 @@ export default function RippleTankLab() {
               {!setupReady && <span>Sıradaki parça aynı deney masasına eklenecek.</span>}
               {setupReady && mode === "reflection" && sourceType !== "plane" && <span>Turuncu kaynak ucunu taşıyıcı üzerinde sağa-sola sürükleyebilirsin.</span>}
               {setupReady && mode === "interference" && <span>Analiz etmek istediğin noktayı leğen üzerinde seçebilirsin.</span>}
-              {setupReady && mode !== "reflection" && mode !== "interference" && <span>Parlak çizgiler dalga tepelerini, oklar yayılma yönünü gösterir.</span>}
+              {setupReady && mode === "reflection" && <span>Engeli döndür; normal, gelme açısı ve yansıma açısını leğen üzerinde karşılaştır.</span>}
+              {setupReady && mode !== "reflection" && mode !== "interference" && <span>Açık su yüzeyi dalga tepesini, koyu yüzey dalga çukurunu gösterir.</span>}
             </div>
           </div>
 
@@ -1489,12 +1691,14 @@ export default function RippleTankLab() {
             <div className="rt-real-life-card"><span>GÜNLÜK HAYATTA</span><b>{realLifeExamples[mode].title}</b><p>{realLifeExamples[mode].text}</p></div>
             <div className="rt-power-row"><button type="button" className={running ? "active" : ""} onClick={() => setRunning((value) => !value)}><i />{running ? "Motor çalışıyor" : "Motor kapalı"}</button><button type="button" onClick={resetMode}>Başlangıca dön</button></div>
             <label><span>Ripple motor frekansı <b>{format(frequency)} Hz</b></span><input type="range" min="2" max="8" step="0.5" value={frequency} onChange={(event) => setFrequency(Number(event.target.value))} /></label>
+            <label><span>Leğendeki su derinliği <b>{format(waterDepth, 2)} cm</b></span><input type="range" min="0.8" max="2" step="0.05" value={waterDepth} onChange={(event) => setWaterDepth(Number(event.target.value))} /></label>
+            <div className="rt-depth-effect"><span>DERİNLİK ETKİSİ</span><strong>{depthEffectText}</strong><small>v = {format(waveSpeed)} cm/s · λ = {format(wavelength)} cm · frekans sabit</small></div>
             {mode === "reflection" && (
               <>
                 <div className="rt-choice-title"><span>KAYNAK ŞEKLİ</span><small>Günlük bir dokunuş, cetvel veya damlatıcı seç.</small></div>
                 <div className="rt-segmented rt-three-options"><button type="button" className={sourceType === "pulse" ? "active" : ""} onClick={() => setSourceType("pulse")}>Tek dokunuş</button><button type="button" className={sourceType === "plane" ? "active" : ""} onClick={() => setSourceType("plane")}>Düz cetvel</button><button type="button" className={sourceType === "circular" ? "active" : ""} onClick={() => setSourceType("circular")}>Noktasal damlatıcı</button></div>
-                <label><span>Liman duvarının açısı <b>{reflectorAngle}°</b></span><input type="range" min="-30" max="30" value={reflectorAngle} onChange={(event) => setReflectorAngle(Number(event.target.value))} /></label>
-                <div className="rt-result-box"><small>GÖZLEM</small><strong>{sourceType === "pulse" ? "Tek dokunuşun oluşturduğu dalga duvara ulaşıp geri döner." : "Gelme açısı yansıma açısına eşittir."}</strong></div>
+                <label><span>Düz engelin yönü <b>{reflectorAngle}°</b></span><input type="range" min="-55" max="55" step="1" value={reflectorAngle} onChange={(event) => setReflectorAngle(Number(event.target.value))} /></label>
+                <div className="rt-result-box"><small>YANSIMA AÇILARI</small><strong>Gelme açısı i = {format(reflectionIncidenceAngle)}° · yansıma açısı r = {format(reflectionIncidenceAngle)}°</strong><span>Kesikli çizgi engele dik normaldir. Açılar engelle değil, normalle ölçülür.</span></div>
               </>
             )}
 
@@ -1516,10 +1720,9 @@ export default function RippleTankLab() {
 
             {mode === "refraction" && (
               <>
-                <label><span>Derin bölge <b>{format(waterDepth, 2)} cm</b></span><input type="range" min="0.8" max="1.5" step="0.05" value={waterDepth} onChange={(event) => setWaterDepth(Number(event.target.value))} /></label>
                 <label><span>Sığ bölge <b>{format(shallowDepth, 2)} cm</b></span><input type="range" min="0.3" max="0.75" step="0.05" value={shallowDepth} onChange={(event) => setShallowDepth(Number(event.target.value))} /></label>
                 <label><span>Gelme açısı <b>{incidenceAngle}°</b></span><input type="range" min="0" max="55" value={incidenceAngle} onChange={(event) => setIncidenceAngle(Number(event.target.value))} /></label>
-                <div className="rt-result-box"><small>SIĞ BÖLGEDE</small><strong>Dalga yavaşlar, dalga boyu küçülür ve normale yaklaşır.</strong><span>λ₁ = {format(wavelength)} cm · λ₂ = {format(shallowWavelength)} cm · r = {format(refractionAngle)}°</span></div>
+                <div className="rt-result-box"><small>CAM LEVHAYA GEÇİŞ</small><strong>Dalga sığ bölgede bütünüyle ilerler; yavaşlar, dalga boyu küçülür ve normale yaklaşır.</strong><span>h₁ = {format(waterDepth, 2)} cm · h₂ = {format(shallowDepth, 2)} cm</span><span>λ₁ = {format(wavelength)} cm · λ₂ = {format(shallowWavelength)} cm · i = {incidenceAngle}° · r = {format(refractionAngle)}°</span></div>
               </>
             )}
 
@@ -1539,8 +1742,8 @@ export default function RippleTankLab() {
         {setupReady && <div className="rt-data-card">
           <div><span>İDEAL ÖLÇÜM TABLOSU</span><h4>{modeLabels[mode].title} kayıtları</h4><p>Bir değişkeni değiştir, gözlemi kaydet ve sonuçları karşılaştır.</p></div>
           <div className="rt-table-wrap">
-            {mode === "reflection" && <table><thead><tr><th>#</th><th>Kaynak</th><th>Yansıtıcı</th><th>Açı</th><th>Sonuç</th></tr></thead><tbody>{reflectionReadings.length ? reflectionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{reading.source}</td><td>{reading.reflector}</td><td>{reading.angle}°</td><td><b>{reading.result}</b></td></tr>) : <tr><td colSpan={5}>İlk yansıma gözlemini kaydet.</td></tr>}</tbody></table>}
-            {mode === "measurement" && <table><thead><tr><th>#</th><th>A</th><th>f</th><th>T</th><th>λ</th><th>v</th><th>Görünüm</th></tr></thead><tbody>{measurementReadings.length ? measurementReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.amplitude)} cm</td><td>{format(reading.frequency)} Hz</td><td>{format(reading.period, 3)} s</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.speed)} cm/s</td><td><b>{reading.pattern}</b></td></tr>) : <tr><td colSpan={7}>Genliği veya frekansı değiştir ve ölçümü kaydet.</td></tr>}</tbody></table>}
+            {mode === "reflection" && <table><thead><tr><th>#</th><th>Kaynak</th><th>Yansıtıcı</th><th>Engel yönü</th><th>i = r</th><th>Sonuç</th></tr></thead><tbody>{reflectionReadings.length ? reflectionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{reading.source}</td><td>{reading.reflector}</td><td>{reading.obstacleAngle}°</td><td>{format(reading.incidenceAngle)}°</td><td><b>{reading.result}</b></td></tr>) : <tr><td colSpan={6}>Engeli döndür ve ilk yansıma gözlemini kaydet.</td></tr>}</tbody></table>}
+            {mode === "measurement" && <table><thead><tr><th>#</th><th>h</th><th>A</th><th>f</th><th>T</th><th>λ</th><th>v</th><th>Görünüm</th></tr></thead><tbody>{measurementReadings.length ? measurementReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.depth, 2)} cm</td><td>{format(reading.amplitude)} cm</td><td>{format(reading.frequency)} Hz</td><td>{format(reading.period, 3)} s</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.speed)} cm/s</td><td><b>{reading.pattern}</b></td></tr>) : <tr><td colSpan={8}>Su derinliğini, genliği veya frekansı değiştir ve ölçümü kaydet.</td></tr>}</tbody></table>}
             {mode === "diffraction" && <table><thead><tr><th>#</th><th>Düzenek</th><th>λ</th><th>Yarık</th><th>λ / yarık</th><th>Yayılma</th></tr></thead><tbody>{diffractionReadings.length ? diffractionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{reading.kind}</td><td>{format(reading.wavelength)} cm</td><td>{reading.opening === null ? "—" : `${format(reading.opening)} cm`}</td><td>{reading.ratio === null ? "—" : format(reading.ratio, 2)}</td><td>{reading.spread === null ? "Kenar boyunca" : `${format(reading.spread)}°`}</td></tr>) : <tr><td colSpan={6}>Yarığı veya frekansı değiştir ve kaydet.</td></tr>}</tbody></table>}
             {mode === "refraction" && <table><thead><tr><th>#</th><th>Derinlik 1</th><th>Derinlik 2</th><th>λ₁</th><th>λ₂</th><th>i</th><th>r</th></tr></thead><tbody>{refractionReadings.length ? refractionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.deepDepth, 2)} cm</td><td>{format(reading.shallowDepth, 2)} cm</td><td>{format(reading.wavelengthDeep)} cm</td><td>{format(reading.wavelengthShallow)} cm</td><td>{reading.incidenceAngle}°</td><td>{format(reading.refractionAngle)}°</td></tr>) : <tr><td colSpan={7}>Cam bloğun derinliğini değiştir ve kaydet.</td></tr>}</tbody></table>}
             {mode === "interference" && <table><thead><tr><th>#</th><th>d</th><th>λ</th><th>Yol farkı</th><th>n</th><th>Sonuç</th></tr></thead><tbody>{interferenceReadings.length ? interferenceReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.separation)} cm</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.pathDifference)} cm</td><td>{reading.fringeOrder}</td><td><b>{reading.result}</b></td></tr>) : <tr><td colSpan={6}>Bir aydınlık saçak seç ve kaydet.</td></tr>}</tbody></table>}
