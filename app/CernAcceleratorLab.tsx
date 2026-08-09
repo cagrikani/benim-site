@@ -2,14 +2,15 @@
 
 import {
   type DragEvent as ReactDragEvent,
+  type MouseEvent as ReactMouseEvent,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 
 type PartKind = "source" | "linac4" | "injectors" | "lhc" | "atlas";
 type RunState = "idle" | "accelerating" | "ready" | "colliding" | "result";
-type EventKind = "electrons" | "photons" | "muons";
 type EnergyKind = "low" | "medium" | "high";
 type DetectorLayer = "track" | "energy" | "outer";
 
@@ -21,14 +22,17 @@ type AcceleratorPart = {
   energy: string;
 };
 
-type CollisionEvent = {
-  key: EventKind;
-  title: string;
+type DetectorParticle = {
+  id: string;
   symbol: string;
-  plainName: string;
-  explanation: string;
-  detectorFinding: string;
-  layers: DetectorLayer[];
+  name: string;
+  group: string;
+  fundamental: boolean;
+  direct: boolean;
+  minimumEnergy: EnergyKind;
+  color: string;
+  standardInfo: string;
+  detectorInfo: string;
 };
 
 const MIME = "application/x-fizik-atolyesi-cern-part";
@@ -115,35 +119,140 @@ const ENERGY_LEVELS: Record<EnergyKind, {
   },
 };
 
-const EVENTS: Record<EventKind, CollisionEvent> = {
-  electrons: {
-    key: "electrons",
-    title: "Elektron çifti",
-    symbol: "e⁻  +  e⁺",
-    plainName: "Elektron ve pozitron",
-    explanation: "Pozitron, elektronun artı yüklü karşıt parçacığıdır.",
-    detectorFinding: "Zıt yönlere kıvrılan iki renkli iz ve iki enerji noktası görülür.",
-    layers: ["track", "energy"],
+const DETECTOR_PARTICLES: DetectorParticle[] = [
+  {
+    id: "electron",
+    symbol: "e⁻ / e⁺",
+    name: "Elektron ve pozitron",
+    group: "Lepton · 1. nesil",
+    fundamental: true,
+    direct: true,
+    minimumEnergy: "low",
+    color: "#70f0cf",
+    standardInfo: "Elektron temel bir madde parçacığıdır. Pozitron, elektronun artı yüklü karşıt parçacığıdır.",
+    detectorInfo: "Zıt yönlere kıvrılan iki iz bırakır ve enerji sensöründe iki parlak nokta oluşturur.",
   },
-  photons: {
-    key: "photons",
-    title: "İki foton",
-    symbol: "γ  +  γ",
-    plainName: "İki ışık parçacığı",
-    explanation: "Foton, ışığı oluşturan yüksüz temel parçacıktır.",
-    detectorFinding: "İçte iz bırakmaz; enerji sensöründe iki sarı parıltı oluşturur.",
-    layers: ["energy"],
+  {
+    id: "photon",
+    symbol: "γ",
+    name: "Foton",
+    group: "Taşıyıcı bozon",
+    fundamental: true,
+    direct: true,
+    minimumEnergy: "low",
+    color: "#ffe367",
+    standardInfo: "Foton ışığın temel parçacığıdır ve elektromanyetik etkileşimi taşır. Elektrik yükü yoktur.",
+    detectorInfo: "İç iz sensöründe yol bırakmaz; enerji sensöründe sarı bir parıltı oluşturur.",
   },
-  muons: {
-    key: "muons",
-    title: "Müon çifti",
-    symbol: "μ⁻  +  μ⁺",
-    plainName: "Müon ve antimüon",
-    explanation: "Müon, elektrona benzeyen fakat daha ağır olan yüklü bir parçacıktır.",
-    detectorFinding: "İki uzun iz dedektörün en dışındaki müon sensörüne kadar ulaşır.",
-    layers: ["track", "outer"],
+  {
+    id: "muon",
+    symbol: "μ⁻ / μ⁺",
+    name: "Müon ve antimüon",
+    group: "Lepton · 2. nesil",
+    fundamental: true,
+    direct: true,
+    minimumEnergy: "medium",
+    color: "#7cd9ff",
+    standardInfo: "Müon elektrona benzeyen, fakat ondan daha ağır olan temel bir leptondur.",
+    detectorInfo: "Dedektörün içinden geçer ve en dıştaki müon sensörüne ulaşan uzun iz bırakır.",
   },
-};
+  {
+    id: "pion",
+    symbol: "π⁺ / π⁻",
+    name: "Yüklü pion",
+    group: "Hadron · kuark bileşiği",
+    fundamental: false,
+    direct: true,
+    minimumEnergy: "medium",
+    color: "#ff9b61",
+    standardInfo: "Pion temel değildir; bir kuark ile bir karşı kuarktan oluşan kısa ömürlü bir hadrondur.",
+    detectorInfo: "İz sensöründe kıvrılan yol ve enerji sensöründe parçacık yağmuru biçiminde sinyal bırakır.",
+  },
+  {
+    id: "proton",
+    symbol: "p⁺",
+    name: "Proton",
+    group: "Baryon · kuark bileşiği",
+    fundamental: false,
+    direct: true,
+    minimumEnergy: "high",
+    color: "#f08b62",
+    standardInfo: "Proton temel değildir; iki yukarı ve bir aşağı kuarktan oluşur: u + u + d.",
+    detectorInfo: "Yüklü olduğu için iz bırakır; enerji sensöründe güçlü bir hadron sinyali oluşturur.",
+  },
+  {
+    id: "neutron",
+    symbol: "n",
+    name: "Nötron",
+    group: "Baryon · kuark bileşiği",
+    fundamental: false,
+    direct: true,
+    minimumEnergy: "high",
+    color: "#b8c8cf",
+    standardInfo: "Nötron temel değildir; bir yukarı ve iki aşağı kuarktan oluşur: u + d + d.",
+    detectorInfo: "Yüksüz olduğu için içte iz bırakmaz; enerji sensöründe oluşturduğu parçacık yağmuruyla tanınır.",
+  },
+  {
+    id: "tau",
+    symbol: "τ⁻ / τ⁺",
+    name: "Tau ve antitau",
+    group: "Lepton · 3. nesil",
+    fundamental: true,
+    direct: false,
+    minimumEnergy: "high",
+    color: "#65e0a8",
+    standardInfo: "Tau, elektron ve müonun daha ağır akrabası olan temel bir leptondur.",
+    detectorInfo: "Dedektöre ulaşmadan bozunur; bıraktığı kısa ve dar parçacık izlerinden çıkarılır.",
+  },
+  {
+    id: "neutrino",
+    symbol: "ν",
+    name: "Nötrino",
+    group: "Lepton",
+    fundamental: true,
+    direct: false,
+    minimumEnergy: "high",
+    color: "#d7a2ff",
+    standardInfo: "Nötrino yüksüz ve çok hafif temel bir leptondur; maddeyle çok zayıf etkileşir.",
+    detectorInfo: "Dedektörde doğrudan iz bırakmaz. Kaybolan enerji ve momentumdan varlığı çıkarılır.",
+  },
+  {
+    id: "w",
+    symbol: "W±",
+    name: "W bozonu",
+    group: "Zayıf etkileşim bozonu",
+    fundamental: true,
+    direct: false,
+    minimumEnergy: "high",
+    color: "#ec78aa",
+    standardInfo: "W bozonu zayıf etkileşimi taşıyan elektrik yüklü temel bir parçacıktır.",
+    detectorInfo: "Dedektöre ulaşmadan bozunur; elektron, müon ve nötrino gibi ürünlerinden çıkarılır.",
+  },
+  {
+    id: "z",
+    symbol: "Z⁰",
+    name: "Z bozonu",
+    group: "Zayıf etkileşim bozonu",
+    fundamental: true,
+    direct: false,
+    minimumEnergy: "high",
+    color: "#8fa7ff",
+    standardInfo: "Z bozonu zayıf etkileşimi taşıyan yüksüz temel bir parçacıktır.",
+    detectorInfo: "Çok kısa sürede bozunur; elektron ya da müon çiftinin birlikte ölçülmesiyle bulunur.",
+  },
+  {
+    id: "higgs",
+    symbol: "H",
+    name: "Higgs bozonu",
+    group: "Higgs alanı parçacığı",
+    fundamental: true,
+    direct: false,
+    minimumEnergy: "high",
+    color: "#bd8cff",
+    standardInfo: "Higgs bozonu, temel parçacıkların kütle kazanmasıyla ilişkili Higgs alanının parçacığıdır.",
+    detectorInfo: "Doğrudan kalıcı iz bırakmaz; foton, elektron veya müon gibi bozunma ürünleri birlikte yorumlanır.",
+  },
+];
 
 const PARTICLE_PRIMER = [
   {
@@ -175,6 +284,49 @@ const PARTICLE_PRIMER = [
     fundamental: true,
   },
 ];
+
+const ENERGY_RANK: Record<EnergyKind, number> = { low: 0, medium: 1, high: 2 };
+
+const particlesAtEnergy = (energyKind: EnergyKind) =>
+  DETECTOR_PARTICLES.filter(
+    (particle) => ENERGY_RANK[particle.minimumEnergy] <= ENERGY_RANK[energyKind],
+  );
+
+function atlasParticleHitAreas(energyKind: EnergyKind) {
+  const center = { x: 380, y: 300 };
+  const photonAngle = Math.PI + 0.78;
+  const areas = [
+    { id: "electron", x: 552, y: 170 },
+    { id: "electron", x: 208, y: 430 },
+    {
+      id: "photon",
+      x: center.x + Math.cos(photonAngle) * 184,
+      y: center.y + Math.sin(photonAngle) * 184,
+    },
+  ];
+  if (ENERGY_RANK[energyKind] >= 1) {
+    [0.13, Math.PI + 0.13].forEach((angle) => {
+      areas.push({
+        id: "muon",
+        x: center.x + Math.cos(angle) * 255,
+        y: center.y + Math.sin(angle) * 255,
+      });
+    });
+    areas.push({ id: "pion", x: 418, y: 480 });
+  }
+  if (ENERGY_RANK[energyKind] >= 2) {
+    areas.push(
+      { id: "proton", x: 244, y: 424 },
+      { id: "neutron", x: 438, y: 126 },
+      { id: "tau", x: 314, y: 356 },
+      { id: "neutrino", x: 548, y: 505 },
+      { id: "w", x: 332, y: 270 },
+      { id: "z", x: 428, y: 270 },
+      { id: "higgs", x: 380, y: 354 },
+    );
+  }
+  return areas;
+}
 
 const clamp = (value: number, minimum: number, maximum: number) =>
   Math.min(maximum, Math.max(minimum, value));
@@ -453,18 +605,46 @@ function drawTag(
   context.fillText(name, x - width / 2 + 51, y + 5);
 }
 
+function drawParticleMarker(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  symbol: string,
+  color: string,
+  selected: boolean,
+) {
+  const radius = selected ? 23 : 18;
+  context.fillStyle = "rgba(4,18,30,0.94)";
+  context.strokeStyle = color;
+  context.lineWidth = selected ? 4 : 2;
+  context.shadowColor = selected ? color : "transparent";
+  context.shadowBlur = selected ? 18 : 0;
+  context.beginPath();
+  context.arc(x, y, radius, 0, Math.PI * 2);
+  context.fill();
+  context.stroke();
+  context.shadowBlur = 0;
+  context.fillStyle = color;
+  context.font = `900 ${selected ? 16 : 13}px Georgia`;
+  context.textAlign = "center";
+  context.fillText(symbol, x, y + 5);
+}
+
 function CernAtlasCanvas({
   phase,
-  event,
   energyKind,
+  selectedParticleId,
+  onSelectParticle,
 }: {
   phase: "colliding" | "result";
-  event: CollisionEvent;
   energyKind: EnergyKind;
+  selectedParticleId: string;
+  onSelectParticle: (id: string) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const energy = ENERGY_LEVELS[energyKind];
   const energyIndex = energyKind === "low" ? 0 : energyKind === "medium" ? 1 : 2;
+  const visibleParticles = useMemo(() => particlesAtEnergy(energyKind), [energyKind]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -559,98 +739,146 @@ function CernAtlasCanvas({
         context.fill();
         context.shadowBlur = 0;
 
-        if (event.key === "electrons") {
+        const drawFocused = (id: string, drawParticle: (selected: boolean) => void) => {
+          context.save();
+          const selected = selectedParticleId === id;
+          context.globalAlpha = selected ? 1 : 0.58;
+          drawParticle(selected);
+          context.restore();
+        };
+
+        drawFocused("electron", (selected) => {
+          const firstEnd = { x: 552, y: 170 };
+          const secondEnd = { x: 208, y: 430 };
           context.strokeStyle = "#70f0cf";
-          context.lineWidth = 4 + energyIndex;
+          context.lineWidth = (selected ? 7 : 4) + energyIndex;
           context.beginPath();
           context.moveTo(center.x, center.y);
-          context.quadraticCurveTo(
-            466 + energy.trackBend * 0.6,
-            235 + energy.trackBend * 0.8,
-            552,
-            170,
-          );
+          context.quadraticCurveTo(466 + energy.trackBend * 0.6, 235 + energy.trackBend * 0.8, firstEnd.x, firstEnd.y);
           context.stroke();
           context.strokeStyle = "#ff8cb8";
           context.beginPath();
           context.moveTo(center.x, center.y);
-          context.quadraticCurveTo(
-            294 - energy.trackBend * 0.6,
-            365 - energy.trackBend * 0.8,
-            208,
-            430,
-          );
+          context.quadraticCurveTo(294 - energy.trackBend * 0.6, 365 - energy.trackBend * 0.8, secondEnd.x, secondEnd.y);
           context.stroke();
-          [
-            { x: 525, y: 187, color: "#ffe77b" },
-            { x: 235, y: 413, color: "#ffe77b" },
-          ].forEach((point) => {
-            context.fillStyle = point.color;
-            context.shadowColor = point.color;
-            context.shadowBlur = energy.signalRadius * 1.4;
-            context.beginPath();
-            context.arc(point.x, point.y, energy.signalRadius, 0, Math.PI * 2);
-            context.fill();
-            context.shadowBlur = 0;
-          });
-          drawTag(context, 588, 142, "e⁻", "Elektron", "#70f0cf");
-          drawTag(context, 172, 458, "e⁺", "Pozitron", "#ff8cb8");
-        }
+          drawParticleMarker(context, firstEnd.x, firstEnd.y, "e⁻", "#70f0cf", selected);
+          drawParticleMarker(context, secondEnd.x, secondEnd.y, "e⁺", "#ff8cb8", selected);
+        });
 
-        if (event.key === "photons") {
-          [0.55, Math.PI + 0.55].forEach((angle, index) => {
-            const endX = center.x + Math.cos(angle) * 184;
-            const endY = center.y + Math.sin(angle) * 184;
-            context.strokeStyle = "#ffe367";
-            context.lineWidth = 3 + energyIndex;
-            context.setLineDash([11, 8]);
+        drawFocused("photon", (selected) => {
+          const angle = Math.PI + 0.78;
+          const endX = center.x + Math.cos(angle) * 184;
+          const endY = center.y + Math.sin(angle) * 184;
+          context.strokeStyle = "#ffe367";
+          context.lineWidth = selected ? 7 : 4;
+          context.setLineDash([11, 8]);
+          context.beginPath();
+          context.moveTo(center.x, center.y);
+          context.lineTo(endX, endY);
+          context.stroke();
+          context.setLineDash([]);
+          context.fillStyle = "#fff08a";
+          context.shadowColor = "#ffe367";
+          context.shadowBlur = energy.signalRadius * 1.55;
+          context.beginPath();
+          context.arc(endX, endY, energy.signalRadius, 0, Math.PI * 2);
+          context.fill();
+          context.shadowBlur = 0;
+          drawParticleMarker(context, endX, endY, "γ", "#ffe367", selected);
+        });
+
+        if (energyIndex >= 1) {
+          drawFocused("muon", (selected) => {
+            [0.13, Math.PI + 0.13].forEach((angle, index) => {
+              const endX = center.x + Math.cos(angle) * 255;
+              const endY = center.y + Math.sin(angle) * 255;
+              const midpointX = (center.x + endX) / 2;
+              const midpointY = (center.y + endY) / 2;
+              const curveDirection = index === 0 ? 1 : -1;
+              const controlX = midpointX - Math.sin(angle) * energy.trackBend * curveDirection;
+              const controlY = midpointY + Math.cos(angle) * energy.trackBend * curveDirection;
+              const color = index === 0 ? "#7cd9ff" : "#b7a1ff";
+              context.strokeStyle = color;
+              context.lineWidth = selected ? 8 : 5;
+              context.beginPath();
+              context.moveTo(center.x, center.y);
+              context.quadraticCurveTo(controlX, controlY, endX, endY);
+              context.stroke();
+              drawParticleMarker(context, endX, endY, index === 0 ? "μ⁻" : "μ⁺", color, selected);
+            });
+          });
+
+          drawFocused("pion", (selected) => {
+            const end = { x: 418, y: 480 };
+            context.strokeStyle = "#ff9b61";
+            context.lineWidth = selected ? 8 : 5;
             context.beginPath();
             context.moveTo(center.x, center.y);
-            context.lineTo(endX, endY);
+            context.quadraticCurveTo(330 - energy.trackBend * 0.5, 390, end.x, end.y);
+            context.stroke();
+            drawParticleMarker(context, end.x, end.y, "π", "#ff9b61", selected);
+          });
+        }
+
+        if (energyIndex >= 2) {
+          drawFocused("proton", (selected) => {
+            const end = { x: 244, y: 424 };
+            context.strokeStyle = "#f08b62";
+            context.lineWidth = selected ? 9 : 6;
+            context.beginPath();
+            context.moveTo(center.x, center.y);
+            context.quadraticCurveTo(252, 332 + energy.trackBend, end.x, end.y);
+            context.stroke();
+            drawParticleMarker(context, end.x, end.y, "p⁺", "#f08b62", selected);
+          });
+
+          drawFocused("neutron", (selected) => {
+            const end = { x: 438, y: 126 };
+            context.strokeStyle = "#b8c8cf";
+            context.lineWidth = selected ? 7 : 4;
+            context.setLineDash([7, 8]);
+            context.beginPath();
+            context.moveTo(center.x, center.y);
+            context.lineTo(end.x, end.y);
             context.stroke();
             context.setLineDash([]);
-            context.fillStyle = "#fff08a";
-            context.shadowColor = "#ffe367";
-            context.shadowBlur = energy.signalRadius * 1.55;
+            drawParticleMarker(context, end.x, end.y, "n", "#b8c8cf", selected);
+          });
+
+          drawFocused("neutrino", (selected) => {
+            const end = { x: 548, y: 505 };
+            context.strokeStyle = "#d7a2ff";
+            context.lineWidth = selected ? 6 : 3;
+            context.setLineDash([5, 11]);
             context.beginPath();
-            context.arc(endX, endY, energy.signalRadius, 0, Math.PI * 2);
-            context.fill();
-            context.shadowBlur = 0;
-            drawTag(
-              context,
-              index === 0 ? 594 : 166,
-              index === 0 ? 430 : 170,
-              "γ",
-              `${index + 1}. foton`,
-              "#ffe367",
-            );
+            context.moveTo(center.x, center.y);
+            context.lineTo(end.x, end.y);
+            context.stroke();
+            context.setLineDash([]);
+            drawParticleMarker(context, end.x, end.y, "ν", "#d7a2ff", selected);
+          });
+
+          [
+            { id: "tau", x: 314, y: 356, symbol: "τ", color: "#65e0a8" },
+            { id: "w", x: 332, y: 270, symbol: "W", color: "#ec78aa" },
+            { id: "z", x: 428, y: 270, symbol: "Z", color: "#8fa7ff" },
+            { id: "higgs", x: 380, y: 354, symbol: "H", color: "#bd8cff" },
+          ].forEach((particle) => {
+            drawFocused(particle.id, (selected) => {
+              context.strokeStyle = particle.color;
+              context.lineWidth = selected ? 5 : 2;
+              context.beginPath();
+              context.moveTo(center.x, center.y);
+              context.lineTo(particle.x, particle.y);
+              context.stroke();
+              drawParticleMarker(context, particle.x, particle.y, particle.symbol, particle.color, selected);
+            });
           });
         }
 
-        if (event.key === "muons") {
-          [0.32, Math.PI + 0.32].forEach((angle, index) => {
-            const endX = center.x + Math.cos(angle) * 255;
-            const endY = center.y + Math.sin(angle) * 255;
-            const midpointX = (center.x + endX) / 2;
-            const midpointY = (center.y + endY) / 2;
-            const curveDirection = index === 0 ? 1 : -1;
-            const controlX = midpointX - Math.sin(angle) * energy.trackBend * curveDirection;
-            const controlY = midpointY + Math.cos(angle) * energy.trackBend * curveDirection;
-            context.strokeStyle = index === 0 ? "#7cd9ff" : "#b7a1ff";
-            context.lineWidth = 5 + energyIndex;
-            context.beginPath();
-            context.moveTo(center.x, center.y);
-            context.quadraticCurveTo(controlX, controlY, endX, endY);
-            context.stroke();
-            drawTag(
-              context,
-              index === 0 ? 605 : 155,
-              index === 0 ? 402 : 198,
-              index === 0 ? "μ⁻" : "μ⁺",
-              index === 0 ? "Müon" : "Antimüon",
-              index === 0 ? "#7cd9ff" : "#b7a1ff",
-            );
-          });
+        const selectedParticle = visibleParticles.find((particle) => particle.id === selectedParticleId) ?? visibleParticles[0];
+        if (selectedParticle) {
+          drawTag(context, 380, 54, selectedParticle.symbol, selectedParticle.name, selectedParticle.color);
         }
 
         context.fillStyle = "rgba(6,21,34,0.92)";
@@ -660,7 +888,7 @@ function CernAtlasCanvas({
         context.fillStyle = "#eefbff";
         context.font = "900 16px Arial";
         context.textAlign = "center";
-        context.fillText(`${event.plainName} görüldü`, center.x, 554);
+        context.fillText(`${energy.label} enerjide ${visibleParticles.length} parçacık türü inceleniyor`, center.x, 554);
       }
 
       if (phase === "colliding") frame = requestAnimationFrame(draw);
@@ -676,13 +904,25 @@ function CernAtlasCanvas({
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [energy, energyIndex, event, phase]);
+  }, [energy, energyIndex, phase, selectedParticleId, visibleParticles]);
+
+  const handleCanvasClick = (eventObject: ReactMouseEvent<HTMLCanvasElement>) => {
+    if (phase !== "result") return;
+    const rect = eventObject.currentTarget.getBoundingClientRect();
+    const logicalX = ((eventObject.clientX - rect.left) / rect.width) * ATLAS_WIDTH;
+    const logicalY = ((eventObject.clientY - rect.top) / rect.height) * ATLAS_HEIGHT;
+    const hit = atlasParticleHitAreas(energyKind)
+      .map((area) => ({ ...area, distance: Math.hypot(area.x - logicalX, area.y - logicalY) }))
+      .sort((first, second) => first.distance - second.distance)[0];
+    if (hit && hit.distance <= 34) onSelectParticle(hit.id);
+  };
 
   return (
     <canvas
       ref={canvasRef}
       className="cern-atlas-canvas"
-      aria-label={phase === "colliding" ? "ATLAS içinde birbirine yaklaşan iki proton" : `${event.plainName} için sade ATLAS dedektör görüntüsü`}
+      onClick={handleCanvasClick}
+      aria-label={phase === "colliding" ? "ATLAS içinde birbirine yaklaşan iki proton" : `${energy.label} enerjide görülebilen parçacıkların ATLAS dedektör görüntüsü`}
     />
   );
 }
@@ -697,18 +937,24 @@ function PartIcon({ kind }: { kind: PartKind }) {
 
 function CernAtlasZoom({
   phase,
-  event,
   energyKind,
+  particles,
+  selectedParticleId,
+  onSelectParticle,
   onBack,
 }: {
   phase: "colliding" | "result";
-  event: CollisionEvent;
   energyKind: EnergyKind;
+  particles: DetectorParticle[];
+  selectedParticleId: string;
+  onSelectParticle: (id: string) => void;
   onBack: () => void;
 }) {
   const energy = ENERGY_LEVELS[energyKind];
   const totalEnergy = energy.beam * 2;
   const energyIndex = energyKind === "low" ? 0 : energyKind === "medium" ? 1 : 2;
+  const selectedParticle = particles.find((particle) => particle.id === selectedParticleId) ?? particles[0];
+  const activeLayers: DetectorLayer[] = energyIndex === 0 ? ["track", "energy"] : ["track", "energy", "outer"];
   const layerInfo: Array<{ key: DetectorLayer; number: number; title: string; text: string }> = [
     { key: "track", number: 1, title: "İz sensörü", text: "Yüklü parçacıkların geçtiği yolu gösterir." },
     { key: "energy", number: 2, title: "Enerji sensörü", text: "Elektron ve fotonun bıraktığı enerjiyi gösterir." },
@@ -734,7 +980,7 @@ function CernAtlasZoom({
           {layerInfo.map((layer) => (
             <article
               key={layer.key}
-              className={`${layer.key} ${phase === "result" && event.layers.includes(layer.key) ? "active" : ""}`}
+              className={`${layer.key} ${phase === "result" && activeLayers.includes(layer.key) ? "active" : ""}`}
             >
               <i>{layer.number}</i>
               <div><b>{layer.title}</b><small>{layer.text}</small></div>
@@ -742,18 +988,64 @@ function CernAtlasZoom({
           ))}
           <p><i /> Ortadaki beyaz nokta, iki protonun çarpıştığı yerdir.</p>
         </aside>
-        <CernAtlasCanvas phase={phase} event={event} energyKind={energyKind} />
+        <CernAtlasCanvas
+          phase={phase}
+          energyKind={energyKind}
+          selectedParticleId={selectedParticleId}
+          onSelectParticle={onSelectParticle}
+        />
       </div>
       {phase === "result" && (
-        <div className="cern-collision-result">
-          <article><small>GİREN</small><b>Proton p⁺ + Proton p⁺</b></article>
-          <article className={`energy-effect ${energyKind}`}>
-            <small>ENERJİYLE NE DEĞİŞTİ?</small>
-            <b>{energy.label} · {format(totalEnergy)} TeV</b>
-            <span>{energy.detectorEffect}</span>
-          </article>
-          <article><small>DEDEKTÖRDE GÖRÜLEN</small><b>{event.symbol}</b><span>{event.plainName}</span></article>
-        </div>
+        <>
+          <div className="cern-particle-explorer">
+            <section className="cern-detected-particles">
+              <span>BU ENERJİDE İNCELENEN TÜM PARÇACIKLAR</span>
+              <h2>Bir parçacığa dokun</h2>
+              <p>Düz çizgili etiket doğrudan dedektör sinyalini, kesikli etiket sinyallerden yapılan çıkarımı gösterir.</p>
+              <div>
+                {particles.map((particle) => (
+                  <button
+                    key={particle.id}
+                    type="button"
+                    className={`${particle.direct ? "direct" : "inferred"} ${selectedParticle?.id === particle.id ? "selected" : ""}`}
+                    style={{ borderColor: particle.color }}
+                    onClick={() => onSelectParticle(particle.id)}
+                    aria-pressed={selectedParticle?.id === particle.id}
+                  >
+                    <i style={{ background: particle.color }}>{particle.symbol}</i>
+                    <span><b>{particle.name}</b><small>{particle.direct ? "Doğrudan sinyal" : "Sinyallerden çıkarım"}</small></span>
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {selectedParticle && (
+              <aside className="cern-standard-card">
+                <span>STANDART MODEL · BASİT BİLGİ KARTI</span>
+                <header>
+                  <strong style={{ background: selectedParticle.color }}>{selectedParticle.symbol}</strong>
+                  <div><h2>{selectedParticle.name}</h2><small>{selectedParticle.group}</small></div>
+                </header>
+                <dl>
+                  <div><dt>Temel parçacık mı?</dt><dd>{selectedParticle.fundamental ? "Evet" : "Hayır, kuark bileşiği"}</dd></div>
+                  <div><dt>ATLAS’ta nasıl bulunur?</dt><dd>{selectedParticle.direct ? "Doğrudan sinyal" : "Başka sinyallerden çıkarım"}</dd></div>
+                </dl>
+                <p>{selectedParticle.standardInfo}</p>
+                <div className="cern-detector-answer"><b>Dedektörde:</b> {selectedParticle.detectorInfo}</div>
+              </aside>
+            )}
+          </div>
+
+          <div className="cern-collision-result">
+            <article><small>GİREN</small><b>Proton p⁺ + Proton p⁺</b></article>
+            <article className={`energy-effect ${energyKind}`}>
+              <small>ENERJİYLE NE DEĞİŞTİ?</small>
+              <b>{energy.label} · {format(totalEnergy)} TeV</b>
+              <span>{energy.detectorEffect}</span>
+            </article>
+            <article><small>İNCELENEN PARÇACIK TÜRLERİ</small><b>{particles.length} tür</b><span>{particles.filter((particle) => particle.direct).length} doğrudan · {particles.filter((particle) => !particle.direct).length} çıkarımla</span></article>
+          </div>
+        </>
       )}
     </div>
   );
@@ -764,7 +1056,7 @@ export default function CernAcceleratorLab() {
   const [dragOver, setDragOver] = useState(false);
   const [runState, setRunState] = useState<RunState>("idle");
   const [energyKind, setEnergyKind] = useState<EnergyKind>("high");
-  const [selectedEvent, setSelectedEvent] = useState<EventKind>("electrons");
+  const [selectedParticleId, setSelectedParticleId] = useState("electron");
   const [message, setMessage] = useState("İlk parçaya dokun veya onu deney alanına sürükle.");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -775,7 +1067,7 @@ export default function CernAcceleratorLab() {
   const setupComplete = installed.length === SETUP_ORDER.length;
   const nextPart = ACCELERATOR_PARTS[installed.length] ?? null;
   const energy = ENERGY_LEVELS[energyKind];
-  const event = EVENTS[selectedEvent];
+  const visibleParticles = useMemo(() => particlesAtEnergy(energyKind), [energyKind]);
   const atlasOpen = runState === "colliding" || runState === "result";
 
   const statusLabel = runState === "accelerating"
@@ -797,7 +1089,7 @@ export default function CernAcceleratorLab() {
     const nextInstalled = [...installed, kind];
     setInstalled(nextInstalled);
     if (nextInstalled.length === SETUP_ORDER.length) {
-      setMessage("Düzenek tamamlandı. Çarpışma gücünü ve görmek istediğin basit parçacık örneğini seç.");
+      setMessage("Düzenek tamamlandı. Çarpışma gücünü seç; bu enerjiye uygun parçacıklar otomatik olarak hazırlanacak.");
     } else {
       setMessage(`${ACCELERATOR_PARTS[nextInstalled.length - 1].label} bağlandı. Sıradaki parça hazır.`);
     }
@@ -836,14 +1128,14 @@ export default function CernAcceleratorLab() {
     setMessage("ATLAS büyütüldü. İki proton çarpışma noktasına yaklaşıyor.");
     timerRef.current = setTimeout(() => {
       setRunState("result");
-      setMessage(`${energy.label} enerjide ${event.plainName} oluştu. ${energy.detectorEffect}`);
+      setMessage(`${energy.label} enerjide ${visibleParticles.length} parçacık türü inceleniyor. Bir parçacığa dokunarak bilgi kartını aç.`);
     }, 1800);
   };
 
   const returnToRing = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setRunState("idle");
-    setMessage("LHC halkasına dönüldü. Yeni bir enerji ve parçacık örneği seçebilirsin.");
+    setMessage("LHC halkasına dönüldü. Yeni bir enerji seçerek parçacık listesinin nasıl değiştiğini inceleyebilirsin.");
   };
 
   const clearSetup = () => {
@@ -945,8 +1237,10 @@ export default function CernAcceleratorLab() {
           {atlasOpen ? (
             <CernAtlasZoom
               phase={runState === "colliding" ? "colliding" : "result"}
-              event={event}
               energyKind={energyKind}
+              particles={visibleParticles}
+              selectedParticleId={selectedParticleId}
+              onSelectParticle={setSelectedParticleId}
               onBack={returnToRing}
             />
           ) : (
@@ -978,6 +1272,7 @@ export default function CernAcceleratorLab() {
                       disabled={runState === "accelerating"}
                       onClick={() => {
                         setEnergyKind(key);
+                        setSelectedParticleId(particlesAtEnergy(key)[0].id);
                         setRunState("idle");
                       }}
                     >
@@ -994,27 +1289,24 @@ export default function CernAcceleratorLab() {
                 <em><b>Dedektörde fark:</b> {energy.detectorEffect}</em>
               </section>
 
-              <section className="cern-event-choice">
-                <span>2 · BASİT ÖRNEK</span>
-                <h2>Dedektörde ne görelim?</h2>
+              <section className="cern-energy-particle-preview">
+                <span>2 · ENERJİYE GÖRE PARÇACIKLAR</span>
+                <h2>{energy.label} enerjide {visibleParticles.length} tür incelenecek</h2>
+                <p>Enerji yükseldikçe daha ağır ve çok kısa ömürlü parçacık örnekleri dedektör analizine eklenir.</p>
                 <div>
-                  {(Object.keys(EVENTS) as EventKind[]).map((key) => (
+                  {visibleParticles.map((particle) => (
                     <button
-                      key={key}
+                      key={particle.id}
                       type="button"
-                      className={selectedEvent === key ? "active" : ""}
-                      disabled={runState === "accelerating"}
-                      onClick={() => {
-                        setSelectedEvent(key);
-                        setRunState("idle");
-                      }}
+                      className={`${particle.direct ? "direct" : "inferred"} ${selectedParticleId === particle.id ? "active" : ""}`}
+                      onClick={() => setSelectedParticleId(particle.id)}
                     >
-                      <strong>{EVENTS[key].symbol}</strong>
-                      <span><b>{EVENTS[key].title}</b><small>{EVENTS[key].plainName}</small></span>
+                      <strong style={{ color: particle.color }}>{particle.symbol}</strong>
+                      <span><b>{particle.name}</b><small>{particle.direct ? "Dedektör sinyali" : "Sinyallerden çıkarım"}</small></span>
                     </button>
                   ))}
                 </div>
-                <p><b>{event.explanation}</b> {event.detectorFinding}</p>
+                <em><b>{visibleParticles.filter((particle) => particle.direct).length}</b> doğrudan sinyal · <b>{visibleParticles.filter((particle) => !particle.direct).length}</b> sinyallerden çıkarım</em>
               </section>
 
               <section className="cern-particle-primer">
