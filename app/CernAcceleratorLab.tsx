@@ -43,10 +43,18 @@ type CollisionEvent = {
   key: EventKind;
   title: string;
   reaction: string;
+  outputSummary: string;
   description: string;
   particles: string[];
   signatures: string[];
   evidence: string;
+  outputs: Array<{
+    symbol: string;
+    name: string;
+    detector: string;
+    color: string;
+    direct: boolean;
+  }>;
 };
 
 type CollisionReading = {
@@ -150,37 +158,62 @@ const EVENTS: Record<EventKind, CollisionEvent> = {
     key: "higgs",
     title: "Higgs → iki foton",
     reaction: "g + g → H → γ + γ",
+    outputSummary: "Çıkan: iki foton γ + γ",
     description: "İki gluonun enerjisi kısa ömürlü bir Higgs bozonuna dönüşür; iki foton elektromanyetik kalorimetrede belirir.",
     particles: ["g", "h", "photon"],
     signatures: ["İç iz yok", "Karşılıklı iki EM enerji kümesi", "Toplam enerjiden Higgs çıkarımı"],
     evidence: "İki foton kümesi",
+    outputs: [
+      { symbol: "γ", name: "1. foton", detector: "EM kalorimetrede sarı enerji kümesi", color: "#f1d260", direct: true },
+      { symbol: "γ", name: "2. foton", detector: "EM kalorimetrede sarı enerji kümesi", color: "#f1d260", direct: true },
+      { symbol: "H", name: "Higgs", detector: "İki fotonun toplamından çıkarılır", color: "#a77bd2", direct: false },
+    ],
   },
   "z-pair": {
     key: "z-pair",
     title: "Z → elektron çifti",
     reaction: "q + q̄ → Z⁰ → e⁻ + e⁺",
+    outputSummary: "Çıkan: elektron e⁻ + pozitron e⁺",
     description: "Kuark-antikuark etkileşimi Z bozonu üretir; zıt yüklü elektron ve pozitron izleri birlikte ölçülür.",
     particles: ["u", "d", "z", "e"],
     signatures: ["Zıt yönlü kıvrılan iki iz", "İki EM enerji kümesi", "Çiftten Z kütlesi çıkarımı"],
     evidence: "e⁻ ve e⁺ izleri",
+    outputs: [
+      { symbol: "e⁻", name: "Elektron", detector: "Kıvrılan iz + EM enerji kümesi", color: "#ffe36d", direct: true },
+      { symbol: "e⁺", name: "Pozitron", detector: "Ters yöne kıvrılan iz + EM kümesi", color: "#ff9ed0", direct: true },
+      { symbol: "Z⁰", name: "Z bozonu", detector: "Elektron çiftinin toplamından çıkarılır", color: "#6f91c9", direct: false },
+    ],
   },
   "top-pair": {
     key: "top-pair",
     title: "Üst kuark çifti",
     reaction: "g + g → t + t̄ → b + b̄ + W⁺ + W⁻",
+    outputSummary: "Çıkan: iki b-jeti + müon μ + nötrino ν",
     description: "Üst kuarklar oluşur oluşmaz W bozonu ve alt kuarka bozunur; jetler, müon ve görünmeyen nötrino birlikte analiz edilir.",
     particles: ["g", "t", "b", "w", "mu", "vmu"],
     signatures: ["İki b-jeti", "Müon spektrometresine ulaşan iz", "Eksik enine momentum"],
     evidence: "b-jetleri + μ + momentum eksiği",
+    outputs: [
+      { symbol: "b", name: "İki b-jeti", detector: "İç izleyici + hadronik kalorimetre", color: "#ef8a55", direct: true },
+      { symbol: "μ", name: "Müon", detector: "En dıştaki müon sistemine ulaşır", color: "#6fb4ff", direct: true },
+      { symbol: "ν", name: "Nötrino", detector: "İz bırakmaz; momentum eksiğinden çıkarılır", color: "#d58aff", direct: false },
+      { symbol: "t", name: "Üst kuark", detector: "Bozunma ürünlerinin tümünden çıkarılır", color: "#e9b45b", direct: false },
+    ],
   },
   jets: {
     key: "jets",
     title: "Kuark–gluon saçılması",
     reaction: "q + g → q + g",
+    outputSummary: "Çıkan: karşılıklı iki parçacık jeti",
     description: "Protonların içindeki kuark ve gluon saçılır; hadronlaşma sonucunda karşılıklı parçacık jetleri oluşur.",
     particles: ["u", "d", "g"],
     signatures: ["İç izleyicide çok sayıda iz", "Hadronik kalorimetrede geniş kümeler", "Karşılıklı iki jet"],
     evidence: "İki hadronik jet",
+    outputs: [
+      { symbol: "jet", name: "1. parçacık jeti", detector: "Çok sayıda iz + hadronik enerji", color: "#ff975e", direct: true },
+      { symbol: "jet", name: "2. parçacık jeti", detector: "Karşı yönde çok sayıda iz + enerji", color: "#f0c263", direct: true },
+      { symbol: "q/g", name: "Kuark veya gluon", detector: "Jet yönü ve enerjisinden çıkarılır", color: "#74c7b7", direct: false },
+    ],
   },
 };
 
@@ -524,8 +557,8 @@ function CernAcceleratorCanvas({
           ? Math.PI - Math.PI * collisionEase
           : -time * speed + Math.PI;
         const beamPoints = [
-          { angle: clockwiseAngle, color: "#62e7ff" },
-          { angle: counterAngle, color: "#ff6fa8" },
+          { angle: clockwiseAngle, color: "#62e7ff", label: "p⁺ →" },
+          { angle: counterAngle, color: "#ff6fa8", label: "← p⁺" },
         ];
         beamPoints.forEach((beam) => {
           const x = 555 + Math.cos(beam.angle) * 390;
@@ -537,6 +570,10 @@ function CernAcceleratorCanvas({
           context.arc(x, y, 7, 0, Math.PI * 2);
           context.fill();
           context.shadowBlur = 0;
+          context.fillStyle = beam.color;
+          context.font = "900 10px Arial";
+          context.textAlign = "center";
+          context.fillText(beam.label, x, y - 13);
         });
       }
 
@@ -561,19 +598,20 @@ function CernAcceleratorCanvas({
 
       context.fillStyle = "rgba(6,19,31,0.88)";
       context.beginPath();
-      context.roundRect(43, 350, 175, 82, 12);
+      context.roundRect(43, 344, 204, 94, 12);
       context.fill();
       context.fillStyle = "#77a8bd";
       context.font = "900 9px Arial";
       context.textAlign = "left";
-      context.fillText("LHC ÇALIŞMA DEĞERLERİ", 59, 372);
+      context.fillText("HALKADA NE DOLAŞIYOR?", 59, 365);
       context.fillStyle = "#d8f4ff";
       context.font = "900 12px Arial";
-      context.fillText(`${format(beamEnergy)} TeV / demet`, 59, 395);
-      context.fillText(`${format(beamEnergy * 2)} TeV çarpışma`, 59, 414);
-      context.fillStyle = "#74c8d7";
+      context.fillText("Proton p⁺ = u + u + d", 59, 387);
+      context.fillStyle = "#62e7ff";
       context.font = "800 9px Arial";
-      context.fillText("vakum · 1,9 K mıknatıs", 59, 430);
+      context.fillText(`Mavi demet → ${format(beamEnergy)} TeV`, 59, 407);
+      context.fillStyle = "#ff80b2";
+      context.fillText(`Pembe demet ← ${format(beamEnergy)} TeV`, 59, 424);
 
       const animated = runState === "accelerating"
         || runState === "stored"
@@ -641,6 +679,37 @@ function drawJet(
   }
 }
 
+function drawEventTag(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  symbol: string,
+  text: string,
+  color: string,
+  align: "left" | "right" = "left",
+) {
+  context.save();
+  context.font = "900 10px Arial";
+  const width = Math.max(118, context.measureText(text).width + 50);
+  const left = align === "left" ? x : x - width;
+  context.fillStyle = "rgba(5,17,28,0.92)";
+  context.strokeStyle = color;
+  context.lineWidth = 1.5;
+  context.beginPath();
+  context.roundRect(left, y - 17, width, 34, 9);
+  context.fill();
+  context.stroke();
+  context.fillStyle = color;
+  context.font = "900 14px Georgia";
+  context.textAlign = "center";
+  context.fillText(symbol, left + 20, y + 5);
+  context.fillStyle = "#dceff6";
+  context.font = "800 9px Arial";
+  context.textAlign = "left";
+  context.fillText(text, left + 38, y + 4);
+  context.restore();
+}
+
 function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -680,7 +749,7 @@ function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
 
       context.strokeStyle = "rgba(143,189,207,0.22)";
       context.lineWidth = 1;
-      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 6) {
         context.beginPath();
         context.moveTo(center.x + Math.cos(angle) * 32, center.y + Math.sin(angle) * 32);
         context.lineTo(center.x + Math.cos(angle) * 246, center.y + Math.sin(angle) * 246);
@@ -711,7 +780,7 @@ function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
       }
 
       if (event.key === "higgs") {
-        [0.45, 3.59].forEach((angle) => {
+        [0.45, 3.59].forEach((angle, index) => {
           const clusterX = center.x + Math.cos(angle) * 128;
           const clusterY = center.y + Math.sin(angle) * 128;
           context.strokeStyle = "rgba(255,234,104,0.46)";
@@ -729,6 +798,15 @@ function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
           context.beginPath();
           context.arc(clusterX, clusterY, 28, 0, Math.PI * 2);
           context.fill();
+          drawEventTag(
+            context,
+            index === 0 ? clusterX + 26 : clusterX - 26,
+            index === 0 ? clusterY - 22 : clusterY + 25,
+            "γ",
+            `${index + 1}. foton · EM kümesi`,
+            "#f1d260",
+            index === 0 ? "left" : "right",
+          );
         });
       }
 
@@ -743,6 +821,8 @@ function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
           context.arc(x, y, 16, 0, Math.PI * 2);
           context.fill();
         });
+        drawEventTag(context, 522, 326, "e⁻", "elektron · iz + EM", "#ffe36d", "left");
+        drawEventTag(context, 238, 194, "e⁺", "pozitron · ters kıvrım", "#ff9ed0", "right");
       }
 
       if (event.key === "top-pair") {
@@ -757,11 +837,16 @@ function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
         context.lineTo(center.x - 75, center.y + 206);
         context.stroke();
         context.setLineDash([]);
+        drawEventTag(context, 536, 220, "b", "b-jeti · hadronik enerji", "#ff8b59", "left");
+        drawEventTag(context, 495, 450, "μ", "müon · dış katmana ulaşır", "#6fb4ff", "left");
+        drawEventTag(context, 266, 432, "ν", "nötrino · momentum eksiği", "#d58aff", "right");
       }
 
       if (event.key === "jets") {
         drawJet(context, 0.16, "#ff975e", 0.38);
         drawJet(context, Math.PI + 0.1, "#f0c263", 0.38);
+        drawEventTag(context, 552, 305, "jet", "çok sayıda parçacık", "#ff975e", "left");
+        drawEventTag(context, 210, 224, "jet", "karşı yönlü jet", "#f0c263", "right");
       }
 
       context.fillStyle = "rgba(5,16,27,0.88)";
@@ -777,17 +862,17 @@ function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
       context.fillText(event.reaction, 34, 61);
 
       const legend = [
-        { color: "#4edcc0", text: "iz" },
-        { color: "#f1d260", text: "EM enerji" },
-        { color: "#e48250", text: "hadronik enerji" },
-        { color: "#659ade", text: "müon" },
+        { color: "#4edcc0", text: "İç izleyici · yüklü iz" },
+        { color: "#f1d260", text: "EM · e ve γ enerjisi" },
+        { color: "#e48250", text: "Hadronik · jet enerjisi" },
+        { color: "#659ade", text: "Dış sistem · müon" },
       ];
       legend.forEach((item, index) => {
         const x = 30 + index * 175;
         context.fillStyle = item.color;
         context.fillRect(x, 486, 18, 5);
         context.fillStyle = "#b9d7e3";
-        context.font = "800 9px Arial";
+        context.font = "800 8px Arial";
         context.fillText(item.text, x + 25, 492);
       });
     };
@@ -823,6 +908,7 @@ export default function CernAcceleratorLab() {
   const [selectedEvent, setSelectedEvent] = useState<EventKind>("higgs");
   const [detectedEvent, setDetectedEvent] = useState<CollisionEvent | null>(null);
   const [selectedParticle, setSelectedParticle] = useState("u");
+  const [activeParticleGroup, setActiveParticleGroup] = useState<ParticleGroup>("quark");
   const [observedParticles, setObservedParticles] = useState<string[]>([]);
   const [readings, setReadings] = useState<CollisionReading[]>([]);
   const [message, setMessage] = useState(
@@ -839,6 +925,7 @@ export default function CernAcceleratorLab() {
   const nextPart = ACCELERATOR_PARTS[installed.length] ?? null;
   const event = EVENTS[selectedEvent];
   const particle = PARTICLES.find((item) => item.id === selectedParticle) ?? PARTICLES[0];
+  const visibleParticles = PARTICLES.filter((item) => item.group === activeParticleGroup);
   const observedSet = useMemo(() => new Set(observedParticles), [observedParticles]);
   const statusLabel = runState === "accelerating"
     ? "Enjektör zincirinde hızlanıyor"
@@ -983,8 +1070,8 @@ export default function CernAcceleratorLab() {
                 <button
                   key={item.kind}
                   type="button"
-                  draggable={!isInstalled && runState === "idle"}
-                  disabled={isInstalled || runState !== "idle"}
+                  draggable={isNext && runState === "idle"}
+                  disabled={isInstalled || !isNext || runState !== "idle"}
                   className={`${isInstalled ? "installed" : ""} ${isNext ? "next" : ""}`}
                   onDragStart={(eventObject) => onDragStart(eventObject, item.kind)}
                   onClick={() => addPart(item.kind)}
@@ -1029,6 +1116,24 @@ export default function CernAcceleratorLab() {
       </div>
 
       {setupComplete && (
+        <div className="cern-simple-summary" aria-label="Parçacık ve çarpışma özeti">
+          <article className="beam-particle">
+            <i>1</i>
+            <span><small>HALKADA DOLAŞAN</small><b>Proton p⁺</b><em>Protonun içinde iki yukarı ve bir aşağı kuark vardır: u + u + d.</em></span>
+            <div><u>p⁺ →</u><u>← p⁺</u></div>
+          </article>
+          <article className="beam-energy">
+            <i>2</i>
+            <span><small>ÇARPIŞMA ENERJİSİ</small><b>{format(beamEnergy)} + {format(beamEnergy)} = {format(beamEnergy * 2)} TeV</b><em>İki proton demeti eşit enerjiyle karşı karşıya gelir.</em></span>
+          </article>
+          <article className="beam-output">
+            <i>3</i>
+            <span><small>ÇARPIŞMADAN ÇIKAN</small><b>{detectedEvent?.outputSummary ?? event.outputSummary}</b><em>{detectedEvent ? "Aşağıdaki dedektör ekranında renkli etiketlerle gösterildi." : "Olayı seç, demetleri hızlandır ve çarpıştır."}</em></span>
+          </article>
+        </div>
+      )}
+
+      {setupComplete && (
         <div className="cern-control-room">
           <section className="cern-beam-controls">
             <span>DEMET KONTROLÜ</span>
@@ -1050,9 +1155,9 @@ export default function CernAcceleratorLab() {
               />
             </label>
             <div className="cern-beam-readout">
-              <span><small>SPS ENJEKSİYON</small><b>450 GeV</b></span>
-              <span><small>LHC DEMETİ</small><b>{format(beamEnergy)} TeV</b></span>
-              <span><small>İKİ DEMET</small><b>{format(beamEnergy * 2)} TeV</b></span>
+              <span className="blue"><small>1. DEMET · SAAT YÖNÜ</small><b>p⁺ → {format(beamEnergy)} TeV</b></span>
+              <span className="pink"><small>2. DEMET · TERS YÖN</small><b>← p⁺ {format(beamEnergy)} TeV</b></span>
+              <span><small>ATLAS’TA KARŞILAŞINCA</small><b>{format(beamEnergy * 2)} TeV</b></span>
             </div>
             <div className="cern-action-row">
               <button type="button" onClick={accelerateBeams} disabled={runState === "accelerating" || runState === "colliding"}>1 · Demetleri hızlandır</button>
@@ -1066,8 +1171,8 @@ export default function CernAcceleratorLab() {
           </section>
 
           <section className="cern-event-picker">
-            <span>OLAY MENÜSÜ</span>
-            <h2>Hangi Standart Model olayını arayalım?</h2>
+            <span>ÇARPIŞMA SEÇİMİ</span>
+            <h2>Çarpışınca ne çıksın?</h2>
             <div>
               {(Object.keys(EVENTS) as EventKind[]).map((key) => (
                 <button
@@ -1081,14 +1186,14 @@ export default function CernAcceleratorLab() {
                   }}
                 >
                   <b>{EVENTS[key].title}</b>
-                  <small>{EVENTS[key].reaction}</small>
+                  <small>{EVENTS[key].outputSummary}</small>
                 </button>
               ))}
             </div>
             <article>
               <small>SEÇİLEN OLAY</small>
               <strong>{event.reaction}</strong>
-              <p>{event.description}</p>
+              <p><b>{event.outputSummary}</b><br />{event.description}</p>
             </article>
           </section>
         </div>
@@ -1099,28 +1204,31 @@ export default function CernAcceleratorLab() {
           <div className="cern-event-display-wrap">
             <div className="cern-section-heading">
               <span>ATLAS DEDEKTÖRÜ</span>
-              <h2>Katmanlardan parçacık izine</h2>
-              <p>İç izleyici yüklü parçacıkların yolunu, kalorimetreler enerjiyi, en dış sistem ise müonları ölçer.</p>
+              <h2>Dedektörde ne görüyoruz?</h2>
+              <p>Renkli etiketler çıkan parçacığın adını ve hangi dedektör katmanında görüldüğünü doğrudan gösterir.</p>
             </div>
             <CernEventDisplay event={detectedEvent} />
           </div>
 
           <aside className="cern-evidence-panel">
-            <span>DEDEKTÖR KANITI</span>
-            <h2>{detectedEvent?.title ?? "Çarpışma bekleniyor"}</h2>
+            <span>ÇARPIŞMA SONUCU</span>
+            <h2>{detectedEvent?.outputSummary ?? "Çarpışma bekleniyor"}</h2>
             {detectedEvent ? (
               <>
                 <strong>{detectedEvent.reaction}</strong>
-                <ul>
-                  {detectedEvent.signatures.map((signature) => <li key={signature}>{signature}</li>)}
-                </ul>
-                <p>
-                  Dedektör, kısa ömürlü W, Z, üst kuark ve Higgs’i doğrudan kalıcı
-                  bir iz olarak görmez; ölçülen bozunma ürünlerinden yeniden kurar.
-                </p>
+                <div className="cern-output-list">
+                  {detectedEvent.outputs.map((output) => (
+                    <article key={`${output.symbol}-${output.name}`}>
+                      <i style={{ background: output.color }}>{output.symbol}</i>
+                      <span><b>{output.name}</b><small>{output.detector}</small></span>
+                      <em className={output.direct ? "direct" : "inferred"}>{output.direct ? "DEDEKTÖRDE SİNYAL" : "SİNYALDEN ÇIKARIM"}</em>
+                    </article>
+                  ))}
+                </div>
+                <p className="cern-output-rule"><b>Basit kural:</b> İz veya enerji kümesi dedektör sinyalidir. Higgs, Z, üst kuark ve nötrino gibi parçacıklar bu sinyallerin birlikte yorumlanmasıyla bulunur.</p>
               </>
             ) : (
-              <p>Demetleri çarpıştırdığında bu alanda izler, enerji kümeleri, jetler ve momentum eksiği açıklanacak.</p>
+              <p>Demetleri çarpıştırdığında çıkan her parçacık; adı, sembolü ve görüldüğü dedektör katmanıyla burada listelenecek.</p>
             )}
           </aside>
         </div>
@@ -1130,67 +1238,64 @@ export default function CernAcceleratorLab() {
         <div className="cern-standard-model">
           <div className="cern-section-heading">
             <span>STANDART MODEL</span>
-            <h2>Temel parçacıkları aileleriyle incele</h2>
-            <p>Bir parçacığı seç. Son çarpışmayla ilişkili olan hücreler parlak çerçeveyle işaretlenir.</p>
+            <h2>Önce aileyi, sonra parçacığı seç</h2>
+            <p>Bütün tabloyu aynı anda göstermek yerine yalnızca seçtiğin aile açılır. Yeşil nokta, çalıştırdığın olayla ilişkili parçacığı gösterir.</p>
           </div>
+          <div className="cern-family-tabs" role="tablist" aria-label="Standart Model parçacık aileleri">
+            {[
+              { group: "quark" as const, label: "Kuarklar", count: 6, first: "u", text: "Protonun içi ve jetler" },
+              { group: "lepton" as const, label: "Leptonlar", count: 6, first: "e", text: "Elektron, müon, tau, nötrinolar" },
+              { group: "boson" as const, label: "Bozonlar", count: 4, first: "g", text: "Etkileşim taşıyıcıları" },
+              { group: "higgs" as const, label: "Higgs", count: 1, first: "h", text: "Higgs alanının parçacığı" },
+            ].map((family) => (
+              <button
+                key={family.group}
+                type="button"
+                className={activeParticleGroup === family.group ? "active" : ""}
+                onClick={() => {
+                  setActiveParticleGroup(family.group);
+                  setSelectedParticle(family.first);
+                }}
+                aria-pressed={activeParticleGroup === family.group}
+              >
+                <b>{family.label} <i>{family.count}</i></b><small>{family.text}</small>
+              </button>
+            ))}
+          </div>
+          {detectedEvent && (
+            <div className="cern-related-particles">
+              <span>BU ÇARPIŞMAYLA İLİŞKİLİ:</span>
+              {detectedEvent.particles.map((id) => {
+                const related = PARTICLES.find((item) => item.id === id);
+                if (!related) return null;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => {
+                      setActiveParticleGroup(related.group);
+                      setSelectedParticle(related.id);
+                    }}
+                  >
+                    <b>{related.symbol}</b>{related.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="cern-particle-layout">
-            <div className="cern-particle-grid" aria-label="Standart Model temel parçacıkları">
-              <section className="quarks">
-                <header><b>KUARKLAR</b><small>madde parçacıkları</small></header>
-                {PARTICLES.filter((item) => item.group === "quark").map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`${selectedParticle === item.id ? "selected" : ""} ${observedSet.has(item.id) ? "observed" : ""}`}
-                    onClick={() => setSelectedParticle(item.id)}
-                    aria-pressed={selectedParticle === item.id}
-                  >
-                    <strong>{item.symbol}</strong><span>{item.name}</span><small>{item.generation}. nesil</small>
-                  </button>
-                ))}
-              </section>
-              <section className="leptons">
-                <header><b>LEPTONLAR</b><small>madde parçacıkları</small></header>
-                {PARTICLES.filter((item) => item.group === "lepton").map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`${selectedParticle === item.id ? "selected" : ""} ${observedSet.has(item.id) ? "observed" : ""}`}
-                    onClick={() => setSelectedParticle(item.id)}
-                    aria-pressed={selectedParticle === item.id}
-                  >
-                    <strong>{item.symbol}</strong><span>{item.name}</span><small>{item.generation}. nesil</small>
-                  </button>
-                ))}
-              </section>
-              <section className="bosons">
-                <header><b>BOZONLAR</b><small>etkileşim taşıyıcıları</small></header>
-                {PARTICLES.filter((item) => item.group === "boson").map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`${selectedParticle === item.id ? "selected" : ""} ${observedSet.has(item.id) ? "observed" : ""}`}
-                    onClick={() => setSelectedParticle(item.id)}
-                    aria-pressed={selectedParticle === item.id}
-                  >
-                    <strong>{item.symbol}</strong><span>{item.name}</span><small>bozon</small>
-                  </button>
-                ))}
-              </section>
-              <section className="higgs">
-                <header><b>HIGGS ALANI</b><small>Higgs bozonu</small></header>
-                {PARTICLES.filter((item) => item.group === "higgs").map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`${selectedParticle === item.id ? "selected" : ""} ${observedSet.has(item.id) ? "observed" : ""}`}
-                    onClick={() => setSelectedParticle(item.id)}
-                    aria-pressed={selectedParticle === item.id}
-                  >
-                    <strong>{item.symbol}</strong><span>{item.name}</span><small>skaler bozon</small>
-                  </button>
-                ))}
-              </section>
+            <div className={`cern-particle-grid ${activeParticleGroup}`} aria-label="Seçilen Standart Model parçacık ailesi">
+              {visibleParticles.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`${selectedParticle === item.id ? "selected" : ""} ${observedSet.has(item.id) ? "observed" : ""}`}
+                  onClick={() => setSelectedParticle(item.id)}
+                  aria-pressed={selectedParticle === item.id}
+                >
+                  <strong>{item.symbol}</strong><span>{item.name}</span><small>{item.generation ? `${item.generation}. nesil` : item.group === "higgs" ? "skaler bozon" : "taşıyıcı bozon"}</small>
+                </button>
+              ))}
             </div>
 
             <aside className={`cern-particle-detail ${particle.group}`}>

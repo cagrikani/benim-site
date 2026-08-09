@@ -29528,12 +29528,214 @@ footer > a {
 .cern-sources a { padding: 6px 8px; border-radius: 7px; background: #edf3f2; color: #496971; font-size: 7px; font-weight: 850; text-decoration: none; }
 .cern-sources a:hover { background: #e8e0f2; color: #65488b; }
 
+.cern-part-list > button:disabled:not(.installed):not(.next) {
+  opacity: 0.38;
+}
+
+.cern-simple-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: min(1240px, 100%);
+  margin: 18px auto 0;
+}
+
+.cern-simple-summary article {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: start;
+  gap: 10px;
+  min-height: 126px;
+  padding: 16px;
+  border: 1px solid #d5e1de;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(43,66,72,0.07);
+}
+
+.cern-simple-summary article > i {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #70539b;
+  color: #fff;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.cern-simple-summary article > span {
+  display: grid;
+  gap: 5px;
+}
+
+.cern-simple-summary small {
+  color: #7c609e;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+}
+
+.cern-simple-summary b {
+  color: #2f505b;
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.cern-simple-summary em {
+  color: #708489;
+  font-size: 8px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.cern-simple-summary .beam-particle > div {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.cern-simple-summary .beam-particle u {
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: #e8f8fb;
+  color: #158098;
+  font-size: 9px;
+  font-weight: 950;
+  text-align: center;
+  text-decoration: none;
+}
+
+.cern-simple-summary .beam-particle u:last-child {
+  background: #fceaf2;
+  color: #b94c79;
+}
+
+.cern-beam-readout span.blue { border-left: 4px solid #34b9d7; }
+.cern-beam-readout span.pink { border-left: 4px solid #e8689d; }
+.cern-event-picker article p b { color: #5e4788; }
+
+.cern-output-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.cern-output-list article {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 9px;
+  padding: 9px;
+  border: 1px solid #dce6e3;
+  border-radius: 10px;
+  background: #f9fbfa;
+}
+
+.cern-output-list article > i {
+  display: grid;
+  place-items: center;
+  grid-row: 1 / 3;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  color: #162b38;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.cern-output-list article > span {
+  display: grid;
+  gap: 2px;
+}
+
+.cern-output-list article > span b { color: #395761; font-size: 9px; }
+.cern-output-list article > span small { color: #73878b; font-size: 7px; line-height: 1.35; }
+.cern-output-list article > em {
+  grid-column: 2;
+  width: max-content;
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: 6px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+}
+
+.cern-output-list article > em.direct { background: #e4f5ed; color: #267a59; }
+.cern-output-list article > em.inferred { background: #f0e9f7; color: #704e96; }
+.cern-output-rule { padding: 11px; border-radius: 9px; background: #edf4f2; }
+.cern-output-rule b { color: #476870; }
+
+.cern-family-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.cern-family-tabs button {
+  display: grid;
+  gap: 3px;
+  min-height: 57px;
+  padding: 9px 10px;
+  border: 1px solid #d8e2df;
+  border-radius: 10px;
+  background: #f8faf9;
+  color: #526b70;
+  cursor: pointer;
+  text-align: left;
+}
+
+.cern-family-tabs button.active {
+  border-color: #71549a;
+  background: #f0eaf7;
+  box-shadow: inset 4px 0 #71549a;
+}
+
+.cern-family-tabs b { font-size: 9px; }
+.cern-family-tabs b i { display: inline-grid; place-items: center; width: 18px; height: 18px; margin-left: 3px; border-radius: 50%; background: #fff; color: #71549a; font-size: 7px; font-style: normal; }
+.cern-family-tabs small { color: #7b8d90; font-size: 7px; line-height: 1.35; }
+
+.cern-related-particles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 11px;
+  padding: 9px;
+  border-radius: 10px;
+  background: #172e3e;
+}
+
+.cern-related-particles > span { margin-right: 4px; color: #7faec0; font-size: 7px; font-weight: 950; }
+.cern-related-particles button { display: flex; align-items: center; gap: 5px; padding: 5px 7px; border: 0; border-radius: 7px; background: #28465a; color: #d8ecf4; cursor: pointer; font-size: 7px; }
+.cern-related-particles button b { color: #72e0c0; font-family: Georgia, serif; font-size: 12px; }
+
+.cern-particle-grid {
+  grid-template-columns: repeat(3, 1fr);
+  align-content: start;
+  padding: 11px;
+  border-radius: 13px;
+  background: #fff0e7;
+}
+
+.cern-particle-grid.lepton { background: #e9f6f2; }
+.cern-particle-grid.boson { grid-template-columns: repeat(2, 1fr); background: #eaf0fb; }
+.cern-particle-grid.higgs { grid-template-columns: minmax(120px, 0.5fr); background: #f1eafa; }
+
 @media (max-width: 1080px) {
   .cern-builder { grid-template-columns: 1fr; }
   .cern-parts-panel { min-height: auto; border-right: 0; border-bottom: 1px solid #d9e3e1; }
   .cern-part-list { grid-template-columns: repeat(2, 1fr); }
   .cern-particle-layout { grid-template-columns: 1fr; }
-  .cern-particle-grid { grid-template-columns: repeat(2, 1fr); }
+  .cern-simple-summary { grid-template-columns: 1fr; }
+  .cern-particle-grid { grid-template-columns: repeat(3, 1fr); }
   .cern-particle-grid section.bosons { grid-template-columns: repeat(2, 1fr); }
   .cern-particle-detail { min-height: 270px; }
 }
@@ -29548,6 +29750,7 @@ footer > a {
   .cern-stage-toolbar { align-items: flex-start; }
   .cern-stage-toolbar > div { flex-wrap: wrap; gap: 8px 16px; }
   .cern-report > div:last-child { grid-template-columns: 1fr; }
+  .cern-family-tabs { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 600px) {
@@ -29561,7 +29764,8 @@ footer > a {
   .cern-stage-toolbar > div { display: grid; grid-template-columns: repeat(3, 1fr); text-align: left; }
   .cern-control-room > section, .cern-event-display-wrap, .cern-evidence-panel, .cern-standard-model, .cern-data-card, .cern-report { padding: 15px; }
   .cern-action-row { grid-template-columns: 1fr; }
-  .cern-event-picker > div, .cern-particle-grid { grid-template-columns: 1fr; }
-  .cern-particle-grid section.bosons { grid-template-columns: repeat(2, 1fr); }
+  .cern-event-picker > div { grid-template-columns: 1fr; }
+  .cern-particle-grid { grid-template-columns: repeat(2, 1fr); }
+  .cern-particle-grid.boson { grid-template-columns: repeat(2, 1fr); }
   .cern-beam-readout { grid-template-columns: 1fr; }
 }
