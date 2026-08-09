@@ -29769,3 +29769,516 @@ footer > a {
   .cern-particle-grid.boson { grid-template-columns: repeat(2, 1fr); }
   .cern-beam-readout { grid-template-columns: 1fr; }
 }
+
+/* CERN sade deney ekranı */
+.cern-lab {
+  padding: 56px 20px 78px;
+  background:
+    radial-gradient(circle at 8% 4%, rgba(58, 183, 202, 0.16), transparent 29rem),
+    radial-gradient(circle at 92% 18%, rgba(126, 91, 177, 0.13), transparent 30rem),
+    linear-gradient(180deg, #f7fbfa 0%, #e9f1ef 100%);
+}
+
+.cern-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  align-items: end;
+  gap: 28px;
+  margin-bottom: 24px;
+}
+
+.cern-heading > div > span,
+.cern-panel-title > span,
+.cern-simple-console section > span,
+.cern-detector-guide > span,
+.cern-sources > span {
+  color: #6c4c97;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+}
+
+.cern-heading h1 {
+  max-width: 860px;
+  margin: 9px 0 14px;
+  font-size: clamp(34px, 4.3vw, 58px);
+  line-height: 1.02;
+}
+
+.cern-heading p {
+  max-width: 790px;
+  color: #5e767c;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.cern-heading aside {
+  gap: 10px;
+  padding: 22px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #ffffff, #f0ebf7);
+  box-shadow: 0 15px 35px rgba(48, 67, 74, 0.08);
+}
+
+.cern-heading aside small { font-size: 10px; }
+.cern-heading aside b {
+  position: relative;
+  padding-left: 20px;
+  color: #38545d;
+  font-size: 13px;
+}
+.cern-heading aside b::before {
+  position: absolute;
+  left: 0;
+  top: 3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #59c6b4;
+  content: "";
+}
+
+.cern-flow {
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 14px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(46, 68, 75, 0.06);
+}
+
+.cern-flow span {
+  min-height: 58px;
+  padding: 12px 18px;
+  color: #73868a;
+  font-size: 12px;
+}
+
+.cern-flow span.active { background: #eee8f7; color: #5f4388; }
+.cern-flow span.done { background: #e9f6f2; color: #247568; }
+.cern-flow span.done i { background: #3b9f8e; }
+.cern-flow i {
+  flex-basis: 30px;
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+
+.cern-builder {
+  grid-template-columns: 310px minmax(0, 1fr);
+  border-radius: 22px;
+  box-shadow: 0 25px 62px rgba(37, 59, 68, 0.13);
+}
+
+.cern-builder.atlas-mode { grid-template-columns: minmax(0, 1fr); }
+.cern-builder.atlas-mode .cern-parts-panel { display: none; }
+
+.cern-parts-panel {
+  min-height: 0;
+  padding: 20px;
+  background: #f7faf9;
+}
+
+.cern-panel-title { gap: 7px; margin-bottom: 15px; }
+.cern-panel-title h2 {
+  font-size: 25px;
+  line-height: 1.08;
+}
+.cern-panel-title p {
+  color: #687f84;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.cern-part-list { gap: 9px; }
+.cern-part-list > button {
+  grid-template-columns: 58px 1fr;
+  gap: 11px;
+  min-height: 85px;
+  padding: 10px;
+  border-radius: 13px;
+}
+.cern-part-list > button.next {
+  border: 2px solid #3ca795;
+  background: #f2fbf8;
+  box-shadow: 0 9px 24px rgba(40, 139, 123, 0.16);
+}
+.cern-part-list > button.installed {
+  border-color: #b9ded4;
+  background: #eaf7f2;
+  opacity: 1;
+}
+.cern-part-list > button:disabled:not(.installed):not(.next) { opacity: 0.3; }
+.cern-part-list b { font-size: 10px; line-height: 1.35; }
+.cern-part-list small { font-size: 8px; line-height: 1.45; }
+.cern-part-list em { margin-top: 2px; font-size: 8px; }
+
+.cern-part-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 13px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+.cern-part-icon-injectors i { border: 3px solid #5fc2d0; border-radius: 50%; }
+.cern-part-icon-injectors i:nth-child(1) { inset: 5px; }
+.cern-part-icon-injectors i:nth-child(2) { inset: 11px; border-color: #9b76cb; }
+.cern-part-icon-injectors i:nth-child(3) { inset: 17px; border-color: #f0c164; }
+.cern-clear {
+  margin-top: 16px;
+  min-height: 38px;
+  font-size: 9px;
+}
+
+.cern-stage {
+  padding: 18px;
+  background: #e5edeb;
+}
+.cern-stage.atlas-open { background: #071826; }
+.cern-stage.drag-over { background: #d9eee9; }
+
+.cern-stage-toolbar {
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 13px 16px;
+  border-radius: 13px;
+  background: #122c3c;
+}
+.cern-stage-toolbar > span {
+  display: grid;
+  gap: 4px;
+}
+.cern-stage-toolbar > span:last-child { text-align: right; }
+.cern-stage-toolbar small { font-size: 9px; }
+.cern-stage-toolbar b { font-size: 12px; }
+
+.cern-accelerator-canvas,
+.cern-atlas-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  background: #071827;
+}
+
+.cern-message {
+  min-height: 50px;
+  margin-top: 12px;
+  padding: 12px 15px;
+  border-radius: 12px;
+  color: #526d73;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.cern-stage.atlas-open .cern-message {
+  border-color: rgba(124, 190, 211, 0.25);
+  background: #112c3d;
+  color: #c9e3ec;
+}
+
+.cern-simple-console {
+  display: grid;
+  grid-template-columns: 0.92fr 1.08fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.cern-simple-console > section {
+  padding: 18px;
+  border: 1px solid #d2dfdc;
+  border-radius: 16px;
+  background: #fff;
+}
+.cern-simple-console h2 {
+  margin: 5px 0 9px;
+  color: #304e58;
+  font-family: Georgia, serif;
+  font-size: 23px;
+}
+.cern-simple-console p {
+  margin: 0;
+  color: #61797e;
+  font-size: 10px;
+  line-height: 1.55;
+}
+.cern-simple-console p b { color: #4f3b75; }
+
+.cern-energy-choice > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 13px 0 9px;
+}
+.cern-energy-choice button {
+  display: grid;
+  gap: 3px;
+  min-height: 55px;
+  padding: 8px;
+  border: 1px solid #d6e0de;
+  border-radius: 10px;
+  background: #f6f9f8;
+  color: #536c72;
+  cursor: pointer;
+}
+.cern-energy-choice button.active {
+  border: 2px solid #7658a0;
+  background: #f0eaf7;
+  color: #5c4084;
+}
+.cern-energy-choice button small { font-size: 8px; font-weight: 900; }
+.cern-energy-choice button b { font-size: 12px; }
+.cern-energy-choice > em {
+  display: block;
+  color: #6c8084;
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.cern-event-choice > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 12px 0 10px;
+}
+.cern-event-choice > div > button {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  align-items: center;
+  gap: 8px;
+  min-height: 68px;
+  padding: 8px;
+  border: 1px solid #d6e1de;
+  border-radius: 11px;
+  background: #f7faf9;
+  color: #526b70;
+  cursor: pointer;
+  text-align: left;
+}
+.cern-event-choice > div > button.active {
+  border: 2px solid #3e9d8d;
+  background: #eaf7f3;
+}
+.cern-event-choice button > strong {
+  display: grid;
+  place-items: center;
+  min-height: 45px;
+  border-radius: 9px;
+  background: #172f40;
+  color: #b9f6e7;
+  font-family: Georgia, serif;
+  font-size: 15px;
+}
+.cern-event-choice button > span { display: grid; gap: 3px; }
+.cern-event-choice button > span b { font-size: 9px; }
+.cern-event-choice button > span small { color: #72868a; font-size: 7px; line-height: 1.3; }
+
+.cern-primary-action {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  min-height: 66px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #62408a, #875fb1);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(93, 60, 133, 0.26);
+}
+.cern-primary-action:disabled { cursor: default; opacity: 0.62; }
+.cern-primary-action > i {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.16);
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 950;
+}
+.cern-primary-action > span { display: grid; gap: 3px; text-align: left; }
+.cern-primary-action small { color: #e1d5ee; font-size: 8px; font-weight: 950; letter-spacing: 0.12em; }
+.cern-primary-action b { font-size: 15px; }
+
+.cern-atlas-zoom {
+  overflow: hidden;
+  border: 1px solid rgba(114, 178, 202, 0.3);
+  border-radius: 20px;
+  background: #071522;
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.32);
+}
+.cern-atlas-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 17px 20px;
+  border-bottom: 1px solid rgba(120, 184, 207, 0.22);
+  background: linear-gradient(90deg, #102c40, #193b50);
+}
+.cern-atlas-titlebar > span { display: grid; gap: 4px; }
+.cern-atlas-titlebar small { color: #75cadd; font-size: 9px; font-weight: 950; letter-spacing: 0.13em; }
+.cern-atlas-titlebar b { color: #effbff; font-size: 16px; }
+.cern-atlas-titlebar button {
+  padding: 9px 12px;
+  border: 1px solid rgba(166, 220, 234, 0.35);
+  border-radius: 9px;
+  background: rgba(255,255,255,0.07);
+  color: #dff4fa;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.cern-atlas-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  padding: 20px;
+}
+.cern-detector-guide {
+  display: grid;
+  gap: 10px;
+}
+.cern-detector-guide > span { color: #70cadc; }
+.cern-detector-guide h2 {
+  margin: -2px 0 4px;
+  color: #f0fbff;
+  font-family: Georgia, serif;
+  font-size: 27px;
+}
+.cern-detector-guide article {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 70px;
+  padding: 10px;
+  border: 1px solid rgba(130, 181, 200, 0.19);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  opacity: 0.62;
+  transition: 180ms ease;
+}
+.cern-detector-guide article.active {
+  border-color: currentColor;
+  background: rgba(255,255,255,0.09);
+  opacity: 1;
+  transform: translateX(4px);
+}
+.cern-detector-guide article.track { color: #62d7bf; }
+.cern-detector-guide article.energy { color: #f3c45f; }
+.cern-detector-guide article.outer { color: #72a6ea; }
+.cern-detector-guide article > i {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+}
+.cern-detector-guide article > div { display: grid; gap: 4px; }
+.cern-detector-guide article b { color: #f0f8fb; font-size: 11px; }
+.cern-detector-guide article small { color: #9dbbc7; font-size: 8px; line-height: 1.4; }
+.cern-detector-guide > p {
+  display: flex;
+  gap: 9px;
+  margin: 4px 0 0;
+  color: #9bb8c4;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.cern-detector-guide > p i {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 10px #fff3a5;
+}
+
+.cern-atlas-canvas { border: 1px solid rgba(111, 177, 201, 0.22); }
+
+.cern-collision-result {
+  display: grid;
+  grid-template-columns: 0.8fr 1.25fr 0.95fr;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+.cern-collision-result article {
+  display: grid;
+  gap: 5px;
+  min-height: 84px;
+  padding: 14px;
+  border: 1px solid rgba(121, 185, 207, 0.24);
+  border-radius: 13px;
+  background: #102b3d;
+}
+.cern-collision-result small { color: #75bfd1; font-size: 8px; font-weight: 950; letter-spacing: 0.11em; }
+.cern-collision-result b { color: #f0fbff; font-size: 12px; line-height: 1.4; }
+.cern-collision-result span { color: #b6d1dc; font-size: 9px; }
+
+.cern-sources {
+  margin-top: 14px;
+  padding: 11px 14px;
+  border-radius: 11px;
+}
+.cern-sources > span { margin-right: 7px; font-size: 8px; }
+.cern-sources a { font-size: 8px; }
+
+@media (max-width: 1080px) {
+  .cern-heading { grid-template-columns: 1fr; }
+  .cern-heading aside { grid-template-columns: repeat(3, 1fr); }
+  .cern-heading aside small { grid-column: 1 / -1; }
+  .cern-builder { grid-template-columns: 1fr; }
+  .cern-parts-panel { border-right: 0; border-bottom: 1px solid #d9e3e1; }
+  .cern-part-list { grid-template-columns: repeat(5, 1fr); }
+  .cern-part-list > button { grid-template-columns: 1fr; justify-items: center; min-height: 150px; text-align: center; }
+  .cern-part-list > button > span { justify-items: center; }
+  .cern-atlas-layout { grid-template-columns: 220px minmax(0, 1fr); }
+}
+
+@media (max-width: 820px) {
+  .cern-heading aside { grid-template-columns: 1fr; }
+  .cern-heading aside small { grid-column: auto; }
+  .cern-flow { grid-template-columns: 1fr; }
+  .cern-flow span { border-right: 0; border-bottom: 1px solid #e2e9e7; }
+  .cern-flow span:last-child { border-bottom: 0; }
+  .cern-part-list { grid-template-columns: repeat(2, 1fr); }
+  .cern-part-list > button { grid-template-columns: 58px 1fr; justify-items: stretch; min-height: 88px; text-align: left; }
+  .cern-part-list > button > span { justify-items: start; }
+  .cern-simple-console { grid-template-columns: 1fr; }
+  .cern-primary-action { grid-column: auto; }
+  .cern-atlas-layout { grid-template-columns: 1fr; }
+  .cern-detector-guide { grid-template-columns: repeat(3, 1fr); }
+  .cern-detector-guide > span,
+  .cern-detector-guide h2,
+  .cern-detector-guide > p { grid-column: 1 / -1; }
+  .cern-detector-guide article { grid-template-columns: 30px 1fr; }
+  .cern-collision-result { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .cern-lab { padding: 38px 10px 56px; }
+  .cern-heading h1 { font-size: 34px; }
+  .cern-heading p { font-size: 13px; }
+  .cern-parts-panel, .cern-stage { padding: 10px; }
+  .cern-part-list { grid-template-columns: 1fr; }
+  .cern-stage-toolbar { display: grid; }
+  .cern-stage-toolbar > span:last-child { text-align: left; }
+  .cern-simple-console > section { padding: 14px; }
+  .cern-energy-choice > div { grid-template-columns: repeat(3, 1fr); }
+  .cern-event-choice > div { grid-template-columns: 1fr; }
+  .cern-atlas-titlebar { align-items: flex-start; }
+  .cern-atlas-layout { padding: 12px; }
+  .cern-detector-guide { grid-template-columns: 1fr; }
+  .cern-detector-guide > span,
+  .cern-detector-guide h2,
+  .cern-detector-guide > p { grid-column: auto; }
+  .cern-collision-result { padding: 0 12px 12px; }
+}

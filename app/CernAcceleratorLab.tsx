@@ -3,23 +3,15 @@
 import {
   type DragEvent as ReactDragEvent,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
 
-type PartKind =
-  | "source"
-  | "linac4"
-  | "psb"
-  | "ps"
-  | "sps"
-  | "lhc"
-  | "magnets"
-  | "atlas";
-type RunState = "idle" | "accelerating" | "stored" | "colliding" | "detected";
-type EventKind = "higgs" | "z-pair" | "top-pair" | "jets";
-type ParticleGroup = "quark" | "lepton" | "boson" | "higgs";
+type PartKind = "source" | "linac4" | "injectors" | "lhc" | "atlas";
+type RunState = "idle" | "accelerating" | "ready" | "colliding" | "result";
+type EventKind = "electrons" | "photons" | "muons";
+type EnergyKind = "low" | "medium" | "high";
+type DetectorLayer = "track" | "energy" | "outer";
 
 type AcceleratorPart = {
   kind: PartKind;
@@ -29,198 +21,115 @@ type AcceleratorPart = {
   energy: string;
 };
 
-type Particle = {
-  id: string;
-  symbol: string;
-  name: string;
-  group: ParticleGroup;
-  generation?: 1 | 2 | 3;
-  charge: string;
-  observation: string;
-};
-
 type CollisionEvent = {
   key: EventKind;
   title: string;
-  reaction: string;
-  outputSummary: string;
-  description: string;
-  particles: string[];
-  signatures: string[];
-  evidence: string;
-  outputs: Array<{
-    symbol: string;
-    name: string;
-    detector: string;
-    color: string;
-    direct: boolean;
-  }>;
-};
-
-type CollisionReading = {
-  id: number;
-  energy: number;
-  event: string;
-  reaction: string;
-  particles: string;
-  evidence: string;
+  symbol: string;
+  plainName: string;
+  explanation: string;
+  detectorFinding: string;
+  layers: DetectorLayer[];
 };
 
 const MIME = "application/x-fizik-atolyesi-cern-part";
-const CANVAS_WIDTH = 1120;
-const CANVAS_HEIGHT = 620;
-const EVENT_WIDTH = 760;
-const EVENT_HEIGHT = 520;
+const ACCELERATOR_WIDTH = 1040;
+const ACCELERATOR_HEIGHT = 560;
+const ATLAS_WIDTH = 760;
+const ATLAS_HEIGHT = 600;
 
 const ACCELERATOR_PARTS: AcceleratorPart[] = [
   {
     kind: "source",
     label: "H⁻ iyon kaynağı",
-    short: "KAYNAK",
-    description: "Hidrojen gazından negatif hidrojen iyonları üretir.",
+    short: "PROTON KAYNAĞI",
+    description: "Hidrojen atomlarından proton demeti hazırlanır.",
     energy: "başlangıç",
   },
   {
     kind: "linac4",
     label: "Linac4",
-    short: "LINAC4",
-    description: "RF elektrik alanları H⁻ iyonlarını doğrusal hatta hızlandırır.",
+    short: "İLK HIZLANDIRICI",
+    description: "Elektrik alan protonlara ilk hızını kazandırır.",
     energy: "160 MeV",
   },
   {
-    kind: "psb",
-    label: "PS Booster + soyma folyosu",
-    short: "PSB",
-    description: "İki elektron ayrılır; dört halkada proton demeti hazırlanır.",
-    energy: "2 GeV",
-  },
-  {
-    kind: "ps",
-    label: "Proton Synchrotron",
-    short: "PS",
-    description: "Proton paketlerini daha yüksek enerjiye çıkarır ve zamanlar.",
-    energy: "26 GeV",
-  },
-  {
-    kind: "sps",
-    label: "Super Proton Synchrotron",
-    short: "SPS",
-    description: "Demeti LHC'ye enjekte edilecek enerjiye ulaştırır.",
-    energy: "450 GeV",
+    kind: "injectors",
+    label: "PS Booster · PS · SPS",
+    short: "ÖN HIZLANDIRICILAR",
+    description: "Proton Synchrotron ve Super Proton Synchrotron demeti LHC'ye hazırlar.",
+    energy: "2 GeV → 26 GeV → 450 GeV",
   },
   {
     kind: "lhc",
-    label: "LHC çift vakum tüpü",
-    short: "LHC",
-    description: "İki proton demeti 27 km'lik halkada zıt yönlerde dolaşır.",
+    label: "LHC halkası ve mıknatıslar",
+    short: "LHC HALKASI",
+    description: "Süperiletken mıknatıslar iki proton demetini zıt yönlerde döndürür.",
     energy: "6,8 TeV / demet",
-  },
-  {
-    kind: "magnets",
-    label: "Süperiletken mıknatıslar + RF",
-    short: "MANYETİK SİSTEM",
-    description: "Dipoller yolu büker, kuadrupoller demeti sıkıştırır, RF enerji verir.",
-    energy: "1,9 K · 8,3 T",
   },
   {
     kind: "atlas",
     label: "ATLAS dedektörü",
     short: "ATLAS",
-    description: "Çarpışma ürünlerini katman katman ölçerek olay görüntüsü oluşturur.",
+    description: "Protonlar burada çarpışır; çıkan parçacıkların yolu ve enerjisi görülür.",
     energy: "çarpışma noktası",
   },
 ];
 
 const SETUP_ORDER = ACCELERATOR_PARTS.map((part) => part.kind);
 
-const PARTICLES: Particle[] = [
-  { id: "u", symbol: "u", name: "Yukarı", group: "quark", generation: 1, charge: "+⅔", observation: "Dedektörde tek başına görülmez; hadronlaşarak jet oluşturur." },
-  { id: "d", symbol: "d", name: "Aşağı", group: "quark", generation: 1, charge: "−⅓", observation: "Protonun temel bileşenlerindendir; çarpışmada jet izi bırakır." },
-  { id: "c", symbol: "c", name: "Tılsım", group: "quark", generation: 2, charge: "+⅔", observation: "Kısa ömürlü hadronların bozunma izleri ve jetlerle belirlenir." },
-  { id: "s", symbol: "s", name: "Acayip", group: "quark", generation: 2, charge: "−⅓", observation: "Acayip hadronların bozunma ürünlerinden tanınır." },
-  { id: "t", symbol: "t", name: "Üst", group: "quark", generation: 3, charge: "+⅔", observation: "Hadronlaşmadan W bozonu ve alt kuarka bozunur; ürünleri birlikte analiz edilir." },
-  { id: "b", symbol: "b", name: "Alt", group: "quark", generation: 3, charge: "−⅓", observation: "Çarpışma noktasından biraz ötede başlayan ikincil izlerle b-jeti olarak tanınır." },
-  { id: "e", symbol: "e", name: "Elektron", group: "lepton", generation: 1, charge: "−1", observation: "İç izleyicide kıvrılan iz ve elektromanyetik kalorimetrede enerji kümesi bırakır." },
-  { id: "ve", symbol: "νₑ", name: "Elektron nötrinosu", group: "lepton", generation: 1, charge: "0", observation: "Dedektörden geçer; görünmeyen enine momentumdan çıkarılır." },
-  { id: "mu", symbol: "μ", name: "Müon", group: "lepton", generation: 2, charge: "−1", observation: "İç izleyici ve en dıştaki müon spektrometresinde uzun bir iz bırakır." },
-  { id: "vmu", symbol: "νμ", name: "Müon nötrinosu", group: "lepton", generation: 2, charge: "0", observation: "Doğrudan iz bırakmaz; momentum dengesizliğinden çıkarılır." },
-  { id: "tau", symbol: "τ", name: "Tau", group: "lepton", generation: 3, charge: "−1", observation: "Çok kısa sürede bozunur; dar bozunma ürünleri demetinden tanınır." },
-  { id: "vtau", symbol: "ντ", name: "Tau nötrinosu", group: "lepton", generation: 3, charge: "0", observation: "Dedektörde iz bırakmaz; tau bozunmalarındaki momentum eksiğiyle çıkarılır." },
-  { id: "g", symbol: "g", name: "Gluon", group: "boson", charge: "0", observation: "Güçlü etkileşimi taşır; kuarklar gibi parçacık jeti olarak gözlenir." },
-  { id: "photon", symbol: "γ", name: "Foton", group: "boson", charge: "0", observation: "İç iz bırakmadan elektromanyetik kalorimetrede enerji kümesi oluşturur." },
-  { id: "w", symbol: "W±", name: "W bozonu", group: "boson", charge: "±1", observation: "Çok kısa ömürlüdür; lepton-nötrino veya iki jet bozunmasından yeniden kurulur." },
-  { id: "z", symbol: "Z⁰", name: "Z bozonu", group: "boson", charge: "0", observation: "Örneğin elektron-pozitron ya da müon-antimüon çiftinin toplamından yeniden kurulur." },
-  { id: "h", symbol: "H", name: "Higgs bozonu", group: "higgs", charge: "0", observation: "Doğrudan kalıcı iz bırakmaz; iki foton gibi bozunma ürünlerinin ortak enerjisinden çıkarılır." },
-];
+const ENERGY_LEVELS: Record<EnergyKind, { label: string; beam: number; summary: string }> = {
+  low: {
+    label: "Düşük",
+    beam: 0.45,
+    summary: "Protonlar daha az çarpışma enerjisi taşır.",
+  },
+  medium: {
+    label: "Orta",
+    beam: 3.5,
+    summary: "Yeni parçacık oluşturmak için daha çok enerji vardır.",
+  },
+  high: {
+    label: "Yüksek",
+    beam: 6.8,
+    summary: "Daha ağır parçacıkların oluşabilme olasılığı artar.",
+  },
+};
 
 const EVENTS: Record<EventKind, CollisionEvent> = {
-  higgs: {
-    key: "higgs",
-    title: "Higgs → iki foton",
-    reaction: "g + g → H → γ + γ",
-    outputSummary: "Çıkan: iki foton γ + γ",
-    description: "İki gluonun enerjisi kısa ömürlü bir Higgs bozonuna dönüşür; iki foton elektromanyetik kalorimetrede belirir.",
-    particles: ["g", "h", "photon"],
-    signatures: ["İç iz yok", "Karşılıklı iki EM enerji kümesi", "Toplam enerjiden Higgs çıkarımı"],
-    evidence: "İki foton kümesi",
-    outputs: [
-      { symbol: "γ", name: "1. foton", detector: "EM kalorimetrede sarı enerji kümesi", color: "#f1d260", direct: true },
-      { symbol: "γ", name: "2. foton", detector: "EM kalorimetrede sarı enerji kümesi", color: "#f1d260", direct: true },
-      { symbol: "H", name: "Higgs", detector: "İki fotonun toplamından çıkarılır", color: "#a77bd2", direct: false },
-    ],
+  electrons: {
+    key: "electrons",
+    title: "Elektron çifti",
+    symbol: "e⁻  +  e⁺",
+    plainName: "Elektron ve pozitron",
+    explanation: "Pozitron, elektronun artı yüklü karşıt parçacığıdır.",
+    detectorFinding: "Zıt yönlere kıvrılan iki renkli iz ve iki enerji noktası görülür.",
+    layers: ["track", "energy"],
   },
-  "z-pair": {
-    key: "z-pair",
-    title: "Z → elektron çifti",
-    reaction: "q + q̄ → Z⁰ → e⁻ + e⁺",
-    outputSummary: "Çıkan: elektron e⁻ + pozitron e⁺",
-    description: "Kuark-antikuark etkileşimi Z bozonu üretir; zıt yüklü elektron ve pozitron izleri birlikte ölçülür.",
-    particles: ["u", "d", "z", "e"],
-    signatures: ["Zıt yönlü kıvrılan iki iz", "İki EM enerji kümesi", "Çiftten Z kütlesi çıkarımı"],
-    evidence: "e⁻ ve e⁺ izleri",
-    outputs: [
-      { symbol: "e⁻", name: "Elektron", detector: "Kıvrılan iz + EM enerji kümesi", color: "#ffe36d", direct: true },
-      { symbol: "e⁺", name: "Pozitron", detector: "Ters yöne kıvrılan iz + EM kümesi", color: "#ff9ed0", direct: true },
-      { symbol: "Z⁰", name: "Z bozonu", detector: "Elektron çiftinin toplamından çıkarılır", color: "#6f91c9", direct: false },
-    ],
+  photons: {
+    key: "photons",
+    title: "İki foton",
+    symbol: "γ  +  γ",
+    plainName: "İki ışık parçacığı",
+    explanation: "Foton, ışığı oluşturan yüksüz temel parçacıktır.",
+    detectorFinding: "İçte iz bırakmaz; enerji sensöründe iki sarı parıltı oluşturur.",
+    layers: ["energy"],
   },
-  "top-pair": {
-    key: "top-pair",
-    title: "Üst kuark çifti",
-    reaction: "g + g → t + t̄ → b + b̄ + W⁺ + W⁻",
-    outputSummary: "Çıkan: iki b-jeti + müon μ + nötrino ν",
-    description: "Üst kuarklar oluşur oluşmaz W bozonu ve alt kuarka bozunur; jetler, müon ve görünmeyen nötrino birlikte analiz edilir.",
-    particles: ["g", "t", "b", "w", "mu", "vmu"],
-    signatures: ["İki b-jeti", "Müon spektrometresine ulaşan iz", "Eksik enine momentum"],
-    evidence: "b-jetleri + μ + momentum eksiği",
-    outputs: [
-      { symbol: "b", name: "İki b-jeti", detector: "İç izleyici + hadronik kalorimetre", color: "#ef8a55", direct: true },
-      { symbol: "μ", name: "Müon", detector: "En dıştaki müon sistemine ulaşır", color: "#6fb4ff", direct: true },
-      { symbol: "ν", name: "Nötrino", detector: "İz bırakmaz; momentum eksiğinden çıkarılır", color: "#d58aff", direct: false },
-      { symbol: "t", name: "Üst kuark", detector: "Bozunma ürünlerinin tümünden çıkarılır", color: "#e9b45b", direct: false },
-    ],
-  },
-  jets: {
-    key: "jets",
-    title: "Kuark–gluon saçılması",
-    reaction: "q + g → q + g",
-    outputSummary: "Çıkan: karşılıklı iki parçacık jeti",
-    description: "Protonların içindeki kuark ve gluon saçılır; hadronlaşma sonucunda karşılıklı parçacık jetleri oluşur.",
-    particles: ["u", "d", "g"],
-    signatures: ["İç izleyicide çok sayıda iz", "Hadronik kalorimetrede geniş kümeler", "Karşılıklı iki jet"],
-    evidence: "İki hadronik jet",
-    outputs: [
-      { symbol: "jet", name: "1. parçacık jeti", detector: "Çok sayıda iz + hadronik enerji", color: "#ff975e", direct: true },
-      { symbol: "jet", name: "2. parçacık jeti", detector: "Karşı yönde çok sayıda iz + enerji", color: "#f0c263", direct: true },
-      { symbol: "q/g", name: "Kuark veya gluon", detector: "Jet yönü ve enerjisinden çıkarılır", color: "#74c7b7", direct: false },
-    ],
+  muons: {
+    key: "muons",
+    title: "Müon çifti",
+    symbol: "μ⁻  +  μ⁺",
+    plainName: "Müon ve antimüon",
+    explanation: "Müon, elektrona benzeyen fakat daha ağır olan yüklü bir parçacıktır.",
+    detectorFinding: "İki uzun iz dedektörün en dışındaki müon sensörüne kadar ulaşır.",
+    layers: ["track", "outer"],
   },
 };
 
 const clamp = (value: number, minimum: number, maximum: number) =>
   Math.min(maximum, Math.max(minimum, value));
-const format = (value: number, digits = 1) =>
-  Number(value.toFixed(digits)).toLocaleString("tr-TR");
+
+const format = (value: number) =>
+  Number(value.toFixed(1)).toLocaleString("tr-TR");
 
 function prepareCanvas(
   canvas: HTMLCanvasElement,
@@ -228,7 +137,7 @@ function prepareCanvas(
   logicalHeight: number,
 ) {
   const rect = canvas.getBoundingClientRect();
-  const cssWidth = Math.max(320, rect.width);
+  const cssWidth = Math.max(300, rect.width);
   const cssHeight = cssWidth * (logicalHeight / logicalWidth);
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   const pixelWidth = Math.round(cssWidth * ratio);
@@ -251,643 +160,438 @@ function prepareCanvas(
   return context;
 }
 
-function drawArrow(
-  context: CanvasRenderingContext2D,
-  startX: number,
-  startY: number,
-  endX: number,
-  endY: number,
-  color: string,
-) {
-  const angle = Math.atan2(endY - startY, endX - startX);
-  context.strokeStyle = color;
-  context.fillStyle = color;
-  context.lineWidth = 3;
-  context.beginPath();
-  context.moveTo(startX, startY);
-  context.lineTo(endX, endY);
-  context.stroke();
-  context.beginPath();
-  context.moveTo(endX, endY);
-  context.lineTo(endX - Math.cos(angle - 0.5) * 13, endY - Math.sin(angle - 0.5) * 13);
-  context.lineTo(endX - Math.cos(angle + 0.5) * 13, endY - Math.sin(angle + 0.5) * 13);
-  context.closePath();
-  context.fill();
-}
-
-function drawMachineLabel(
+function roundedPanel(
   context: CanvasRenderingContext2D,
   x: number,
   y: number,
-  title: string,
-  energy: string,
-  active = false,
+  width: number,
+  height: number,
+  fill: string,
+  stroke: string,
+  radius = 16,
 ) {
-  context.save();
-  context.fillStyle = active ? "rgba(48,232,185,0.18)" : "rgba(7,22,38,0.84)";
-  context.strokeStyle = active ? "#58efc4" : "rgba(130,177,202,0.38)";
-  context.lineWidth = active ? 2.5 : 1.5;
+  context.fillStyle = fill;
+  context.strokeStyle = stroke;
+  context.lineWidth = 1.5;
   context.beginPath();
-  context.roundRect(x - 56, y - 20, 112, 40, 9);
+  context.roundRect(x, y, width, height, radius);
   context.fill();
   context.stroke();
-  context.fillStyle = active ? "#a8ffe6" : "#d9f2ff";
-  context.font = "900 10px Arial";
-  context.textAlign = "center";
-  context.fillText(title, x, y - 3);
-  context.fillStyle = active ? "#66f2c8" : "#7eaac0";
-  context.font = "800 9px Arial";
-  context.fillText(energy, x, y + 12);
-  context.restore();
-}
-
-function acceleratorPathPoint(progress: number) {
-  const points = [
-    { x: 78, y: 139 },
-    { x: 280, y: 139 },
-    { x: 374, y: 139 },
-    { x: 475, y: 139 },
-    { x: 603, y: 139 },
-    { x: 675, y: 240 },
-    { x: 290, y: 400 },
-  ];
-  const scaled = clamp(progress, 0, 0.9999) * (points.length - 1);
-  const index = Math.floor(scaled);
-  const local = scaled - index;
-  const start = points[index];
-  const end = points[index + 1];
-  return {
-    x: start.x + (end.x - start.x) * local,
-    y: start.y + (end.y - start.y) * local,
-  };
 }
 
 function CernAcceleratorCanvas({
   installedCount,
   runState,
-  beamEnergy,
 }: {
   installedCount: number;
   runState: RunState;
-  beamEnergy: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    let animationFrame = 0;
+    let frame = 0;
     const startedAt = performance.now();
 
     const draw = (now: number) => {
-      const context = prepareCanvas(canvas, CANVAS_WIDTH, CANVAS_HEIGHT);
+      const context = prepareCanvas(canvas, ACCELERATOR_WIDTH, ACCELERATOR_HEIGHT);
       if (!context) return;
       const time = (now - startedAt) / 1000;
-      const activeStage = runState === "accelerating"
-        ? Math.min(5, Math.floor(((time % 4.2) / 4.2) * 6))
-        : runState === "stored" || runState === "colliding" || runState === "detected"
-          ? 5
-          : -1;
-
-      const background = context.createLinearGradient(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-      background.addColorStop(0, "#071827");
-      background.addColorStop(0.55, "#0c2940");
-      background.addColorStop(1, "#06131f");
+      const background = context.createLinearGradient(0, 0, ACCELERATOR_WIDTH, ACCELERATOR_HEIGHT);
+      background.addColorStop(0, "#071b2b");
+      background.addColorStop(1, "#0b3047");
       context.fillStyle = background;
-      context.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      context.fillRect(0, 0, ACCELERATOR_WIDTH, ACCELERATOR_HEIGHT);
 
-      context.strokeStyle = "rgba(92,164,191,0.08)";
-      context.lineWidth = 1;
-      for (let x = 24; x < CANVAS_WIDTH; x += 44) {
-        context.beginPath();
-        context.moveTo(x, 0);
-        context.lineTo(x, CANVAS_HEIGHT);
-        context.stroke();
-      }
-      for (let y = 22; y < CANVAS_HEIGHT; y += 44) {
-        context.beginPath();
-        context.moveTo(0, y);
-        context.lineTo(CANVAS_WIDTH, y);
-        context.stroke();
-      }
+      context.fillStyle = "rgba(255,255,255,0.04)";
+      for (let x = 0; x < ACCELERATOR_WIDTH; x += 52) context.fillRect(x, 0, 1, ACCELERATOR_HEIGHT);
+      for (let y = 0; y < ACCELERATOR_HEIGHT; y += 52) context.fillRect(0, y, ACCELERATOR_WIDTH, 1);
 
-      context.fillStyle = "rgba(5,15,26,0.82)";
-      context.beginPath();
-      context.roundRect(25, 24, 1070, 248, 22);
-      context.fill();
-      context.strokeStyle = "rgba(104,173,200,0.22)";
-      context.stroke();
-      context.fillStyle = "#78a9be";
-      context.font = "900 11px Arial";
-      context.textAlign = "left";
-      context.fillText("CERN PROTON ENJEKTÖR ZİNCİRİ · ŞEMATİK ÜSTTEN GÖRÜNÜM", 48, 52);
+      context.fillStyle = "#84b8ca";
+      context.font = "900 13px Arial";
+      context.fillText("CERN HIZLANDIRMA YOLU", 42, 43);
+      context.fillStyle = "#e7f8ff";
+      context.font = "900 20px Arial";
+      context.fillText("Proton kaynağından LHC halkasına", 42, 70);
 
-      const slots = [
-        { x: 78, y: 139, rx: 34, ry: 34, title: "H⁻", energy: "iyon kaynağı" },
-        { x: 218, y: 139, rx: 92, ry: 26, title: "LINAC4", energy: "160 MeV" },
-        { x: 374, y: 139, rx: 43, ry: 43, title: "PSB", energy: "2 GeV" },
-        { x: 475, y: 139, rx: 48, ry: 48, title: "PS", energy: "26 GeV" },
-        { x: 603, y: 139, rx: 72, ry: 52, title: "SPS", energy: "450 GeV" },
+      const nodes = [
+        { x: 80, label: "KAYNAK" },
+        { x: 270, label: "LINAC4" },
+        { x: 470, label: "PS · SPS" },
+        { x: 680, label: "LHC" },
+        { x: 910, label: "ATLAS" },
       ];
+      context.lineWidth = 8;
+      context.lineCap = "round";
+      nodes.slice(0, -1).forEach((node, index) => {
+        context.strokeStyle = installedCount > index + 1 ? "#4db5c9" : "rgba(125,174,194,0.2)";
+        context.setLineDash(installedCount > index + 1 ? [] : [10, 10]);
+        context.beginPath();
+        context.moveTo(node.x + 28, 130);
+        context.lineTo(nodes[index + 1].x - 28, 130);
+        context.stroke();
+      });
+      context.setLineDash([]);
 
-      slots.forEach((slot, index) => {
+      nodes.forEach((node, index) => {
         const installed = installedCount > index;
-        context.save();
-        context.strokeStyle = installed
-          ? index === activeStage ? "#58efc4" : "#4995b8"
-          : "rgba(123,169,190,0.25)";
-        context.lineWidth = installed ? index === activeStage ? 7 : 5 : 2;
-        context.setLineDash(installed ? [] : [8, 7]);
-        context.shadowColor = index === activeStage ? "#42e8b7" : "transparent";
-        context.shadowBlur = index === activeStage ? 18 : 0;
-        if (index === 1) {
-          context.beginPath();
-          context.roundRect(slot.x - slot.rx, slot.y - slot.ry, slot.rx * 2, slot.ry * 2, 10);
-          context.stroke();
-          if (installed) {
-            context.strokeStyle = "rgba(94,229,214,0.42)";
-            context.lineWidth = 2;
-            for (let cell = -65; cell <= 65; cell += 26) {
-              context.beginPath();
-              context.moveTo(slot.x + cell, slot.y - 18);
-              context.lineTo(slot.x + cell, slot.y + 18);
-              context.stroke();
-            }
-          }
-        } else {
-          const rings = index === 2 ? 4 : 1;
-          for (let ring = 0; ring < rings; ring += 1) {
-            context.beginPath();
-            context.ellipse(slot.x, slot.y, slot.rx - ring * 6, slot.ry - ring * 6, 0, 0, Math.PI * 2);
-            context.stroke();
-          }
-        }
-        context.restore();
-        drawMachineLabel(context, slot.x, 225, slot.title, slot.energy, index === activeStage);
+        const next = installedCount === index;
+        context.shadowColor = next ? "#74efd0" : "transparent";
+        context.shadowBlur = next ? 18 : 0;
+        context.fillStyle = installed ? "#5bd1bd" : "#193b50";
+        context.strokeStyle = installed ? "#baffed" : next ? "#74efd0" : "#45657a";
+        context.lineWidth = next ? 4 : 2;
+        context.beginPath();
+        context.arc(node.x, 130, 26, 0, Math.PI * 2);
+        context.fill();
+        context.stroke();
+        context.shadowBlur = 0;
+        context.fillStyle = installed ? "#092c34" : "#c8e0e9";
+        context.font = "900 13px Arial";
+        context.textAlign = "center";
+        context.fillText(installed ? "✓" : String(index + 1), node.x, 135);
+        context.fillStyle = installed ? "#dffef6" : "#759aad";
+        context.font = "900 11px Arial";
+        context.fillText(node.label, node.x, 177);
       });
 
-      for (let index = 0; index < slots.length - 1; index += 1) {
-        const start = slots[index];
-        const end = slots[index + 1];
-        context.strokeStyle = installedCount > index + 1 ? "#2f718f" : "rgba(102,151,173,0.2)";
-        context.lineWidth = 4;
-        context.setLineDash(installedCount > index + 1 ? [] : [8, 7]);
-        context.beginPath();
-        context.moveTo(start.x + start.rx, start.y);
-        context.lineTo(end.x - end.rx, end.y);
-        context.stroke();
-        context.setLineDash([]);
-      }
+      const ringReady = installedCount >= 4;
+      roundedPanel(context, 35, 215, 970, 305, "rgba(3,17,28,0.68)", "rgba(104,177,202,0.25)", 24);
+      context.fillStyle = "#84b8ca";
+      context.font = "900 12px Arial";
+      context.textAlign = "left";
+      context.fillText("LHC HALKASI · ÜSTTEN GÖRÜNÜM", 62, 249);
 
-      context.fillStyle = "rgba(5,15,26,0.72)";
+      context.strokeStyle = ringReady ? "#3c7da0" : "rgba(104,156,180,0.24)";
+      context.lineWidth = ringReady ? 34 : 4;
+      context.setLineDash(ringReady ? [] : [14, 12]);
       context.beginPath();
-      context.roundRect(25, 292, 1070, 300, 22);
-      context.fill();
-      context.strokeStyle = "rgba(104,173,200,0.22)";
-      context.stroke();
-      context.fillStyle = "#78a9be";
-      context.font = "900 11px Arial";
-      context.fillText("LHC · 27 km HALKANIN EĞİTSEL ÖLÇEK MODELİ", 48, 320);
-
-      const lhcInstalled = installedCount > 5;
-      const systemsInstalled = installedCount > 6;
-      const atlasInstalled = installedCount > 7;
-      context.save();
-      context.strokeStyle = lhcInstalled ? "#3d789d" : "rgba(112,163,186,0.24)";
-      context.lineWidth = lhcInstalled ? 28 : 4;
-      context.setLineDash(lhcInstalled ? [] : [12, 10]);
-      context.beginPath();
-      context.ellipse(555, 447, 390, 116, 0, 0, Math.PI * 2);
+      context.ellipse(500, 378, 350, 102, 0, 0, Math.PI * 2);
       context.stroke();
       context.setLineDash([]);
-      if (lhcInstalled) {
-        context.strokeStyle = "#0b2438";
-        context.lineWidth = 16;
+      if (ringReady) {
+        context.strokeStyle = "#0b2437";
+        context.lineWidth = 20;
         context.beginPath();
-        context.ellipse(555, 447, 390, 116, 0, 0, Math.PI * 2);
+        context.ellipse(500, 378, 350, 102, 0, 0, Math.PI * 2);
         context.stroke();
-        context.strokeStyle = "#6ab0d1";
-        context.lineWidth = 2;
+        context.strokeStyle = "#47c6de";
+        context.lineWidth = 3;
         context.beginPath();
-        context.ellipse(555, 443, 390, 112, 0, 0, Math.PI * 2);
+        context.ellipse(500, 372, 350, 96, 0, 0, Math.PI * 2);
         context.stroke();
-        context.strokeStyle = "#cf6f9f";
+        context.strokeStyle = "#f07aa9";
         context.beginPath();
-        context.ellipse(555, 451, 390, 120, 0, 0, Math.PI * 2);
+        context.ellipse(500, 384, 350, 108, 0, 0, Math.PI * 2);
         context.stroke();
       }
+
+      const atlasReady = installedCount >= 5;
+      context.save();
+      context.translate(850, 378);
+      [58, 43, 29].forEach((radius, index) => {
+        context.strokeStyle = atlasReady
+          ? ["#70a7e8", "#f0b45f", "#63d4bc"][index]
+          : "rgba(119,161,180,0.28)";
+        context.lineWidth = index === 0 ? 12 : 9;
+        context.beginPath();
+        context.arc(0, 0, radius, 0, Math.PI * 2);
+        context.stroke();
+      });
       context.restore();
-
-      context.strokeStyle = installedCount > 4 ? "#357695" : "rgba(102,151,173,0.2)";
-      context.lineWidth = 5;
-      context.beginPath();
-      context.moveTo(603, 191);
-      context.bezierCurveTo(620, 255, 650, 302, 675, 347);
-      context.stroke();
-      drawArrow(context, 646, 291, 675, 347, installedCount > 4 ? "#50c8d7" : "#315166");
-
-      if (systemsInstalled) {
-        for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
-          const x = 555 + Math.cos(angle) * 390;
-          const y = 447 + Math.sin(angle) * 116;
-          context.save();
-          context.translate(x, y);
-          context.rotate(angle + Math.PI / 2);
-          context.fillStyle = angle % (Math.PI / 6) < 0.05 ? "#ae5a8d" : "#2e8fa2";
-          context.fillRect(-8, -17, 16, 34);
-          context.restore();
-        }
-        context.fillStyle = "#89cddd";
-        context.font = "800 9px Arial";
-        context.textAlign = "center";
-        context.fillText("SÜPERİLETKEN DİPOL + KUADRUPOL MIKNATISLAR", 555, 408);
-        context.fillText("RF BOŞLUKLARI DEMETE HER TURDA ENERJİ VERİR", 555, 425);
-      }
-
-      const collisionPoint = { x: 945, y: 447 };
-      if (atlasInstalled) {
-        const detectorColors = ["#65e2c2", "#f5d66d", "#e88956", "#6ca5df"];
-        detectorColors.forEach((color, index) => {
-          context.strokeStyle = color;
-          context.lineWidth = 7;
-          context.beginPath();
-          context.arc(collisionPoint.x, collisionPoint.y, 22 + index * 12, 0, Math.PI * 2);
-          context.stroke();
-        });
-        context.fillStyle = "rgba(8,24,39,0.9)";
-        context.beginPath();
-        context.roundRect(973, 382, 97, 42, 8);
-        context.fill();
-        context.fillStyle = "#d8eff8";
-        context.font = "900 10px Arial";
-        context.textAlign = "center";
-        context.fillText("ATLAS", 1021, 399);
-        context.fillStyle = "#78a9be";
-        context.font = "800 8px Arial";
-        context.fillText("ÇARPIŞMA NOKTASI", 1021, 414);
-      } else {
-        context.strokeStyle = "rgba(123,169,190,0.3)";
-        context.lineWidth = 2;
-        context.setLineDash([7, 6]);
-        context.beginPath();
-        context.arc(collisionPoint.x, collisionPoint.y, 57, 0, Math.PI * 2);
-        context.stroke();
-        context.setLineDash([]);
-      }
-
-      if (runState === "accelerating") {
-        const progress = (time % 4.2) / 4.2;
-        const point = acceleratorPathPoint(progress);
-        context.shadowColor = "#73ffcf";
-        context.shadowBlur = 18;
-        context.fillStyle = "#c4ffed";
-        context.beginPath();
-        context.arc(point.x, point.y, 7, 0, Math.PI * 2);
-        context.fill();
-        context.shadowBlur = 0;
-      }
-
-      if (lhcInstalled && (runState === "stored" || runState === "colliding" || runState === "detected")) {
-        const speed = runState === "colliding" ? 2.5 : 1.45;
-        const collisionEase = runState === "colliding" ? Math.min(1, time / 1.6) : 0;
-        const clockwiseAngle = runState === "colliding"
-          ? Math.PI + Math.PI * collisionEase
-          : time * speed;
-        const counterAngle = runState === "colliding"
-          ? Math.PI - Math.PI * collisionEase
-          : -time * speed + Math.PI;
-        const beamPoints = [
-          { angle: clockwiseAngle, color: "#62e7ff", label: "p⁺ →" },
-          { angle: counterAngle, color: "#ff6fa8", label: "← p⁺" },
-        ];
-        beamPoints.forEach((beam) => {
-          const x = 555 + Math.cos(beam.angle) * 390;
-          const y = 447 + Math.sin(beam.angle) * 116;
-          context.shadowColor = beam.color;
-          context.shadowBlur = 20;
-          context.fillStyle = beam.color;
-          context.beginPath();
-          context.arc(x, y, 7, 0, Math.PI * 2);
-          context.fill();
-          context.shadowBlur = 0;
-          context.fillStyle = beam.color;
-          context.font = "900 10px Arial";
-          context.textAlign = "center";
-          context.fillText(beam.label, x, y - 13);
-        });
-      }
-
-      if (runState === "colliding" && time > 1.45) {
-        const flash = clamp(1 - (time - 1.45) / 0.8, 0, 1);
-        const radial = context.createRadialGradient(
-          collisionPoint.x,
-          collisionPoint.y,
-          2,
-          collisionPoint.x,
-          collisionPoint.y,
-          90,
-        );
-        radial.addColorStop(0, `rgba(255,255,255,${flash})`);
-        radial.addColorStop(0.25, `rgba(255,224,109,${flash * 0.85})`);
-        radial.addColorStop(1, "rgba(255,108,159,0)");
-        context.fillStyle = radial;
-        context.beginPath();
-        context.arc(collisionPoint.x, collisionPoint.y, 90, 0, Math.PI * 2);
-        context.fill();
-      }
-
-      context.fillStyle = "rgba(6,19,31,0.88)";
-      context.beginPath();
-      context.roundRect(43, 344, 204, 94, 12);
-      context.fill();
-      context.fillStyle = "#77a8bd";
-      context.font = "900 9px Arial";
-      context.textAlign = "left";
-      context.fillText("HALKADA NE DOLAŞIYOR?", 59, 365);
-      context.fillStyle = "#d8f4ff";
+      context.fillStyle = atlasReady ? "#f1faff" : "#6e92a3";
       context.font = "900 12px Arial";
-      context.fillText("Proton p⁺ = u + u + d", 59, 387);
-      context.fillStyle = "#62e7ff";
-      context.font = "800 9px Arial";
-      context.fillText(`Mavi demet → ${format(beamEnergy)} TeV`, 59, 407);
-      context.fillStyle = "#ff80b2";
-      context.fillText(`Pembe demet ← ${format(beamEnergy)} TeV`, 59, 424);
+      context.textAlign = "center";
+      context.fillText("ATLAS", 850, 458);
 
-      const animated = runState === "accelerating"
-        || runState === "stored"
-        || runState === "colliding";
-      if (animated) animationFrame = requestAnimationFrame(draw);
+      if (ringReady && (runState === "accelerating" || runState === "ready")) {
+        const moving = runState === "accelerating" ? time * 1.8 : time * 1.1;
+        for (let index = 0; index < 8; index += 1) {
+          const blueAngle = moving + index * (Math.PI / 4);
+          const pinkAngle = -moving + index * (Math.PI / 4);
+          context.fillStyle = "#67e6ff";
+          context.beginPath();
+          context.arc(500 + Math.cos(blueAngle) * 350, 372 + Math.sin(blueAngle) * 96, 6, 0, Math.PI * 2);
+          context.fill();
+          context.fillStyle = "#ff91bc";
+          context.beginPath();
+          context.arc(500 + Math.cos(pinkAngle) * 350, 384 + Math.sin(pinkAngle) * 108, 6, 0, Math.PI * 2);
+          context.fill();
+        }
+      }
+
+      context.fillStyle = "#67e6ff";
+      context.font = "900 13px Arial";
+      context.textAlign = "left";
+      context.fillText("p⁺ proton demeti →", 294, 349);
+      context.fillStyle = "#ff91bc";
+      context.fillText("← p⁺ proton demeti", 563, 420);
+      context.fillStyle = "#b5d0dc";
+      context.font = "800 11px Arial";
+      context.fillText(atlasReady ? "İki demet ATLAS noktasında karşılaştırılır." : "Kurulum tamamlandığında proton demetleri halkada görünecek.", 62, 493);
+
+      frame = requestAnimationFrame(draw);
     };
 
+    frame = requestAnimationFrame(draw);
     const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(animationFrame);
-      animationFrame = requestAnimationFrame(draw);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(draw);
     });
     observer.observe(canvas);
-    animationFrame = requestAnimationFrame(draw);
     return () => {
       observer.disconnect();
-      cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(frame);
     };
-  }, [beamEnergy, installedCount, runState]);
+  }, [installedCount, runState]);
 
   return (
     <canvas
       ref={canvasRef}
       className="cern-accelerator-canvas"
-      aria-label="CERN proton enjektör zinciri, LHC halkası ve ATLAS çarpışma noktası"
+      aria-label="CERN hızlandırma yolu, LHC halkası ve zıt yönlerde dolaşan iki proton demeti"
     />
   );
 }
 
-function drawCurvedTrack(
-  context: CanvasRenderingContext2D,
-  angle: number,
-  curvature: number,
-  length: number,
-  color: string,
-  width = 3,
-) {
-  const center = { x: EVENT_WIDTH / 2, y: EVENT_HEIGHT / 2 };
-  context.save();
-  context.translate(center.x, center.y);
-  context.rotate(angle);
-  context.strokeStyle = color;
-  context.lineWidth = width;
-  context.beginPath();
-  context.moveTo(0, 0);
-  context.quadraticCurveTo(length * 0.5, curvature, length, curvature * 1.35);
-  context.stroke();
-  context.restore();
-}
-
-function drawJet(
-  context: CanvasRenderingContext2D,
-  angle: number,
-  color: string,
-  spread = 0.22,
-) {
-  for (let index = -3; index <= 3; index += 1) {
-    drawCurvedTrack(
-      context,
-      angle + index * spread / 3,
-      index * 4,
-      188 - Math.abs(index) * 8,
-      color,
-      index === 0 ? 4 : 2,
-    );
-  }
-}
-
-function drawEventTag(
+function drawTag(
   context: CanvasRenderingContext2D,
   x: number,
   y: number,
   symbol: string,
-  text: string,
+  name: string,
   color: string,
-  align: "left" | "right" = "left",
 ) {
-  context.save();
-  context.font = "900 10px Arial";
-  const width = Math.max(118, context.measureText(text).width + 50);
-  const left = align === "left" ? x : x - width;
-  context.fillStyle = "rgba(5,17,28,0.92)";
+  context.font = "900 14px Arial";
+  const width = Math.max(144, context.measureText(name).width + 60);
+  context.fillStyle = "rgba(6,22,35,0.94)";
   context.strokeStyle = color;
-  context.lineWidth = 1.5;
+  context.lineWidth = 2;
   context.beginPath();
-  context.roundRect(left, y - 17, width, 34, 9);
+  context.roundRect(x - width / 2, y - 21, width, 42, 11);
   context.fill();
   context.stroke();
   context.fillStyle = color;
-  context.font = "900 14px Georgia";
-  context.textAlign = "center";
-  context.fillText(symbol, left + 20, y + 5);
-  context.fillStyle = "#dceff6";
-  context.font = "800 9px Arial";
+  context.font = "900 20px Georgia";
   context.textAlign = "left";
-  context.fillText(text, left + 38, y + 4);
-  context.restore();
+  context.fillText(symbol, x - width / 2 + 13, y + 7);
+  context.fillStyle = "#ecf9fd";
+  context.font = "900 12px Arial";
+  context.fillText(name, x - width / 2 + 51, y + 5);
 }
 
-function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
+function CernAtlasCanvas({
+  phase,
+  event,
+}: {
+  phase: "colliding" | "result";
+  event: CollisionEvent;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const draw = () => {
-      const context = prepareCanvas(canvas, EVENT_WIDTH, EVENT_HEIGHT);
+    let frame = 0;
+    const startedAt = performance.now();
+
+    const draw = (now: number) => {
+      const context = prepareCanvas(canvas, ATLAS_WIDTH, ATLAS_HEIGHT);
       if (!context) return;
-      const center = { x: EVENT_WIDTH / 2, y: EVENT_HEIGHT / 2 };
-      const background = context.createRadialGradient(center.x, center.y, 20, center.x, center.y, 360);
-      background.addColorStop(0, "#102f46");
-      background.addColorStop(1, "#050f1b");
+      const elapsed = (now - startedAt) / 1000;
+      const center = { x: 380, y: 300 };
+      const background = context.createRadialGradient(center.x, center.y, 30, center.x, center.y, 430);
+      background.addColorStop(0, "#173e56");
+      background.addColorStop(1, "#061421");
       context.fillStyle = background;
-      context.fillRect(0, 0, EVENT_WIDTH, EVENT_HEIGHT);
+      context.fillRect(0, 0, ATLAS_WIDTH, ATLAS_HEIGHT);
 
       const layers = [
-        { radius: 68, color: "#4edcc0", width: 18, label: "İÇ İZLEYİCİ" },
-        { radius: 126, color: "#f1d260", width: 32, label: "EM KALORİMETRE" },
-        { radius: 184, color: "#e48250", width: 44, label: "HADRONİK KALORİMETRE" },
-        { radius: 238, color: "#659ade", width: 12, label: "MÜON SİSTEMİ" },
+        { radius: 102, color: "#62d7bf", width: 24 },
+        { radius: 184, color: "#f3c45f", width: 42 },
+        { radius: 256, color: "#72a6ea", width: 18 },
       ];
       layers.forEach((layer) => {
+        context.globalAlpha = 0.28;
         context.strokeStyle = layer.color;
-        context.globalAlpha = 0.24;
         context.lineWidth = layer.width;
         context.beginPath();
         context.arc(center.x, center.y, layer.radius, 0, Math.PI * 2);
         context.stroke();
-        context.globalAlpha = 0.7;
-        context.lineWidth = 1.5;
+        context.globalAlpha = 0.92;
+        context.lineWidth = 2;
         context.beginPath();
         context.arc(center.x, center.y, layer.radius, 0, Math.PI * 2);
         context.stroke();
       });
       context.globalAlpha = 1;
 
-      context.strokeStyle = "rgba(143,189,207,0.22)";
-      context.lineWidth = 1;
-      for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 6) {
-        context.beginPath();
-        context.moveTo(center.x + Math.cos(angle) * 32, center.y + Math.sin(angle) * 32);
-        context.lineTo(center.x + Math.cos(angle) * 246, center.y + Math.sin(angle) * 246);
-        context.stroke();
-      }
-
-      context.fillStyle = "#ffffff";
-      context.shadowColor = "#ffffff";
-      context.shadowBlur = 16;
+      context.strokeStyle = "rgba(141,192,211,0.25)";
+      context.lineWidth = 4;
       context.beginPath();
-      context.arc(center.x, center.y, 7, 0, Math.PI * 2);
-      context.fill();
-      context.shadowBlur = 0;
+      context.moveTo(72, center.y);
+      context.lineTo(688, center.y);
+      context.stroke();
 
-      if (!event) {
-        context.fillStyle = "rgba(6,18,29,0.88)";
+      if (phase === "colliding") {
+        const progress = clamp(elapsed / 1.35, 0, 1);
+        const leftX = 92 + (center.x - 92) * progress;
+        const rightX = 668 - (668 - center.x) * progress;
+        context.shadowBlur = 18;
+        context.shadowColor = "#67e6ff";
+        context.fillStyle = "#67e6ff";
         context.beginPath();
-        context.roundRect(220, 215, 320, 90, 14);
+        context.arc(leftX, center.y, 12, 0, Math.PI * 2);
         context.fill();
-        context.fillStyle = "#d9f2fb";
-        context.font = "900 15px Arial";
+        context.shadowColor = "#ff91bc";
+        context.fillStyle = "#ff91bc";
+        context.beginPath();
+        context.arc(rightX, center.y, 12, 0, Math.PI * 2);
+        context.fill();
+        context.shadowBlur = 0;
+        context.fillStyle = "#9aefff";
+        context.font = "900 18px Arial";
         context.textAlign = "center";
-        context.fillText("ÇARPIŞMA VERİSİ BEKLENİYOR", center.x, 247);
-        context.fillStyle = "#7ea9ba";
-        context.font = "800 11px Arial";
-        context.fillText("Demetleri hazırla ve seçtiğin olayı çalıştır.", center.x, 272);
-        return;
-      }
+        context.fillText("p⁺ →", leftX, center.y - 27);
+        context.fillStyle = "#ffaad0";
+        context.fillText("← p⁺", rightX, center.y + 43);
+        if (progress > 0.88) {
+          const flash = 18 + Math.sin(elapsed * 12) * 6;
+          context.fillStyle = "rgba(255,255,255,0.9)";
+          context.shadowColor = "#fff4ab";
+          context.shadowBlur = 34;
+          context.beginPath();
+          context.arc(center.x, center.y, flash, 0, Math.PI * 2);
+          context.fill();
+          context.shadowBlur = 0;
+        }
+        context.fillStyle = "rgba(6,21,34,0.9)";
+        context.beginPath();
+        context.roundRect(185, 506, 390, 58, 14);
+        context.fill();
+        context.fillStyle = "#eaf9fd";
+        context.font = "900 18px Arial";
+        context.textAlign = "center";
+        context.fillText("İki proton çarpışma noktasına yaklaşıyor", center.x, 541);
+      } else {
+        context.fillStyle = "#ffffff";
+        context.shadowColor = "#fff6aa";
+        context.shadowBlur = 24;
+        context.beginPath();
+        context.arc(center.x, center.y, 10, 0, Math.PI * 2);
+        context.fill();
+        context.shadowBlur = 0;
 
-      if (event.key === "higgs") {
-        [0.45, 3.59].forEach((angle, index) => {
-          const clusterX = center.x + Math.cos(angle) * 128;
-          const clusterY = center.y + Math.sin(angle) * 128;
-          context.strokeStyle = "rgba(255,234,104,0.46)";
-          context.setLineDash([4, 7]);
+        if (event.key === "electrons") {
+          context.strokeStyle = "#70f0cf";
+          context.lineWidth = 6;
           context.beginPath();
           context.moveTo(center.x, center.y);
-          context.lineTo(clusterX, clusterY);
+          context.quadraticCurveTo(485, 244, 552, 170);
           context.stroke();
-          context.setLineDash([]);
-          const shower = context.createRadialGradient(clusterX, clusterY, 2, clusterX, clusterY, 28);
-          shower.addColorStop(0, "#fff7bd");
-          shower.addColorStop(0.4, "#ffd84e");
-          shower.addColorStop(1, "rgba(255,191,48,0)");
-          context.fillStyle = shower;
+          context.strokeStyle = "#ff8cb8";
           context.beginPath();
-          context.arc(clusterX, clusterY, 28, 0, Math.PI * 2);
-          context.fill();
-          drawEventTag(
-            context,
-            index === 0 ? clusterX + 26 : clusterX - 26,
-            index === 0 ? clusterY - 22 : clusterY + 25,
-            "γ",
-            `${index + 1}. foton · EM kümesi`,
-            "#f1d260",
-            index === 0 ? "left" : "right",
-          );
-        });
-      }
+          context.moveTo(center.x, center.y);
+          context.quadraticCurveTo(274, 356, 208, 430);
+          context.stroke();
+          [
+            { x: 525, y: 187, color: "#ffe77b" },
+            { x: 235, y: 413, color: "#ffe77b" },
+          ].forEach((point) => {
+            context.fillStyle = point.color;
+            context.shadowColor = point.color;
+            context.shadowBlur = 22;
+            context.beginPath();
+            context.arc(point.x, point.y, 19, 0, Math.PI * 2);
+            context.fill();
+            context.shadowBlur = 0;
+          });
+          drawTag(context, 588, 142, "e⁻", "Elektron", "#70f0cf");
+          drawTag(context, 172, 458, "e⁺", "Pozitron", "#ff8cb8");
+        }
 
-      if (event.key === "z-pair") {
-        drawCurvedTrack(context, 0.38, 34, 137, "#ffe36d", 4);
-        drawCurvedTrack(context, Math.PI + 0.38, -34, 137, "#ff9ed0", 4);
-        [0.65, 3.79].forEach((angle) => {
-          const x = center.x + Math.cos(angle) * 127;
-          const y = center.y + Math.sin(angle) * 127;
-          context.fillStyle = "#ffe36d";
-          context.beginPath();
-          context.arc(x, y, 16, 0, Math.PI * 2);
-          context.fill();
-        });
-        drawEventTag(context, 522, 326, "e⁻", "elektron · iz + EM", "#ffe36d", "left");
-        drawEventTag(context, 238, 194, "e⁺", "pozitron · ters kıvrım", "#ff9ed0", "right");
-      }
+        if (event.key === "photons") {
+          [0.55, Math.PI + 0.55].forEach((angle, index) => {
+            const endX = center.x + Math.cos(angle) * 184;
+            const endY = center.y + Math.sin(angle) * 184;
+            context.strokeStyle = "#ffe367";
+            context.lineWidth = 5;
+            context.setLineDash([11, 8]);
+            context.beginPath();
+            context.moveTo(center.x, center.y);
+            context.lineTo(endX, endY);
+            context.stroke();
+            context.setLineDash([]);
+            context.fillStyle = "#fff08a";
+            context.shadowColor = "#ffe367";
+            context.shadowBlur = 28;
+            context.beginPath();
+            context.arc(endX, endY, 24, 0, Math.PI * 2);
+            context.fill();
+            context.shadowBlur = 0;
+            drawTag(
+              context,
+              index === 0 ? 594 : 166,
+              index === 0 ? 430 : 170,
+              "γ",
+              `${index + 1}. foton`,
+              "#ffe367",
+            );
+          });
+        }
 
-      if (event.key === "top-pair") {
-        drawJet(context, -0.25, "#ff8b59", 0.3);
-        drawJet(context, 2.55, "#f3b85f", 0.3);
-        drawCurvedTrack(context, 1.25, 18, 238, "#6fb4ff", 5);
-        context.strokeStyle = "#d58aff";
-        context.lineWidth = 5;
-        context.setLineDash([9, 8]);
+        if (event.key === "muons") {
+          [0.32, Math.PI + 0.32].forEach((angle, index) => {
+            const endX = center.x + Math.cos(angle) * 255;
+            const endY = center.y + Math.sin(angle) * 255;
+            context.strokeStyle = index === 0 ? "#7cd9ff" : "#b7a1ff";
+            context.lineWidth = 7;
+            context.beginPath();
+            context.moveTo(center.x, center.y);
+            context.lineTo(endX, endY);
+            context.stroke();
+            drawTag(
+              context,
+              index === 0 ? 605 : 155,
+              index === 0 ? 402 : 198,
+              index === 0 ? "μ⁻" : "μ⁺",
+              index === 0 ? "Müon" : "Antimüon",
+              index === 0 ? "#7cd9ff" : "#b7a1ff",
+            );
+          });
+        }
+
+        context.fillStyle = "rgba(6,21,34,0.92)";
         context.beginPath();
-        context.moveTo(center.x, center.y);
-        context.lineTo(center.x - 75, center.y + 206);
-        context.stroke();
-        context.setLineDash([]);
-        drawEventTag(context, 536, 220, "b", "b-jeti · hadronik enerji", "#ff8b59", "left");
-        drawEventTag(context, 495, 450, "μ", "müon · dış katmana ulaşır", "#6fb4ff", "left");
-        drawEventTag(context, 266, 432, "ν", "nötrino · momentum eksiği", "#d58aff", "right");
+        context.roundRect(190, 522, 380, 50, 13);
+        context.fill();
+        context.fillStyle = "#eefbff";
+        context.font = "900 16px Arial";
+        context.textAlign = "center";
+        context.fillText(`${event.plainName} görüldü`, center.x, 554);
       }
 
-      if (event.key === "jets") {
-        drawJet(context, 0.16, "#ff975e", 0.38);
-        drawJet(context, Math.PI + 0.1, "#f0c263", 0.38);
-        drawEventTag(context, 552, 305, "jet", "çok sayıda parçacık", "#ff975e", "left");
-        drawEventTag(context, 210, 224, "jet", "karşı yönlü jet", "#f0c263", "right");
-      }
-
-      context.fillStyle = "rgba(5,16,27,0.88)";
-      context.beginPath();
-      context.roundRect(18, 18, 282, 58, 11);
-      context.fill();
-      context.fillStyle = "#78a9be";
-      context.font = "900 9px Arial";
-      context.textAlign = "left";
-      context.fillText("ATLAS · İDEAL OLAY GÖRÜNÜMÜ", 34, 39);
-      context.fillStyle = "#eefaff";
-      context.font = "900 13px Arial";
-      context.fillText(event.reaction, 34, 61);
-
-      const legend = [
-        { color: "#4edcc0", text: "İç izleyici · yüklü iz" },
-        { color: "#f1d260", text: "EM · e ve γ enerjisi" },
-        { color: "#e48250", text: "Hadronik · jet enerjisi" },
-        { color: "#659ade", text: "Dış sistem · müon" },
-      ];
-      legend.forEach((item, index) => {
-        const x = 30 + index * 175;
-        context.fillStyle = item.color;
-        context.fillRect(x, 486, 18, 5);
-        context.fillStyle = "#b9d7e3";
-        context.font = "800 8px Arial";
-        context.fillText(item.text, x + 25, 492);
-      });
+      if (phase === "colliding") frame = requestAnimationFrame(draw);
     };
 
-    draw();
-    const observer = new ResizeObserver(draw);
+    frame = requestAnimationFrame(draw);
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(draw);
+    });
     observer.observe(canvas);
-    return () => observer.disconnect();
-  }, [event]);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [event, phase]);
 
   return (
     <canvas
       ref={canvasRef}
-      className="cern-event-canvas"
-      aria-label={event ? `${event.title} için ideal ATLAS olay görüntüsü` : "Boş ATLAS olay ekranı"}
+      className="cern-atlas-canvas"
+      aria-label={phase === "colliding" ? "ATLAS içinde birbirine yaklaşan iki proton" : `${event.plainName} için sade ATLAS dedektör görüntüsü`}
     />
   );
 }
@@ -895,8 +599,59 @@ function CernEventDisplay({ event }: { event: CollisionEvent | null }) {
 function PartIcon({ kind }: { kind: PartKind }) {
   return (
     <span className={`cern-part-icon cern-part-icon-${kind}`} aria-hidden="true">
-      <i /><i /><i /><i />
+      <i /><i /><i />
     </span>
+  );
+}
+
+function CernAtlasZoom({
+  phase,
+  event,
+  totalEnergy,
+  onBack,
+}: {
+  phase: "colliding" | "result";
+  event: CollisionEvent;
+  totalEnergy: number;
+  onBack: () => void;
+}) {
+  const layerInfo: Array<{ key: DetectorLayer; number: number; title: string; text: string }> = [
+    { key: "track", number: 1, title: "İz sensörü", text: "Yüklü parçacıkların geçtiği yolu gösterir." },
+    { key: "energy", number: 2, title: "Enerji sensörü", text: "Elektron ve fotonun bıraktığı enerjiyi gösterir." },
+    { key: "outer", number: 3, title: "Dış sensör", text: "Dedektörü geçen müonları yakalar." },
+  ];
+
+  return (
+    <div className="cern-atlas-zoom">
+      <div className="cern-atlas-titlebar">
+        <span><small>ATLAS’IN İÇİNDE</small><b>Büyütülmüş çarpışma görüntüsü</b></span>
+        {phase === "result" && <button type="button" onClick={onBack}>LHC halkasına dön</button>}
+      </div>
+      <div className="cern-atlas-layout">
+        <aside className="cern-detector-guide">
+          <span>ATLAS NE YAPIYOR?</span>
+          <h2>Üç basit bölge</h2>
+          {layerInfo.map((layer) => (
+            <article
+              key={layer.key}
+              className={`${layer.key} ${phase === "result" && event.layers.includes(layer.key) ? "active" : ""}`}
+            >
+              <i>{layer.number}</i>
+              <div><b>{layer.title}</b><small>{layer.text}</small></div>
+            </article>
+          ))}
+          <p><i /> Ortadaki beyaz nokta, iki protonun çarpıştığı yerdir.</p>
+        </aside>
+        <CernAtlasCanvas phase={phase} event={event} />
+      </div>
+      {phase === "result" && (
+        <div className="cern-collision-result">
+          <article><small>GİREN</small><b>Proton p⁺ + Proton p⁺</b></article>
+          <article><small>ENERJİ NE YAPTI?</small><b>{format(totalEnergy)} TeV; yeni parçacıkların kütlesi ve hareketi için kullanıldı.</b></article>
+          <article><small>DEDEKTÖRDE GÖRÜLEN</small><b>{event.symbol}</b><span>{event.plainName}</span></article>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -904,17 +659,9 @@ export default function CernAcceleratorLab() {
   const [installed, setInstalled] = useState<PartKind[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [runState, setRunState] = useState<RunState>("idle");
-  const [beamEnergy, setBeamEnergy] = useState(6.8);
-  const [selectedEvent, setSelectedEvent] = useState<EventKind>("higgs");
-  const [detectedEvent, setDetectedEvent] = useState<CollisionEvent | null>(null);
-  const [selectedParticle, setSelectedParticle] = useState("u");
-  const [activeParticleGroup, setActiveParticleGroup] = useState<ParticleGroup>("quark");
-  const [observedParticles, setObservedParticles] = useState<string[]>([]);
-  const [readings, setReadings] = useState<CollisionReading[]>([]);
-  const [message, setMessage] = useState(
-    "H⁻ iyon kaynağıyla başla; parçaları CERN'deki gerçek hızlandırma sırasına göre yerleştir.",
-  );
-  const [answers, setAnswers] = useState(["", "", "", ""]);
+  const [energyKind, setEnergyKind] = useState<EnergyKind>("high");
+  const [selectedEvent, setSelectedEvent] = useState<EventKind>("electrons");
+  const [message, setMessage] = useState("İlk parçaya dokun veya onu deney alanına sürükle.");
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => {
@@ -923,37 +670,33 @@ export default function CernAcceleratorLab() {
 
   const setupComplete = installed.length === SETUP_ORDER.length;
   const nextPart = ACCELERATOR_PARTS[installed.length] ?? null;
+  const energy = ENERGY_LEVELS[energyKind];
   const event = EVENTS[selectedEvent];
-  const particle = PARTICLES.find((item) => item.id === selectedParticle) ?? PARTICLES[0];
-  const visibleParticles = PARTICLES.filter((item) => item.group === activeParticleGroup);
-  const observedSet = useMemo(() => new Set(observedParticles), [observedParticles]);
+  const totalEnergy = energy.beam * 2;
+  const atlasOpen = runState === "colliding" || runState === "result";
+
   const statusLabel = runState === "accelerating"
-    ? "Enjektör zincirinde hızlanıyor"
-    : runState === "stored"
-      ? "İki demet LHC halkasında hazır"
+    ? "Protonlar hızlanıyor"
+    : runState === "ready"
+      ? "Proton demetleri çarpışmaya hazır"
       : runState === "colliding"
-        ? "ATLAS noktasında çarpışıyor"
-        : runState === "detected"
-          ? "Olay yeniden oluşturuldu"
+        ? "ATLAS içinde çarpışıyor"
+        : runState === "result"
+          ? "Çarpışma sonucu gösteriliyor"
           : setupComplete
             ? "Düzenek hazır"
-            : "Kurulum bekleniyor";
+            : `Sıradaki: ${nextPart?.short ?? "—"}`;
 
   const addPart = (kind: PartKind) => {
     if (installed.includes(kind) || runState !== "idle") return;
     const expected = SETUP_ORDER[installed.length];
-    if (kind !== expected) {
-      const expectedPart = ACCELERATOR_PARTS.find((item) => item.kind === expected);
-      setMessage(`Bu parça henüz bağlanamaz. Sıradaki parça: ${expectedPart?.label ?? "—"}.`);
-      return;
-    }
+    if (kind !== expected) return;
     const nextInstalled = [...installed, kind];
     setInstalled(nextInstalled);
     if (nextInstalled.length === SETUP_ORDER.length) {
-      setMessage("Hızlandırıcı zinciri tamamlandı. Proton demetlerini enjektörlerden geçirerek LHC'ye doldur.");
+      setMessage("Düzenek tamamlandı. Çarpışma gücünü ve görmek istediğin basit parçacık örneğini seç.");
     } else {
-      const following = ACCELERATOR_PARTS[nextInstalled.length];
-      setMessage(`${ACCELERATOR_PARTS[nextInstalled.length - 1].label} yerine oturdu. Şimdi ${following.label} parçasını ekle.`);
+      setMessage(`${ACCELERATOR_PARTS[nextInstalled.length - 1].label} bağlandı. Sıradaki parça hazır.`);
     }
   };
 
@@ -973,94 +716,87 @@ export default function CernAcceleratorLab() {
   };
 
   const accelerateBeams = () => {
-    if (!setupComplete || runState === "accelerating" || runState === "colliding") return;
+    if (!setupComplete || runState !== "idle") return;
     if (timerRef.current) clearTimeout(timerRef.current);
-    setDetectedEvent(null);
     setRunState("accelerating");
-    setMessage("H⁻ iyonları Linac4'te hızlanıyor; elektronları ayrılan protonlar PSB, PS ve SPS üzerinden LHC'ye aktarılıyor.");
+    setMessage("Elektrik alan protonlara enerji veriyor; mıknatıslar onları LHC halkasında tutuyor.");
     timerRef.current = setTimeout(() => {
-      setRunState("stored");
-      setMessage(`İki proton demeti zıt yönlerde dolaşıyor. Her demetin enerjisi ${format(beamEnergy)} TeV; ATLAS'ta çarpışmaya hazır.`);
-    }, 4200);
+      setRunState("ready");
+      setMessage("Mavi ve pembe proton demetleri zıt yönlerde dolaşıyor. Şimdi ATLAS'ta çarpıştır.");
+    }, 2600);
   };
 
   const collideBeams = () => {
-    if (runState !== "stored") {
-      setMessage("Çarpışmadan önce proton demetlerini hızlandırıp LHC halkasına doldur.");
-      return;
-    }
+    if (runState !== "ready") return;
     if (timerRef.current) clearTimeout(timerRef.current);
     setRunState("colliding");
-    setDetectedEvent(null);
-    setMessage("Kuadrupol mıknatıslar iki demeti ATLAS etkileşim noktasında sıkıştırıyor.");
+    setMessage("ATLAS büyütüldü. İki proton çarpışma noktasına yaklaşıyor.");
     timerRef.current = setTimeout(() => {
-      const selected = EVENTS[selectedEvent];
-      setRunState("detected");
-      setDetectedEvent(selected);
-      setObservedParticles((current) => Array.from(new Set([...current, ...selected.particles])));
-      setReadings((current) => [...current, {
-        id: Date.now(),
-        energy: beamEnergy * 2,
-        event: selected.title,
-        reaction: selected.reaction,
-        particles: selected.particles
-          .map((id) => PARTICLES.find((candidate) => candidate.id === id)?.symbol ?? id)
-          .join(", "),
-        evidence: selected.evidence,
-      }]);
-      setMessage(`${selected.title} olayı ideal dedektör verisiyle yeniden oluşturuldu. İzleri ve enerji kümelerini incele.`);
-    }, 2300);
+      setRunState("result");
+      setMessage(`${event.plainName} oluştu. Renkli yolları ve kullanılan dedektör bölgesini incele.`);
+    }, 1800);
   };
 
-  const resetBeams = () => {
+  const returnToRing = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setRunState("idle");
-    setDetectedEvent(null);
-    setMessage(setupComplete
-      ? "Düzenek korunuyor. Yeni proton demetlerini hazırlayabilirsin."
-      : "Kuruluma gerçek hızlandırıcı zincirinin ilk parçasından devam et.");
+    setMessage("LHC halkasına dönüldü. Yeni bir enerji ve parçacık örneği seçebilirsin.");
   };
 
   const clearSetup = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     setInstalled([]);
     setRunState("idle");
-    setDetectedEvent(null);
-    setMessage("Düzenek söküldü. H⁻ iyon kaynağıyla yeniden başla.");
+    setMessage("Düzenek söküldü. Proton kaynağıyla yeniden başla.");
   };
+
+  const runPrimaryAction = () => {
+    if (runState === "idle") accelerateBeams();
+    if (runState === "ready") collideBeams();
+    if (runState === "result") returnToRing();
+  };
+
+  const primaryLabel = runState === "idle"
+    ? "Protonları hızlandır"
+    : runState === "accelerating"
+      ? "Protonlar hızlanıyor…"
+      : runState === "ready"
+        ? "ATLAS’ta çarpıştır"
+        : runState === "colliding"
+          ? "Çarpışma gerçekleşiyor…"
+          : "Yeni çarpışma hazırla";
 
   return (
     <section className="cern-lab" id="cern-hizlandirici-deneyi">
       <div className="cern-heading">
         <div>
-          <span>MODERN FİZİK · DENEY 2 · CERN</span>
-          <h1>Hızlandırıcıyı kur, protonları çarpıştır, temel parçacıkları tanı.</h1>
+          <span>MODERN FİZİK · CERN DENEYİ</span>
+          <h1>Protonları hızlandır, ATLAS’ın içine gir ve çarpışmayı gör.</h1>
           <p>
-            CERN’in gerçek proton enjektör zincirini sırayla birleştir. LHC’de zıt
-            yönlü iki demet oluştur, ATLAS olay görüntüsünü incele ve Standart
-            Model parçacıklarını dedektör kanıtlarıyla eşleştir.
+            Beş parçayı sırayla kur. Protonların LHC’de nasıl dolaştığını izle;
+            ATLAS’ta çarpıştırınca dedektör aynı ekranda büyüsün.
           </p>
         </div>
         <aside>
-          <small>TYMM · 12. SINIF MODERN FİZİK</small>
-          <b>Model kurma · kanıt yorumlama · bilimsel çıkarım</b>
-          <span>Eğitsel ölçek modeli · ideal dedektör yanıtı</span>
+          <small>BU DENEYDE ÜÇ ŞEY GÖRECEKSİN</small>
+          <b>Halkada ne dolaşıyor?</b>
+          <b>Çarpışma enerjisi ne işe yarıyor?</b>
+          <b>ATLAS çıkan parçacığı nasıl görüyor?</b>
         </aside>
       </div>
 
-      <div className="cern-flow" aria-label="CERN deney akışı">
-        <span><i>1</i>Enjektör zincirini kur</span>
-        <span><i>2</i>Demetleri hızlandır</span>
-        <span><i>3</i>ATLAS’ta çarpıştır</span>
-        <span><i>4</i>Parçacıkları tanımla</span>
+      <div className="cern-flow" aria-label="Sade CERN deney akışı">
+        <span className={!setupComplete ? "active" : "done"}><i>1</i>Düzeneği kur</span>
+        <span className={setupComplete && !atlasOpen ? "active" : setupComplete ? "done" : ""}><i>2</i>Protonları hızlandır</span>
+        <span className={atlasOpen ? "active" : ""}><i>3</i>ATLAS’ta büyüt ve gör</span>
       </div>
 
-      <div className="cern-builder">
+      <div className={`cern-builder ${atlasOpen ? "atlas-mode" : ""}`}>
         <aside className="cern-parts-panel">
           <div className="cern-panel-title">
-            <span>HIZLANDIRICI PARÇALARI <b>{installed.length}/{SETUP_ORDER.length}</b></span>
-            <h2>Gerçek sırayla kur</h2>
-            <p>Parçayı sürükle veya dokun. Sistem yalnızca fiziksel olarak doğru sıradaki bağlantıyı kabul eder.</p>
+            <span>DENEY PARÇALARI <b>{installed.length}/{SETUP_ORDER.length}</b></span>
+            <h2>Sadece sıradaki parçayı ekle</h2>
+            <p>Yeşil çerçeveli parçaya dokunabilir veya onu sağdaki alana sürükleyebilirsin.</p>
           </div>
           <div className="cern-part-list">
             {ACCELERATOR_PARTS.map((item, index) => {
@@ -1079,7 +815,7 @@ export default function CernAcceleratorLab() {
                   <PartIcon kind={item.kind} />
                   <span>
                     <b>{index + 1}. {item.label}</b>
-                    <small>{isInstalled ? "Bağlandı" : item.description}</small>
+                    <small>{isInstalled ? "Yerine yerleşti" : item.description}</small>
                     <em>{item.energy}</em>
                   </span>
                 </button>
@@ -1090,7 +826,7 @@ export default function CernAcceleratorLab() {
         </aside>
 
         <div
-          className={`cern-stage ${dragOver ? "drag-over" : ""}`}
+          className={`cern-stage ${dragOver ? "drag-over" : ""} ${atlasOpen ? "atlas-open" : ""}`}
           onDragOver={(eventObject) => {
             eventObject.preventDefault();
             setDragOver(true);
@@ -1099,280 +835,94 @@ export default function CernAcceleratorLab() {
           onDrop={onDrop}
         >
           <div className="cern-stage-toolbar">
-            <span><small>CERN KONTROL MERKEZİ · EĞİTSEL MODEL</small><b>{statusLabel}</b></span>
-            <div>
-              <span><small>SIRADAKİ PARÇA</small><b>{nextPart?.short ?? "TAMAMLANDI"}</b></span>
-              <span><small>DEMET ENERJİSİ</small><b>{format(beamEnergy)} TeV</b></span>
-              <span><small>ÇARPIŞMA ENERJİSİ</small><b>{format(beamEnergy * 2)} TeV</b></span>
-            </div>
+            <span><small>CERN DENEY EKRANI</small><b>{statusLabel}</b></span>
+            {!atlasOpen && <span><small>HALKADA DOLAŞAN</small><b>Proton p⁺ = u + u + d</b></span>}
           </div>
-          <CernAcceleratorCanvas
-            installedCount={installed.length}
-            runState={runState}
-            beamEnergy={beamEnergy}
-          />
+
+          {atlasOpen ? (
+            <CernAtlasZoom
+              phase={runState === "colliding" ? "colliding" : "result"}
+              event={event}
+              totalEnergy={totalEnergy}
+              onBack={returnToRing}
+            />
+          ) : (
+            <CernAcceleratorCanvas installedCount={installed.length} runState={runState} />
+          )}
+
           <div className="cern-message" role="status"><i />{message}</div>
+
+          {setupComplete && !atlasOpen && (
+            <div className="cern-simple-console">
+              <section className="cern-energy-choice">
+                <span>1 · ÇARPIŞMA GÜCÜ</span>
+                <h2>Enerji ne işe yarar?</h2>
+                <p>
+                  Protonların taşıdığı enerji çarpışmada <b>yeni parçacıkların
+                  kütlesine ve hareketine</b> dönüşebilir. Enerji arttıkça daha
+                  ağır parçacıkların oluşabilme olasılığı artar.
+                </p>
+                <div>
+                  {(Object.keys(ENERGY_LEVELS) as EnergyKind[]).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={energyKind === key ? "active" : ""}
+                      disabled={runState === "accelerating"}
+                      onClick={() => {
+                        setEnergyKind(key);
+                        setRunState("idle");
+                      }}
+                    >
+                      <small>{ENERGY_LEVELS[key].label}</small>
+                      <b>{format(ENERGY_LEVELS[key].beam * 2)} TeV</b>
+                    </button>
+                  ))}
+                </div>
+                <em>{energy.summary}</em>
+              </section>
+
+              <section className="cern-event-choice">
+                <span>2 · BASİT ÖRNEK</span>
+                <h2>Dedektörde ne görelim?</h2>
+                <div>
+                  {(Object.keys(EVENTS) as EventKind[]).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={selectedEvent === key ? "active" : ""}
+                      disabled={runState === "accelerating"}
+                      onClick={() => {
+                        setSelectedEvent(key);
+                        setRunState("idle");
+                      }}
+                    >
+                      <strong>{EVENTS[key].symbol}</strong>
+                      <span><b>{EVENTS[key].title}</b><small>{EVENTS[key].plainName}</small></span>
+                    </button>
+                  ))}
+                </div>
+                <p><b>{event.explanation}</b> {event.detectorFinding}</p>
+              </section>
+
+              <button
+                className="cern-primary-action"
+                type="button"
+                onClick={runPrimaryAction}
+                disabled={runState === "accelerating" || runState === "colliding"}
+              >
+                <i>{runState === "ready" ? "2" : "1"}</i>
+                <span><small>{runState === "ready" ? "SONRAKİ ADIM" : "DENEYİ BAŞLAT"}</small><b>{primaryLabel}</b></span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {setupComplete && (
-        <div className="cern-simple-summary" aria-label="Parçacık ve çarpışma özeti">
-          <article className="beam-particle">
-            <i>1</i>
-            <span><small>HALKADA DOLAŞAN</small><b>Proton p⁺</b><em>Protonun içinde iki yukarı ve bir aşağı kuark vardır: u + u + d.</em></span>
-            <div><u>p⁺ →</u><u>← p⁺</u></div>
-          </article>
-          <article className="beam-energy">
-            <i>2</i>
-            <span><small>ÇARPIŞMA ENERJİSİ</small><b>{format(beamEnergy)} + {format(beamEnergy)} = {format(beamEnergy * 2)} TeV</b><em>İki proton demeti eşit enerjiyle karşı karşıya gelir.</em></span>
-          </article>
-          <article className="beam-output">
-            <i>3</i>
-            <span><small>ÇARPIŞMADAN ÇIKAN</small><b>{detectedEvent?.outputSummary ?? event.outputSummary}</b><em>{detectedEvent ? "Aşağıdaki dedektör ekranında renkli etiketlerle gösterildi." : "Olayı seç, demetleri hızlandır ve çarpıştır."}</em></span>
-          </article>
-        </div>
-      )}
-
-      {setupComplete && (
-        <div className="cern-control-room">
-          <section className="cern-beam-controls">
-            <span>DEMET KONTROLÜ</span>
-            <h2>İki proton demetini hazırla</h2>
-            <label>
-              <span>Her demetin enerjisi <b>{format(beamEnergy)} TeV</b></span>
-              <input
-                type="range"
-                min="0.45"
-                max="6.8"
-                step="0.05"
-                value={beamEnergy}
-                disabled={runState !== "idle" && runState !== "detected"}
-                onChange={(eventObject) => {
-                  setBeamEnergy(Number(eventObject.target.value));
-                  setRunState("idle");
-                  setDetectedEvent(null);
-                }}
-              />
-            </label>
-            <div className="cern-beam-readout">
-              <span className="blue"><small>1. DEMET · SAAT YÖNÜ</small><b>p⁺ → {format(beamEnergy)} TeV</b></span>
-              <span className="pink"><small>2. DEMET · TERS YÖN</small><b>← p⁺ {format(beamEnergy)} TeV</b></span>
-              <span><small>ATLAS’TA KARŞILAŞINCA</small><b>{format(beamEnergy * 2)} TeV</b></span>
-            </div>
-            <div className="cern-action-row">
-              <button type="button" onClick={accelerateBeams} disabled={runState === "accelerating" || runState === "colliding"}>1 · Demetleri hızlandır</button>
-              <button type="button" className="collision" onClick={collideBeams} disabled={runState !== "stored"}>2 · ATLAS’ta çarpıştır</button>
-              <button type="button" onClick={resetBeams}>Yeni demet</button>
-            </div>
-            <div className="cern-system-note">
-              <b>Elektrik alan</b> parçacığa enerji verir. <b>Manyetik alan</b>
-              demeti büker, odaklar ve iki demeti çarpışma noktasında sıkıştırır.
-            </div>
-          </section>
-
-          <section className="cern-event-picker">
-            <span>ÇARPIŞMA SEÇİMİ</span>
-            <h2>Çarpışınca ne çıksın?</h2>
-            <div>
-              {(Object.keys(EVENTS) as EventKind[]).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={selectedEvent === key ? "active" : ""}
-                  onClick={() => {
-                    setSelectedEvent(key);
-                    setDetectedEvent(null);
-                    if (runState === "detected") setRunState("stored");
-                  }}
-                >
-                  <b>{EVENTS[key].title}</b>
-                  <small>{EVENTS[key].outputSummary}</small>
-                </button>
-              ))}
-            </div>
-            <article>
-              <small>SEÇİLEN OLAY</small>
-              <strong>{event.reaction}</strong>
-              <p><b>{event.outputSummary}</b><br />{event.description}</p>
-            </article>
-          </section>
-        </div>
-      )}
-
-      {setupComplete && (
-        <div className="cern-analysis">
-          <div className="cern-event-display-wrap">
-            <div className="cern-section-heading">
-              <span>ATLAS DEDEKTÖRÜ</span>
-              <h2>Dedektörde ne görüyoruz?</h2>
-              <p>Renkli etiketler çıkan parçacığın adını ve hangi dedektör katmanında görüldüğünü doğrudan gösterir.</p>
-            </div>
-            <CernEventDisplay event={detectedEvent} />
-          </div>
-
-          <aside className="cern-evidence-panel">
-            <span>ÇARPIŞMA SONUCU</span>
-            <h2>{detectedEvent?.outputSummary ?? "Çarpışma bekleniyor"}</h2>
-            {detectedEvent ? (
-              <>
-                <strong>{detectedEvent.reaction}</strong>
-                <div className="cern-output-list">
-                  {detectedEvent.outputs.map((output) => (
-                    <article key={`${output.symbol}-${output.name}`}>
-                      <i style={{ background: output.color }}>{output.symbol}</i>
-                      <span><b>{output.name}</b><small>{output.detector}</small></span>
-                      <em className={output.direct ? "direct" : "inferred"}>{output.direct ? "DEDEKTÖRDE SİNYAL" : "SİNYALDEN ÇIKARIM"}</em>
-                    </article>
-                  ))}
-                </div>
-                <p className="cern-output-rule"><b>Basit kural:</b> İz veya enerji kümesi dedektör sinyalidir. Higgs, Z, üst kuark ve nötrino gibi parçacıklar bu sinyallerin birlikte yorumlanmasıyla bulunur.</p>
-              </>
-            ) : (
-              <p>Demetleri çarpıştırdığında çıkan her parçacık; adı, sembolü ve görüldüğü dedektör katmanıyla burada listelenecek.</p>
-            )}
-          </aside>
-        </div>
-      )}
-
-      {setupComplete && (
-        <div className="cern-standard-model">
-          <div className="cern-section-heading">
-            <span>STANDART MODEL</span>
-            <h2>Önce aileyi, sonra parçacığı seç</h2>
-            <p>Bütün tabloyu aynı anda göstermek yerine yalnızca seçtiğin aile açılır. Yeşil nokta, çalıştırdığın olayla ilişkili parçacığı gösterir.</p>
-          </div>
-          <div className="cern-family-tabs" role="tablist" aria-label="Standart Model parçacık aileleri">
-            {[
-              { group: "quark" as const, label: "Kuarklar", count: 6, first: "u", text: "Protonun içi ve jetler" },
-              { group: "lepton" as const, label: "Leptonlar", count: 6, first: "e", text: "Elektron, müon, tau, nötrinolar" },
-              { group: "boson" as const, label: "Bozonlar", count: 4, first: "g", text: "Etkileşim taşıyıcıları" },
-              { group: "higgs" as const, label: "Higgs", count: 1, first: "h", text: "Higgs alanının parçacığı" },
-            ].map((family) => (
-              <button
-                key={family.group}
-                type="button"
-                className={activeParticleGroup === family.group ? "active" : ""}
-                onClick={() => {
-                  setActiveParticleGroup(family.group);
-                  setSelectedParticle(family.first);
-                }}
-                aria-pressed={activeParticleGroup === family.group}
-              >
-                <b>{family.label} <i>{family.count}</i></b><small>{family.text}</small>
-              </button>
-            ))}
-          </div>
-          {detectedEvent && (
-            <div className="cern-related-particles">
-              <span>BU ÇARPIŞMAYLA İLİŞKİLİ:</span>
-              {detectedEvent.particles.map((id) => {
-                const related = PARTICLES.find((item) => item.id === id);
-                if (!related) return null;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => {
-                      setActiveParticleGroup(related.group);
-                      setSelectedParticle(related.id);
-                    }}
-                  >
-                    <b>{related.symbol}</b>{related.name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <div className="cern-particle-layout">
-            <div className={`cern-particle-grid ${activeParticleGroup}`} aria-label="Seçilen Standart Model parçacık ailesi">
-              {visibleParticles.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`${selectedParticle === item.id ? "selected" : ""} ${observedSet.has(item.id) ? "observed" : ""}`}
-                  onClick={() => setSelectedParticle(item.id)}
-                  aria-pressed={selectedParticle === item.id}
-                >
-                  <strong>{item.symbol}</strong><span>{item.name}</span><small>{item.generation ? `${item.generation}. nesil` : item.group === "higgs" ? "skaler bozon" : "taşıyıcı bozon"}</small>
-                </button>
-              ))}
-            </div>
-
-            <aside className={`cern-particle-detail ${particle.group}`}>
-              <span>SEÇİLEN PARÇACIK</span>
-              <div><strong>{particle.symbol}</strong><h3>{particle.name}</h3></div>
-              <dl>
-                <div><dt>Aile</dt><dd>{particle.group === "quark" ? "Kuark" : particle.group === "lepton" ? "Lepton" : particle.group === "boson" ? "Taşıyıcı bozon" : "Higgs bozonu"}</dd></div>
-                <div><dt>Elektrik yükü</dt><dd>{particle.charge}</dd></div>
-                <div><dt>Nesil</dt><dd>{particle.generation ? `${particle.generation}. nesil` : "—"}</dd></div>
-              </dl>
-              <p>{particle.observation}</p>
-              <small>{observedSet.has(particle.id) ? "Bu parçacık çalıştırılan olaylardan biriyle ilişkilendirildi." : "Farklı olayları çalıştırarak bu parçacığın dedektör kanıtını ara."}</small>
-            </aside>
-          </div>
-        </div>
-      )}
-
-      {setupComplete && (
-        <div className="cern-data-card">
-          <div className="cern-section-heading">
-            <span>İDEAL OLAY KAYITLARI</span>
-            <h2>Çarpışma günlüğü</h2>
-            <p>Her olayda çarpışma enerjisini, kısa ömürlü ara parçacıkları ve dedektörde kalan kanıtı karşılaştır.</p>
-          </div>
-          <div className="cern-table-wrap">
-            <table>
-              <thead><tr><th>#</th><th>√s</th><th>Olay</th><th>Tepkime</th><th>İlişkili parçacıklar</th><th>Dedektör kanıtı</th></tr></thead>
-              <tbody>
-                {readings.length ? readings.map((reading, index) => (
-                  <tr key={reading.id}>
-                    <td>{index + 1}</td>
-                    <td>{format(reading.energy)} TeV</td>
-                    <td><b>{reading.event}</b></td>
-                    <td>{reading.reaction}</td>
-                    <td>{reading.particles}</td>
-                    <td>{reading.evidence}</td>
-                  </tr>
-                )) : <tr><td colSpan={6}>İlk proton–proton çarpışmasını çalıştır.</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {setupComplete && (
-        <div className="cern-report">
-          <div className="cern-section-heading">
-            <span>TYMM · DENEY RAPORU</span>
-            <h2>Düzenekten kanıta, kanıttan modele</h2>
-            <p>Yanıtlarını kendi kurduğun hızlandırıcı zinciri ve olay görüntülerine dayandır.</p>
-          </div>
-          <div>
-            {[
-              "Linac4, PSB, PS ve SPS neden tek bir hızlandırıcı yerine art arda kullanılıyor?",
-              "RF elektrik alanları ile mıknatısların proton demeti üzerindeki görevlerini karşılaştır.",
-              "Elektron, foton, jet ve müon ATLAS'ın hangi katmanlarında farklı kanıtlar bırakıyor?",
-              "Nötrino, W, Z, üst kuark ve Higgs gibi parçacıkların varlığı hangi dolaylı kanıtlardan çıkarılıyor?",
-            ].map((question, index) => (
-              <label key={question}>
-                <span><b>{index + 1}</b>{question}</span>
-                <textarea
-                  value={answers[index]}
-                  onChange={(eventObject) => setAnswers((current) => current.map((answer, answerIndex) => answerIndex === index ? eventObject.target.value : answer))}
-                  placeholder="Düzenek ve olay görüntüsünden kanıt göstererek yaz..."
-                />
-              </label>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="cern-sources">
-        <span>MODELİN BİLİMSEL DAYANAKLARI</span>
-        <a href="https://home.cern/science/accelerators/large-hadron-collider" target="_blank" rel="noreferrer">CERN · Large Hadron Collider</a>
-        <a href="https://home.cern/science/accelerators/proton-synchrotron-booster" target="_blank" rel="noreferrer">CERN · Proton Synchrotron Booster</a>
-        <a href="https://home.cern/science/physics/standard-model" target="_blank" rel="noreferrer">CERN · Standard Model</a>
-        <a href="https://opendata.atlas.cern/docs/documentation/introduction/introduction_ATLAS/" target="_blank" rel="noreferrer">ATLAS Open Data · Detector layers</a>
+        <span>Bilimsel dayanak</span>
+        <a href="https://home.cern/science/accelerators/large-hadron-collider" target="_blank" rel="noreferrer">CERN · LHC</a>
+        <a href="https://opendata.atlas.cern/docs/documentation/introduction/introduction_ATLAS/" target="_blank" rel="noreferrer">ATLAS · Dedektör</a>
       </div>
     </section>
   );
