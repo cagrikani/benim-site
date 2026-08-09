@@ -31,6 +31,7 @@ type ReflectionReading = {
 type MeasurementReading = {
   id: number;
   frequency: number;
+  amplitude: number;
   wavelength: number;
   period: number;
   speed: number;
@@ -66,7 +67,7 @@ const CANVAS_WIDTH = 920;
 const CANVAS_HEIGHT = 560;
 const TANK = { x: 48, y: 52, width: 660, height: 454 };
 const GRAVITY = 9.81;
-const SETUP_ORDER = ["tank", "motor", "source", "power", "apparatus"] as const;
+const SETUP_ORDER = ["tank", "motor", "apparatus"] as const;
 type SetupKind = (typeof SETUP_ORDER)[number];
 
 const clamp = (value: number, minimum: number, maximum: number) =>
@@ -234,6 +235,7 @@ function drawTankFrame(context: CanvasRenderingContext2D) {
 function drawPowerUnit(
   context: CanvasRenderingContext2D,
   frequency: number,
+  amplitude: number,
   running: boolean,
 ) {
   context.save();
@@ -253,12 +255,16 @@ function drawPowerUnit(
   context.roundRect(762, 301, 106, 44, 7);
   context.fill();
   context.fillStyle = running ? "#72e39a" : "#739092";
-  context.font = "900 16px ui-monospace, monospace";
+  context.font = "900 14px ui-monospace, monospace";
   context.textAlign = "center";
-  context.fillText(`${format(frequency)} Hz`, 815, 329);
+  context.fillText(`${format(frequency)} Hz`, 815, 320);
+  context.fillStyle = running ? "#f3b358" : "#789092";
+  context.font = "800 10px ui-monospace, monospace";
+  context.fillText(`A ${format(amplitude)} cm`, 815, 338);
 
   [
-    { x: 815, label: "FREKANS", value: frequency / 8 },
+    { x: 779, label: "FREKANS", value: frequency / 8 },
+    { x: 850, label: "GENLİK", value: amplitude / 2.5 },
   ].forEach((knob) => {
     context.fillStyle = "#8ba0a1";
     context.beginPath();
@@ -655,13 +661,24 @@ function drawMeasurementMode(
   context: CanvasRenderingContext2D,
   time: number,
   frequency: number,
+  amplitude: number,
   wavelengthPixels: number,
   standingWave: boolean,
 ) {
   context.save();
   clipTank(context);
   const phase = (time * frequency * wavelengthPixels) % wavelengthPixels;
-  drawParallelWavefronts(context, { x: 378, y: 445 }, { x: 0, y: -1 }, wavelengthPixels, -phase, 11, 280, "rgba(247,255,255,0.96)", 2.4);
+  drawParallelWavefronts(
+    context,
+    { x: 378, y: 445 },
+    { x: 0, y: -1 },
+    wavelengthPixels,
+    -phase,
+    11,
+    280,
+    `rgba(247,255,255,${clamp(0.58 + amplitude * 0.16, 0.65, 0.98)})`,
+    1.5 + amplitude * 0.8,
+  );
   drawDirectionArrow(context, { x: 238, y: 420 }, { x: 238, y: 290 }, "YAYILMA YÖNÜ");
 
   if (standingWave) {
@@ -708,6 +725,10 @@ function drawMeasurementMode(
   context.font = "900 12px Arial";
   context.textAlign = "left";
   context.fillText("λ", 632, (firstY + secondY) / 2 + 4);
+  context.font = "900 9px Arial";
+  context.fillText("DALGA TEPESİ", 95, firstY + 3);
+  context.fillStyle = "rgba(35,79,83,0.72)";
+  context.fillText("DALGA ÇUKURU", 95, (firstY + secondY) / 2 + 3);
   context.restore();
 }
 
@@ -920,6 +941,7 @@ function RippleTankCanvas({
   running,
   installedCount,
   frequency,
+  amplitude,
   wavelengthPixels,
   sourceType,
   reflectorType,
@@ -942,6 +964,7 @@ function RippleTankCanvas({
   running: boolean;
   installedCount: number;
   frequency: number;
+  amplitude: number;
   wavelengthPixels: number;
   sourceType: SourceType;
   reflectorType: ReflectorType;
@@ -978,7 +1001,7 @@ function RippleTankCanvas({
       if (setupReady && mode === "reflection") {
         drawReflectionMode(context, time, frequency, wavelengthPixels, sourceType, reflectorType, reflectorAngle, circularSource, focusDirection);
       } else if (setupReady && mode === "measurement") {
-        drawMeasurementMode(context, time, frequency, wavelengthPixels, standingWave);
+        drawMeasurementMode(context, time, frequency, amplitude, wavelengthPixels, standingWave);
       } else if (setupReady && mode === "diffraction") {
         drawDiffractionMode(context, time, frequency, wavelengthPixels, diffractionType, slitWidth);
       } else if (setupReady && mode === "refraction") {
@@ -986,7 +1009,7 @@ function RippleTankCanvas({
       } else if (setupReady) {
         drawInterferenceMode(context, time, frequency, wavelengthPixels, sourceSeparation, selectedPoint);
       }
-      if (installedCount >= 3) {
+      if (installedCount >= 2) {
         const barType: SourceBarType = mode === "interference"
           ? "double"
           : mode === "reflection"
@@ -995,9 +1018,9 @@ function RippleTankCanvas({
         drawSourceBar(context, barType, mode === "refraction" ? incidenceAngle : 0);
       }
       if (installedCount >= 2) {
-        drawMotorConnection(context, running && setupReady, installedCount >= 3, installedCount >= 4);
+        drawMotorConnection(context, running && setupReady, true, true);
+        drawPowerUnit(context, frequency, amplitude, running && setupReady);
       }
-      if (installedCount >= 4) drawPowerUnit(context, frequency, running && setupReady);
       context.fillStyle = "rgba(255,255,255,0.94)";
       context.beginPath();
       context.roundRect(70, 68, 235, 38, 10);
@@ -1010,7 +1033,7 @@ function RippleTankCanvas({
     };
     animationFrame = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animationFrame);
-  }, [circularSource, diffractionType, focusDirection, frequency, incidenceAngle, installedCount, mode, reflectorAngle, reflectorType, refractionAngle, running, selectedPoint, slitWidth, sourceSeparation, sourceType, standingWave, wavelengthDeepPixels, wavelengthPixels, wavelengthShallowPixels]);
+  }, [amplitude, circularSource, diffractionType, focusDirection, frequency, incidenceAngle, installedCount, mode, reflectorAngle, reflectorType, refractionAngle, running, selectedPoint, slitWidth, sourceSeparation, sourceType, standingWave, wavelengthDeepPixels, wavelengthPixels, wavelengthShallowPixels]);
 
   const updatePointer = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const point = pointFromPointer(event);
@@ -1052,16 +1075,24 @@ function RippleTankCanvas({
   );
 }
 
-const modeLabels: Record<WaveMode, { step: string; title: string; text: string }> = {
-  reflection: { step: "01", title: "Yansıma", text: "Düz, dairesel ve odaklanan dalga" },
-  measurement: { step: "02", title: "Dalga ölçümü", text: "Dalga boyu, periyot ve hız" },
-  diffraction: { step: "03", title: "Kırınım", text: "Engel kenarı veya yarık" },
-  refraction: { step: "04", title: "Kırılma", text: "Derin ve sığ su bölgesi" },
-  interference: { step: "05", title: "Girişim", text: "İki noktasal kaynak" },
+const modeLabels: Record<WaveMode, { step: string; grade: string; title: string; text: string }> = {
+  measurement: { step: "01", grade: "10. SINIF", title: "Dalgayı tanı", text: "Tepe, çukur, λ, A, f, T ve hız" },
+  reflection: { step: "02", grade: "10. SINIF", title: "Yansıma", text: "Liman duvarından geri dönen dalga" },
+  refraction: { step: "03", grade: "10. SINIF", title: "Kırılma", text: "Sığ kıyıya yaklaşan dalga" },
+  diffraction: { step: "04", grade: "12. SINIF", title: "Kırınım", text: "Liman ağzından yayılan dalga" },
+  interference: { step: "05", grade: "12. SINIF", title: "Girişim", text: "İki yağmur damlasının deseni" },
+};
+
+const realLifeExamples: Record<WaveMode, { title: string; text: string }> = {
+  measurement: { title: "Havuza düzenli dokunuş", text: "Kaynak daha hızlı titreştikçe tepeler daha sık üretilir; genlik büyüdükçe su yüzeyi daha güçlü salınır." },
+  reflection: { title: "Liman duvarı", text: "Dalgalar sert kıyı veya liman duvarına çarpınca gelme açısına eşit açıyla geri döner." },
+  refraction: { title: "Sığlaşan sahil", text: "Kıyıya yaklaşan dalga yavaşlar, dalga boyu küçülür ve doğrultusu normale yaklaşır." },
+  diffraction: { title: "Liman girişi", text: "Dalgalar dar bir açıklıktan geçince açıklığın arkasındaki bölgeye bükülerek yayılır." },
+  interference: { title: "Aynı anda düşen iki damla", text: "İki kaynaktan gelen tepeler bazı noktalarda güçlenir, bazı noktalarda birbirini zayıflatır." },
 };
 
 const modeApparatus: Record<WaveMode, string> = {
-  reflection: "Düz ve parabolik yansıtıcı",
+  reflection: "Düz yansıtıcı",
   measurement: "Sönümleyici ve ölçüm cetveli",
   diffraction: "Engel ve ayarlı yarık",
   refraction: "Cam blok",
@@ -1085,10 +1116,8 @@ function RippleTankSetup({
 }) {
   const setupItems: Array<{ kind: SetupKind; name: string; detail: string }> = [
     { kind: "tank", name: "Dalga leğeni", detail: "Leğeni masaya koy ve suyu ekle" },
-    { kind: "motor", name: "Ripple motor", detail: "Motoru taşıyıcıya tak" },
-    { kind: "source", name: "Dalga kaynağı", detail: mode === "interference" ? "İki kaynak ucunu bağla" : "Kaynak ucunu motora bağla" },
-    { kind: "power", name: "Güç kaynağı", detail: "Motor kablosunu bağla" },
-    { kind: "apparatus", name: modeApparatus[mode], detail: "Deney parçasını leğene koy" },
+    { kind: "motor", name: "Motor ve kaynak", detail: "Motoru, kaynak ucunu ve güç kablosunu bağla" },
+    { kind: "apparatus", name: modeApparatus[mode], detail: "Seçili deney parçasını leğene koy" },
   ];
   const setupReady = installedCount === SETUP_ORDER.length;
   const nextItem = setupItems[installedCount];
@@ -1121,11 +1150,12 @@ function RippleTankSetup({
 }
 
 export default function RippleTankLab() {
-  const [mode, setMode] = useState<WaveMode>("reflection");
+  const [mode, setMode] = useState<WaveMode>("measurement");
   const [running, setRunning] = useState(false);
   const [installedCount, setInstalledCount] = useState(0);
   const previousModeRef = useRef(mode);
   const [frequency, setFrequency] = useState(4);
+  const [amplitude, setAmplitude] = useState(1.2);
   const [waterDepth, setWaterDepth] = useState(1.2);
   const [sourceType, setSourceType] = useState<SourceType>("plane");
   const [reflectorType, setReflectorType] = useState<ReflectorType>("straight");
@@ -1191,6 +1221,7 @@ export default function RippleTankLab() {
 
   const resetMode = () => {
     setFrequency(4);
+    setAmplitude(1.2);
     setWaterDepth(1.2);
     setSourceType("plane");
     setReflectorType("straight");
@@ -1262,7 +1293,7 @@ export default function RippleTankLab() {
       }]);
     } else if (mode === "measurement") {
       setMeasurementReadings((current) => [...current, {
-        id: Date.now(), frequency, wavelength, period, speed: waveSpeed,
+        id: Date.now(), frequency, amplitude, wavelength, period, speed: waveSpeed,
         pattern: standingWave ? "Duran dalga" : "İlerleyen dalga",
       }]);
     } else if (mode === "diffraction") {
@@ -1304,7 +1335,7 @@ export default function RippleTankLab() {
       <div className="rt-mode-switch" role="tablist" aria-label="Dalga leğeni deneyleri">
         {(Object.keys(modeLabels) as WaveMode[]).map((key) => (
           <button key={key} type="button" className={mode === key ? "active" : ""} onClick={() => setMode(key)}>
-            <small>ÇALIŞMA {modeLabels[key].step}</small><b>{modeLabels[key].title}</b><span>{modeLabels[key].text}</span>
+            <small>{modeLabels[key].grade} · DENEY {modeLabels[key].step}</small><b>{modeLabels[key].title}</b><span>{modeLabels[key].text}</span>
           </button>
         ))}
       </div>
@@ -1322,6 +1353,7 @@ export default function RippleTankLab() {
               running={running && setupReady}
               installedCount={installedCount}
               frequency={frequency}
+              amplitude={amplitude}
               wavelengthPixels={mode === "interference" ? wavelength * 8 : wavelengthPixels}
               sourceType={sourceType}
               reflectorType={reflectorType}
@@ -1357,21 +1389,23 @@ export default function RippleTankLab() {
                 onReset={resetSetup}
               />
             ) : <>
+            <div className="rt-real-life-card"><span>GÜNLÜK HAYATTA</span><b>{realLifeExamples[mode].title}</b><p>{realLifeExamples[mode].text}</p></div>
             <div className="rt-power-row"><button type="button" className={running ? "active" : ""} onClick={() => setRunning((value) => !value)}><i />{running ? "Motor çalışıyor" : "Motor kapalı"}</button><button type="button" onClick={resetMode}>Başlangıca dön</button></div>
             <label><span>Ripple motor frekansı <b>{format(frequency)} Hz</b></span><input type="range" min="2" max="8" step="0.5" value={frequency} onChange={(event) => setFrequency(Number(event.target.value))} /></label>
             {mode === "reflection" && (
               <>
-                <div className="rt-segmented rt-three-options"><button type="button" className={sourceType === "pulse" ? "active" : ""} onClick={() => { setSourceType("pulse"); setReflectorType("straight"); }}>Tek atma</button><button type="button" className={sourceType === "plane" ? "active" : ""} onClick={() => setSourceType("plane")}>Düzlemsel kaynak</button><button type="button" className={sourceType === "circular" ? "active" : ""} onClick={() => { setSourceType("circular"); setReflectorType("straight"); }}>Dairesel kaynak</button></div>
-                <div className="rt-segmented"><button type="button" className={reflectorType === "straight" ? "active" : ""} onClick={() => setReflectorType("straight")}>Düz engel</button><button type="button" className={reflectorType === "parabolic" ? "active" : ""} onClick={() => { setReflectorType("parabolic"); setSourceType("plane"); }}>Parabolik engel</button></div>
-                {reflectorType === "straight" ? <label><span>Engel açısı <b>{reflectorAngle}°</b></span><input type="range" min="-30" max="30" value={reflectorAngle} onChange={(event) => setReflectorAngle(Number(event.target.value))} /></label> : <div className="rt-segmented"><button type="button" className={focusDirection === "toward" ? "active" : ""} onClick={() => setFocusDirection("toward")}>Düz dalga → odak</button><button type="button" className={focusDirection === "from" ? "active" : ""} onClick={() => setFocusDirection("from")}>Odak → düz dalga</button></div>}
-                <div className="rt-result-box"><small>İDEAL GÖZLEM</small><strong>{sourceType === "pulse" ? "Tek atma merkezden her doğrultuda aynı hızla yayılır." : reflectorType === "parabolic" ? (focusDirection === "toward" ? "Yansıyan dalgalar odakta toplanır." : "Odaktan çıkan dalga düzlemsel yansır.") : "Gelme açısı yansıma açısına eşittir."}</strong></div>
+                <div className="rt-choice-title"><span>KAYNAK ŞEKLİ</span><small>Günlük bir dokunuş, cetvel veya damlatıcı seç.</small></div>
+                <div className="rt-segmented rt-three-options"><button type="button" className={sourceType === "pulse" ? "active" : ""} onClick={() => setSourceType("pulse")}>Tek dokunuş</button><button type="button" className={sourceType === "plane" ? "active" : ""} onClick={() => setSourceType("plane")}>Düz cetvel</button><button type="button" className={sourceType === "circular" ? "active" : ""} onClick={() => setSourceType("circular")}>Noktasal damlatıcı</button></div>
+                <label><span>Liman duvarının açısı <b>{reflectorAngle}°</b></span><input type="range" min="-30" max="30" value={reflectorAngle} onChange={(event) => setReflectorAngle(Number(event.target.value))} /></label>
+                <div className="rt-result-box"><small>GÖZLEM</small><strong>{sourceType === "pulse" ? "Tek dokunuşun oluşturduğu dalga duvara ulaşıp geri döner." : "Gelme açısı yansıma açısına eşittir."}</strong></div>
               </>
             )}
 
             {mode === "measurement" && (
               <>
+                <label><span>Kaynak genliği <b>{format(amplitude)} cm</b></span><input type="range" min="0.5" max="2.5" step="0.1" value={amplitude} onChange={(event) => setAmplitude(Number(event.target.value))} /></label>
                 <label className="rt-check"><input type="checkbox" checked={standingWave} onChange={(event) => setStandingWave(event.target.checked)} /><span>Yansıtıcı engeli ekle · duran dalga</span></label>
-                <div className="rt-result-box success"><small>CETVELLE DALGA ÖLÇÜMÜ</small><strong>{standingWave ? "Düğüm noktaları arasındaki uzaklık, dalga boyunun yarısıdır." : "İki komşu dalga tepesi arasındaki uzaklık dalga boyudur."}</strong><span>T = {format(period, 3)} s · λ = {format(wavelength)} cm · v = {format(waveSpeed)} cm/s</span></div>
+                <div className="rt-result-box success"><small>TEMEL DALGA KAVRAMLARI</small><strong>{standingWave ? "Düğüm noktaları arasındaki uzaklık, dalga boyunun yarısıdır." : "İki komşu tepe arası λ; denge çizgisiyle tepe arası A’dır."}</strong><span>Su dalgası mekanik bir yüzey dalgasıdır; enerji taşır, suyu leğen boyunca taşımaz.</span><span>A = {format(amplitude)} cm · f = {format(frequency)} Hz · T = {format(period, 3)} s</span><span>λ = {format(wavelength)} cm · v = {format(waveSpeed)} cm/s</span></div>
               </>
             )}
 
@@ -1409,7 +1443,7 @@ export default function RippleTankLab() {
           <div><span>İDEAL ÖLÇÜM TABLOSU</span><h4>{modeLabels[mode].title} kayıtları</h4><p>Bir değişkeni değiştir, gözlemi kaydet ve sonuçları karşılaştır.</p></div>
           <div className="rt-table-wrap">
             {mode === "reflection" && <table><thead><tr><th>#</th><th>Kaynak</th><th>Yansıtıcı</th><th>Açı</th><th>Sonuç</th></tr></thead><tbody>{reflectionReadings.length ? reflectionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{reading.source}</td><td>{reading.reflector}</td><td>{reading.angle}°</td><td><b>{reading.result}</b></td></tr>) : <tr><td colSpan={5}>İlk yansıma gözlemini kaydet.</td></tr>}</tbody></table>}
-            {mode === "measurement" && <table><thead><tr><th>#</th><th>f</th><th>T</th><th>λ</th><th>v</th><th>Görünüm</th></tr></thead><tbody>{measurementReadings.length ? measurementReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.frequency)} Hz</td><td>{format(reading.period, 3)} s</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.speed)} cm/s</td><td><b>{reading.pattern}</b></td></tr>) : <tr><td colSpan={6}>Dalga boyunu gözle ve ölçümü kaydet.</td></tr>}</tbody></table>}
+            {mode === "measurement" && <table><thead><tr><th>#</th><th>A</th><th>f</th><th>T</th><th>λ</th><th>v</th><th>Görünüm</th></tr></thead><tbody>{measurementReadings.length ? measurementReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.amplitude)} cm</td><td>{format(reading.frequency)} Hz</td><td>{format(reading.period, 3)} s</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.speed)} cm/s</td><td><b>{reading.pattern}</b></td></tr>) : <tr><td colSpan={7}>Genliği veya frekansı değiştir ve ölçümü kaydet.</td></tr>}</tbody></table>}
             {mode === "diffraction" && <table><thead><tr><th>#</th><th>Düzenek</th><th>λ</th><th>Yarık</th><th>λ / yarık</th><th>Yayılma</th></tr></thead><tbody>{diffractionReadings.length ? diffractionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{reading.kind}</td><td>{format(reading.wavelength)} cm</td><td>{reading.opening === null ? "—" : `${format(reading.opening)} cm`}</td><td>{reading.ratio === null ? "—" : format(reading.ratio, 2)}</td><td>{reading.spread === null ? "Kenar boyunca" : `${format(reading.spread)}°`}</td></tr>) : <tr><td colSpan={6}>Yarığı veya frekansı değiştir ve kaydet.</td></tr>}</tbody></table>}
             {mode === "refraction" && <table><thead><tr><th>#</th><th>Derinlik 1</th><th>Derinlik 2</th><th>λ₁</th><th>λ₂</th><th>i</th><th>r</th></tr></thead><tbody>{refractionReadings.length ? refractionReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.deepDepth, 2)} cm</td><td>{format(reading.shallowDepth, 2)} cm</td><td>{format(reading.wavelengthDeep)} cm</td><td>{format(reading.wavelengthShallow)} cm</td><td>{reading.incidenceAngle}°</td><td>{format(reading.refractionAngle)}°</td></tr>) : <tr><td colSpan={7}>Cam bloğun derinliğini değiştir ve kaydet.</td></tr>}</tbody></table>}
             {mode === "interference" && <table><thead><tr><th>#</th><th>d</th><th>λ</th><th>Yol farkı</th><th>n</th><th>Sonuç</th></tr></thead><tbody>{interferenceReadings.length ? interferenceReadings.map((reading, index) => <tr key={reading.id}><td>{index + 1}</td><td>{format(reading.separation)} cm</td><td>{format(reading.wavelength)} cm</td><td>{format(reading.pathDifference)} cm</td><td>{reading.fringeOrder}</td><td><b>{reading.result}</b></td></tr>) : <tr><td colSpan={6}>Bir aydınlık saçak seç ve kaydet.</td></tr>}</tbody></table>}

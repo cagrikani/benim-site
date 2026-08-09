@@ -27895,6 +27895,72 @@ footer > a {
   accent-color: #168c9b;
 }
 
+.rt-real-life-card {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  overflow: hidden;
+  padding: 14px 15px 14px 48px;
+  border: 1px solid #cfe1de;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #edf8f6, #fffaf0);
+}
+
+.rt-real-life-card::before {
+  content: "≈";
+  position: absolute;
+  left: 13px;
+  top: 17px;
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  background: #168d9a;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.rt-real-life-card > span {
+  display: block !important;
+  color: #dd8b21 !important;
+  font-size: 7px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.12em;
+}
+
+.rt-real-life-card b {
+  color: #28585d;
+  font-size: 11px;
+}
+
+.rt-real-life-card p {
+  margin: 0;
+  color: #668084;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.rt-choice-title {
+  display: grid;
+  gap: 3px;
+  padding-top: 2px;
+}
+
+.rt-choice-title span {
+  display: block !important;
+  color: #315f64 !important;
+  font-size: 8px !important;
+  font-weight: 950 !important;
+  letter-spacing: 0.08em;
+}
+
+.rt-choice-title small {
+  color: #7b9093;
+  font-size: 7px;
+}
+
 .rt-power-row,
 .rt-segmented {
   display: grid;
