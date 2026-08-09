@@ -771,6 +771,69 @@ test("fotoelektrik tezgâhı gerçekçi cihaz, tayf, bağlantı ve ölçüm gör
   assert.match(css, /\.pe-report\s*\{/);
 });
 
+test("Modern Fizik alanı CERN hızlandırıcı zinciri ve Standart Model deneyini sunar", async () => {
+  const hub = await readFile(
+    new URL("app/ModernPhysicsLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("app/CernAcceleratorLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(hub, /CernAcceleratorLab/);
+  assert.match(hub, /CERN parçacık hızlandırıcı/);
+  assert.match(hub, /activeExperiment === "cern"/);
+  assert.match(page, /H⁻ iyon kaynağı/);
+  assert.match(page, /Linac4/);
+  assert.match(page, /PS Booster/);
+  assert.match(page, /Proton Synchrotron/);
+  assert.match(page, /Super Proton Synchrotron/);
+  assert.match(page, /LHC çift vakum tüpü/);
+  assert.match(page, /Süperiletken mıknatıslar \+ RF/);
+  assert.match(page, /ATLAS dedektörü/);
+  assert.match(page, /160 MeV/);
+  assert.match(page, /2 GeV/);
+  assert.match(page, /26 GeV/);
+  assert.match(page, /450 GeV/);
+  assert.match(page, /6,8 TeV \/ demet/);
+  assert.match(page, /application\/x-fizik-atolyesi-cern-part/);
+  assert.match(page, /onDragStart/);
+  assert.match(page, /onDrop/);
+  assert.match(page, /accelerateBeams/);
+  assert.match(page, /collideBeams/);
+  assert.match(page, /CernAcceleratorCanvas/);
+  assert.match(page, /CernEventDisplay/);
+  assert.match(page, /Higgs → iki foton/);
+  assert.match(page, /Z → elektron çifti/);
+  assert.match(page, /Üst kuark çifti/);
+  assert.match(page, /Kuark–gluon saçılması/);
+  assert.match(page, /STANDART MODEL/);
+  assert.equal((page.match(/group: "quark"/g) ?? []).length, 6);
+  assert.equal((page.match(/group: "lepton"/g) ?? []).length, 6);
+  assert.equal((page.match(/group: "boson"/g) ?? []).length, 4);
+  assert.equal((page.match(/group: "higgs"/g) ?? []).length, 1);
+  assert.match(page, /Eksik enine momentum/);
+  assert.match(page, /İDEAL OLAY KAYITLARI/);
+  assert.match(page, /TYMM · DENEY RAPORU/);
+  assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
+});
+
+test("CERN laboratuvarı gerçekçi halka, dedektör ve responsive paneller içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.modern-experiment-switch\s*\{/);
+  assert.match(css, /\.cern-lab\s*\{/);
+  assert.match(css, /\.cern-builder\s*\{/);
+  assert.match(css, /\.cern-parts-panel\s*\{/);
+  assert.match(css, /\.cern-stage\.drag-over\s*\{/);
+  assert.match(css, /\.cern-accelerator-canvas\s*,/);
+  assert.match(css, /\.cern-control-room\s*\{/);
+  assert.match(css, /\.cern-event-canvas\s*\{/);
+  assert.match(css, /\.cern-particle-grid\s*\{/);
+  assert.match(css, /\.cern-particle-detail\s*\{/);
+  assert.match(css, /\.cern-data-card\s*,/);
+  assert.match(css, /\.cern-report\s*\{/);
+});
+
 test("balistik sarkaç modülü PDF düzeneğiyle kurulabilir ve iki yöntemle hız bulur", async () => {
   const page = await readFile(
     new URL("app/BallisticPendulumLab.tsx", projectRoot),
@@ -1195,6 +1258,7 @@ test("tüm deney modülleri ideal ölçüm politikası uygular", async () => {
     "app/TorqueLab.tsx",
     "app/PrismLab.tsx",
     "app/PhotoelectricLab.tsx",
+    "app/CernAcceleratorLab.tsx",
     "app/OhmLawLab.tsx",
     "app/ResistorConnectionsLab.tsx",
   ];

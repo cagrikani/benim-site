@@ -29009,3 +29009,559 @@ footer > a {
     flex: 1;
   }
 }
+
+/* Modern Fizik · CERN parçacık hızlandırıcı */
+
+.modern-site-header nav button {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #667b80;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  font-weight: 850;
+}
+
+.modern-site-header nav button:hover,
+.modern-site-header nav button.active {
+  background: #eee9f7;
+  color: #5e4788;
+}
+
+.modern-experiment-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: min(1240px, calc(100% - 40px));
+  margin: 26px auto 0;
+}
+
+.modern-experiment-switch > button {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  align-items: center;
+  gap: 15px;
+  min-height: 104px;
+  padding: 13px 17px;
+  border: 1px solid #d9e1df;
+  border-radius: 17px;
+  background: rgba(255,255,255,0.8);
+  color: #4d656b;
+  cursor: pointer;
+  text-align: left;
+  transition: 180ms ease;
+}
+
+.modern-experiment-switch > button:hover,
+.modern-experiment-switch > button.active {
+  border-color: rgba(114,86,162,0.52);
+  background: #fff;
+  box-shadow: 0 14px 32px rgba(49,54,77,0.1);
+  transform: translateY(-2px);
+}
+
+.modern-experiment-switch > button > span {
+  display: grid;
+  gap: 4px;
+}
+
+.modern-experiment-switch small {
+  color: #9a7dc1;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+}
+
+.modern-experiment-switch b {
+  color: #364f58;
+  font-size: 13px;
+}
+
+.modern-experiment-switch em {
+  color: #74888c;
+  font-size: 8px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.modern-experiment-switch > button > i {
+  position: relative;
+  display: block;
+  width: 82px;
+  height: 74px;
+  overflow: hidden;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #14263c, #36355a);
+}
+
+.modern-switch-photo::before {
+  position: absolute;
+  left: 12px;
+  top: 32px;
+  width: 58px;
+  height: 5px;
+  background: linear-gradient(90deg, #6549e5, #46c9f2, #66d97d, #ffd557, #ff765d);
+  box-shadow: 0 0 14px rgba(101,214,255,0.7);
+  content: "";
+  transform: rotate(-9deg);
+}
+
+.modern-switch-photo::after {
+  position: absolute;
+  right: 12px;
+  top: 17px;
+  width: 28px;
+  height: 38px;
+  border: 4px solid #d7e3eb;
+  border-radius: 4px;
+  background: #263549;
+  content: "";
+}
+
+.modern-switch-cern {
+  display: grid !important;
+  place-items: center;
+}
+
+.modern-switch-cern::before,
+.modern-switch-cern::after,
+.modern-switch-cern u {
+  position: absolute;
+  border: 3px solid #50bad0;
+  border-radius: 50%;
+  content: "";
+}
+
+.modern-switch-cern::before { width: 58px; height: 38px; }
+.modern-switch-cern::after { width: 12px; height: 12px; border-color: #ffcf5f; box-shadow: 0 0 12px #ffcf5f; }
+.modern-switch-cern u:nth-child(1) { width: 44px; height: 28px; border-color: #a36dd3; }
+.modern-switch-cern u:nth-child(2) { width: 5px; height: 5px; border-color: #fff; background: #fff; transform: translateX(29px); }
+.modern-switch-cern u:nth-child(3) { width: 5px; height: 5px; border-color: #ff72a6; background: #ff72a6; transform: translateX(-29px); }
+
+.cern-lab {
+  min-height: 100vh;
+  padding: 58px 20px 86px;
+  background:
+    radial-gradient(circle at 7% 7%, rgba(79,177,205,0.14), transparent 29rem),
+    radial-gradient(circle at 94% 23%, rgba(133,84,175,0.15), transparent 31rem),
+    linear-gradient(#f6faf9, #eaf1ef);
+  color: #29464f;
+}
+
+.cern-heading,
+.cern-flow,
+.cern-builder,
+.cern-control-room,
+.cern-analysis,
+.cern-standard-model,
+.cern-data-card,
+.cern-report,
+.cern-sources {
+  width: min(1240px, 100%);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.cern-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.43fr);
+  align-items: end;
+  gap: 44px;
+  margin-bottom: 24px;
+}
+
+.cern-heading > div > span,
+.cern-section-heading > span,
+.cern-parts-panel .cern-panel-title > span,
+.cern-beam-controls > span,
+.cern-event-picker > span,
+.cern-evidence-panel > span,
+.cern-particle-detail > span,
+.cern-sources > span {
+  color: #70539b;
+  font-size: 8px;
+  font-weight: 950;
+  letter-spacing: 0.16em;
+}
+
+.cern-heading h1 {
+  max-width: 800px;
+  margin: 8px 0 11px;
+  color: #253f4b;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(28px, 4.1vw, 53px);
+  line-height: 1.01;
+  letter-spacing: -0.035em;
+}
+
+.cern-heading p {
+  max-width: 760px;
+  margin: 0;
+  color: #6a8085;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.cern-heading aside {
+  display: grid;
+  gap: 7px;
+  padding: 19px;
+  border: 1px solid rgba(112,83,155,0.2);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fff, #f2edf8);
+}
+
+.cern-heading aside small { color: #70539b; font-size: 8px; font-weight: 950; }
+.cern-heading aside b { color: #354f5a; font-size: 11px; line-height: 1.4; }
+.cern-heading aside span { color: #75878b; font-size: 8px; font-weight: 750; }
+
+.cern-flow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid #d6e1de;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.cern-flow span {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-right: 1px solid #e2e9e7;
+  color: #5f7479;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.cern-flow span:last-child { border-right: 0; }
+.cern-flow i {
+  display: grid;
+  place-items: center;
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #70539b;
+  color: #fff;
+  font-size: 8px;
+  font-style: normal;
+}
+
+.cern-builder {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.31fr) minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid #d3dfdd;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 22px 54px rgba(41,64,70,0.11);
+}
+
+.cern-parts-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 720px;
+  padding: 21px;
+  border-right: 1px solid #d9e3e1;
+  background: #f7faf9;
+}
+
+.cern-panel-title { display: grid; gap: 6px; margin-bottom: 14px; }
+.cern-panel-title > span { display: flex; justify-content: space-between; }
+.cern-panel-title > span b { color: #2f7b86; }
+.cern-panel-title h2 { margin: 0; color: #2b4650; font-family: Georgia, serif; font-size: 23px; }
+.cern-panel-title p { margin: 0; color: #71858a; font-size: 8px; line-height: 1.5; }
+
+.cern-part-list { display: grid; gap: 7px; }
+.cern-part-list > button {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 66px;
+  padding: 8px 10px;
+  border: 1px solid #dbe5e2;
+  border-radius: 11px;
+  background: #fff;
+  color: #4d656a;
+  cursor: grab;
+  text-align: left;
+  transition: 150ms ease;
+}
+
+.cern-part-list > button:hover:not(:disabled),
+.cern-part-list > button.next {
+  border-color: #46a5af;
+  box-shadow: 0 7px 18px rgba(46,128,139,0.11);
+  transform: translateX(2px);
+}
+
+.cern-part-list > button.installed {
+  border-color: #b9dece;
+  background: #edf8f2;
+  opacity: 0.72;
+}
+
+.cern-part-list > button:disabled { cursor: default; }
+.cern-part-list > button > span:last-child { display: grid; gap: 2px; }
+.cern-part-list b { color: #344f58; font-size: 8px; }
+.cern-part-list small { color: #788b8f; font-size: 7px; line-height: 1.35; }
+.cern-part-list em { color: #73569b; font-size: 7px; font-style: normal; font-weight: 900; }
+
+.cern-part-icon {
+  position: relative;
+  display: block;
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #203b50, #0e2031);
+}
+
+.cern-part-icon i { position: absolute; display: block; }
+.cern-part-icon-source i:first-child { left: 14px; top: 8px; width: 18px; height: 28px; border: 3px solid #72d0d9; border-radius: 6px 6px 10px 10px; }
+.cern-part-icon-source i:nth-child(2) { left: 20px; top: 4px; width: 7px; height: 6px; background: #a7c5ce; }
+.cern-part-icon-linac4 i:first-child { left: 5px; top: 17px; width: 36px; height: 12px; border: 3px solid #71cbd6; border-radius: 5px; }
+.cern-part-icon-linac4 i:nth-child(2), .cern-part-icon-linac4 i:nth-child(3), .cern-part-icon-linac4 i:nth-child(4) { top: 13px; width: 3px; height: 20px; background: #9d78c7; }
+.cern-part-icon-linac4 i:nth-child(2) { left: 14px; } .cern-part-icon-linac4 i:nth-child(3) { left: 22px; } .cern-part-icon-linac4 i:nth-child(4) { left: 30px; }
+.cern-part-icon-psb i, .cern-part-icon-ps i, .cern-part-icon-sps i, .cern-part-icon-lhc i { border: 3px solid #5fc2d0; border-radius: 50%; }
+.cern-part-icon-psb i:nth-child(1) { inset: 5px; } .cern-part-icon-psb i:nth-child(2) { inset: 10px; } .cern-part-icon-psb i:nth-child(3) { inset: 15px; }
+.cern-part-icon-ps i:first-child { inset: 6px; border-width: 6px; }
+.cern-part-icon-sps i:first-child { left: 4px; top: 9px; width: 38px; height: 28px; border-width: 5px; }
+.cern-part-icon-lhc i:first-child { left: 3px; top: 10px; width: 40px; height: 26px; border-width: 7px; border-color: #477aa1; }
+.cern-part-icon-lhc i:nth-child(2) { left: 4px; top: 11px; width: 38px; height: 24px; border-color: #d16e9c; border-width: 2px; }
+.cern-part-icon-magnets i:first-child { left: 7px; top: 9px; width: 32px; height: 28px; border: 6px solid #407ea0; border-radius: 9px; }
+.cern-part-icon-magnets i:nth-child(2) { left: 18px; top: 12px; width: 10px; height: 22px; border: 2px solid #df79a8; border-radius: 50%; }
+.cern-part-icon-atlas i { border-radius: 50%; }
+.cern-part-icon-atlas i:nth-child(1) { inset: 4px; border: 5px solid #609de0; }
+.cern-part-icon-atlas i:nth-child(2) { inset: 10px; border: 5px solid #e98d55; }
+.cern-part-icon-atlas i:nth-child(3) { inset: 16px; border: 4px solid #f3d363; }
+.cern-part-icon-atlas i:nth-child(4) { inset: 21px; background: #fff; box-shadow: 0 0 8px #fff; }
+
+.cern-clear {
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid #d7e1de;
+  border-radius: 9px;
+  background: transparent;
+  color: #76898d;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 850;
+}
+
+.cern-stage {
+  min-width: 0;
+  padding: 16px;
+  background: #e9efed;
+  transition: 150ms ease;
+}
+
+.cern-stage.drag-over { background: #dff0ed; box-shadow: inset 0 0 0 3px #43a5ad; }
+
+.cern-stage-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: #152c3c;
+  color: #dff5fb;
+}
+
+.cern-stage-toolbar > span:first-child,
+.cern-stage-toolbar > div > span { display: grid; gap: 2px; }
+.cern-stage-toolbar small { color: #76adbe; font-size: 7px; font-weight: 900; letter-spacing: 0.09em; }
+.cern-stage-toolbar b { font-size: 9px; }
+.cern-stage-toolbar > div { display: flex; gap: 20px; text-align: right; }
+
+.cern-accelerator-canvas,
+.cern-event-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 15px;
+  background: #071827;
+}
+
+.cern-message {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 43px;
+  margin-top: 10px;
+  padding: 10px 13px;
+  border: 1px solid #ccdcda;
+  border-radius: 10px;
+  background: #fff;
+  color: #61777c;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.cern-message i { flex: 0 0 9px; width: 9px; height: 9px; border-radius: 50%; background: #50b7c1; box-shadow: 0 0 0 5px rgba(80,183,193,0.12); }
+
+.cern-control-room {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.cern-control-room > section,
+.cern-evidence-panel,
+.cern-standard-model,
+.cern-data-card,
+.cern-report {
+  border: 1px solid #d5e1de;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(43,66,72,0.08);
+}
+
+.cern-control-room > section { padding: 20px; }
+.cern-beam-controls h2, .cern-event-picker h2, .cern-evidence-panel h2, .cern-section-heading h2 { margin: 6px 0 13px; color: #2d4751; font-family: Georgia, serif; font-size: 22px; }
+.cern-beam-controls label { display: grid; gap: 8px; }
+.cern-beam-controls label > span { display: flex; justify-content: space-between; color: #667d82; font-size: 8px; font-weight: 850; }
+.cern-beam-controls label b { color: #70539b; }
+.cern-beam-controls input { width: 100%; accent-color: #70539b; }
+
+.cern-beam-readout { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 12px; }
+.cern-beam-readout span { display: grid; gap: 3px; padding: 10px; border-radius: 9px; background: #f1f6f5; }
+.cern-beam-readout small { color: #7d9093; font-size: 6px; font-weight: 900; }
+.cern-beam-readout b { color: #315965; font-size: 10px; }
+
+.cern-action-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 7px; margin-top: 12px; }
+.cern-action-row button {
+  min-height: 40px;
+  padding: 8px;
+  border: 1px solid #bfcfcd;
+  border-radius: 9px;
+  background: #f5f8f7;
+  color: #506b70;
+  cursor: pointer;
+  font-size: 8px;
+  font-weight: 900;
+}
+.cern-action-row button:first-child { border-color: #4d9aaa; background: #e9f6f6; color: #26737e; }
+.cern-action-row button.collision { border-color: #7c5ba5; background: #f0eafa; color: #65478c; }
+.cern-action-row button:disabled { opacity: 0.45; cursor: default; }
+
+.cern-system-note { margin-top: 11px; padding: 11px 12px; border-radius: 10px; background: #152c3c; color: #b9d4df; font-size: 8px; line-height: 1.55; }
+.cern-system-note b { color: #73e0d0; }
+
+.cern-event-picker > div { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; }
+.cern-event-picker > div button { display: grid; gap: 3px; min-height: 60px; padding: 10px; border: 1px solid #d8e2df; border-radius: 10px; background: #f8faf9; color: #526b70; cursor: pointer; text-align: left; }
+.cern-event-picker > div button.active { border-color: #7657a0; background: #f1ebf9; box-shadow: inset 4px 0 #7657a0; }
+.cern-event-picker button b { font-size: 8px; }
+.cern-event-picker button small { color: #7f8f92; font-size: 7px; }
+.cern-event-picker article { display: grid; gap: 5px; margin-top: 10px; padding: 12px; border-radius: 11px; background: #edf5f4; }
+.cern-event-picker article small { color: #6f539a; font-size: 7px; font-weight: 950; }
+.cern-event-picker article strong { color: #315864; font-size: 11px; }
+.cern-event-picker article p { margin: 0; color: #688084; font-size: 8px; line-height: 1.5; }
+
+.cern-analysis { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 0.35fr); gap: 14px; margin-top: 18px; }
+.cern-event-display-wrap { min-width: 0; padding: 20px; border: 1px solid #d5e1de; border-radius: 18px; background: #fff; box-shadow: 0 14px 36px rgba(43,66,72,0.08); }
+.cern-section-heading { margin-bottom: 14px; }
+.cern-section-heading h2 { margin-bottom: 5px; }
+.cern-section-heading p { max-width: 760px; margin: 0; color: #6f8387; font-size: 9px; line-height: 1.5; }
+.cern-evidence-panel { padding: 20px; }
+.cern-evidence-panel > strong { display: block; padding: 10px; border-radius: 9px; background: #172e3e; color: #dff7ff; font-size: 11px; }
+.cern-evidence-panel ul { display: grid; gap: 7px; margin: 13px 0; padding: 0; list-style: none; }
+.cern-evidence-panel li { position: relative; padding-left: 17px; color: #506a70; font-size: 8px; font-weight: 800; }
+.cern-evidence-panel li::before { position: absolute; left: 0; top: 2px; width: 9px; height: 9px; border-radius: 50%; background: #63cbb6; content: ""; }
+.cern-evidence-panel p { margin: 0; color: #6d8286; font-size: 8px; line-height: 1.6; }
+
+.cern-standard-model, .cern-data-card, .cern-report { margin-top: 18px; padding: 22px; }
+.cern-particle-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; gap: 15px; }
+.cern-particle-grid { display: grid; grid-template-columns: 1fr 1fr 0.75fr 0.45fr; gap: 10px; }
+.cern-particle-grid section { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; align-content: start; padding: 10px; border-radius: 13px; }
+.cern-particle-grid section.quarks { background: #fff0e7; }
+.cern-particle-grid section.leptons { background: #e9f6f2; }
+.cern-particle-grid section.bosons { grid-template-columns: 1fr; background: #eaf0fb; }
+.cern-particle-grid section.higgs { grid-template-columns: 1fr; background: #f1eafa; }
+.cern-particle-grid header { grid-column: 1 / -1; display: grid; gap: 2px; min-height: 35px; }
+.cern-particle-grid header b { color: #3f5962; font-size: 8px; letter-spacing: 0.08em; }
+.cern-particle-grid header small { color: #7c8f92; font-size: 6px; }
+.cern-particle-grid button { position: relative; display: grid; justify-items: center; gap: 2px; min-height: 72px; padding: 8px 5px; border: 2px solid transparent; border-radius: 10px; background: rgba(255,255,255,0.85); color: #4f666b; cursor: pointer; }
+.cern-particle-grid button.selected { border-color: #394f63; box-shadow: 0 7px 16px rgba(42,59,74,0.12); }
+.cern-particle-grid button.observed::after { position: absolute; right: 5px; top: 5px; width: 8px; height: 8px; border-radius: 50%; background: #31c68c; box-shadow: 0 0 0 4px rgba(49,198,140,0.12); content: ""; }
+.cern-particle-grid button strong { font-family: Georgia, serif; font-size: 22px; }
+.cern-particle-grid button span { font-size: 7px; font-weight: 900; }
+.cern-particle-grid button small { color: #849598; font-size: 6px; }
+
+.cern-particle-detail { display: flex; flex-direction: column; padding: 18px; border-radius: 14px; background: #f5f8f7; }
+.cern-particle-detail > div { display: flex; align-items: center; gap: 12px; margin: 9px 0 13px; }
+.cern-particle-detail > div > strong { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 16px; background: #df8254; color: #fff; font-family: Georgia, serif; font-size: 31px; }
+.cern-particle-detail.lepton > div > strong { background: #3ba28e; }
+.cern-particle-detail.boson > div > strong { background: #5d82b8; }
+.cern-particle-detail.higgs > div > strong { background: #7655a4; }
+.cern-particle-detail h3 { margin: 0; color: #334f59; font-family: Georgia, serif; font-size: 22px; }
+.cern-particle-detail dl { display: grid; gap: 5px; margin: 0 0 13px; }
+.cern-particle-detail dl div { display: flex; justify-content: space-between; gap: 8px; padding-bottom: 5px; border-bottom: 1px solid #dce5e2; font-size: 8px; }
+.cern-particle-detail dt { color: #7b8e91; }
+.cern-particle-detail dd { margin: 0; color: #3f5c64; font-weight: 900; }
+.cern-particle-detail p { margin: 0 0 12px; color: #5e767b; font-size: 8px; line-height: 1.55; }
+.cern-particle-detail > small { margin-top: auto; padding: 10px; border-radius: 9px; background: #e8f2ef; color: #567477; font-size: 7px; font-weight: 800; line-height: 1.45; }
+
+.cern-table-wrap { overflow-x: auto; }
+.cern-data-card table { width: 100%; border-collapse: collapse; font-size: 8px; }
+.cern-data-card th { padding: 9px; border-bottom: 2px solid #cedbd8; color: #6d8084; text-align: left; }
+.cern-data-card td { padding: 10px 9px; border-bottom: 1px solid #e2e9e7; color: #50696e; }
+.cern-data-card td b { color: #63478b; }
+
+.cern-report > div:last-child { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.cern-report label { display: grid; gap: 8px; padding: 12px; border: 1px solid #dce5e2; border-radius: 12px; background: #fafcfb; }
+.cern-report label > span { display: flex; align-items: flex-start; gap: 8px; color: #536d72; font-size: 8px; font-weight: 850; line-height: 1.45; }
+.cern-report label > span b { display: grid; place-items: center; flex: 0 0 21px; width: 21px; height: 21px; border-radius: 50%; background: #72539b; color: #fff; font-size: 7px; }
+.cern-report textarea { min-height: 88px; resize: vertical; padding: 10px; border: 1px solid #d2dedb; border-radius: 9px; background: #fff; color: #3f5c64; font: inherit; font-size: 9px; line-height: 1.5; }
+
+.cern-sources { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 18px; padding: 13px 16px; border: 1px solid #d5e1de; border-radius: 12px; background: rgba(255,255,255,0.72); }
+.cern-sources > span { margin-right: 6px; }
+.cern-sources a { padding: 6px 8px; border-radius: 7px; background: #edf3f2; color: #496971; font-size: 7px; font-weight: 850; text-decoration: none; }
+.cern-sources a:hover { background: #e8e0f2; color: #65488b; }
+
+@media (max-width: 1080px) {
+  .cern-builder { grid-template-columns: 1fr; }
+  .cern-parts-panel { min-height: auto; border-right: 0; border-bottom: 1px solid #d9e3e1; }
+  .cern-part-list { grid-template-columns: repeat(2, 1fr); }
+  .cern-particle-layout { grid-template-columns: 1fr; }
+  .cern-particle-grid { grid-template-columns: repeat(2, 1fr); }
+  .cern-particle-grid section.bosons { grid-template-columns: repeat(2, 1fr); }
+  .cern-particle-detail { min-height: 270px; }
+}
+
+@media (max-width: 820px) {
+  .modern-site-header nav { display: none; }
+  .modern-experiment-switch { grid-template-columns: 1fr; }
+  .cern-heading, .cern-control-room, .cern-analysis { grid-template-columns: 1fr; }
+  .cern-flow { grid-template-columns: repeat(2, 1fr); }
+  .cern-flow span:nth-child(2) { border-right: 0; }
+  .cern-flow span:nth-child(-n+2) { border-bottom: 1px solid #e2e9e7; }
+  .cern-stage-toolbar { align-items: flex-start; }
+  .cern-stage-toolbar > div { flex-wrap: wrap; gap: 8px 16px; }
+  .cern-report > div:last-child { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  .modern-experiment-switch { width: min(100% - 20px, 1240px); }
+  .modern-experiment-switch > button { grid-template-columns: 70px 1fr; }
+  .modern-experiment-switch > button > i { width: 66px; height: 63px; }
+  .cern-lab { padding-right: 10px; padding-left: 10px; }
+  .cern-part-list { grid-template-columns: 1fr; }
+  .cern-stage { padding: 9px; }
+  .cern-stage-toolbar { display: grid; }
+  .cern-stage-toolbar > div { display: grid; grid-template-columns: repeat(3, 1fr); text-align: left; }
+  .cern-control-room > section, .cern-event-display-wrap, .cern-evidence-panel, .cern-standard-model, .cern-data-card, .cern-report { padding: 15px; }
+  .cern-action-row { grid-template-columns: 1fr; }
+  .cern-event-picker > div, .cern-particle-grid { grid-template-columns: 1fr; }
+  .cern-particle-grid section.bosons { grid-template-columns: repeat(2, 1fr); }
+  .cern-beam-readout { grid-template-columns: 1fr; }
+}
