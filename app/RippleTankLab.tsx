@@ -450,6 +450,24 @@ function drawParallelWavefronts(
   for (let index = -count; index <= count; index += 1) {
     const offset = index * spacing + phase;
     const waveCenter = add(center, waveDirection, offset);
+    const troughCenter = add(waveCenter, waveDirection, -Math.min(5, spacing * 0.16));
+    context.shadowBlur = 0;
+    context.strokeStyle = "rgba(16, 78, 96, 0.36)";
+    context.lineWidth = Math.max(1, width * 0.62);
+    context.beginPath();
+    context.moveTo(
+      troughCenter.x - tangent.x * lineLength,
+      troughCenter.y - tangent.y * lineLength,
+    );
+    context.lineTo(
+      troughCenter.x + tangent.x * lineLength,
+      troughCenter.y + tangent.y * lineLength,
+    );
+    context.stroke();
+    context.strokeStyle = color;
+    context.lineWidth = width;
+    context.shadowColor = color;
+    context.shadowBlur = 4;
     context.beginPath();
     context.moveTo(
       waveCenter.x - tangent.x * lineLength,
@@ -481,6 +499,16 @@ function drawCircularWaves(
   context.shadowBlur = 5;
   for (let radius = ((phase % spacing) + spacing) % spacing; radius < maximumRadius; radius += spacing) {
     if (radius < 5) continue;
+    context.shadowBlur = 0;
+    context.strokeStyle = "rgba(16, 78, 96, 0.34)";
+    context.lineWidth = 1.2;
+    context.beginPath();
+    context.arc(source.x, source.y, Math.max(1, radius - Math.min(5, spacing * 0.16)), startAngle, endAngle);
+    context.stroke();
+    context.strokeStyle = color;
+    context.lineWidth = 2;
+    context.shadowColor = color;
+    context.shadowBlur = 4;
     context.beginPath();
     context.arc(source.x, source.y, radius, startAngle, endAngle);
     context.stroke();
@@ -495,6 +523,16 @@ function drawSinglePulse(
   color: string,
 ) {
   context.save();
+  context.strokeStyle = color;
+  context.lineWidth = 4;
+  context.shadowColor = color;
+  context.shadowBlur = 8;
+  context.strokeStyle = "rgba(16, 78, 96, 0.4)";
+  context.lineWidth = 2;
+  context.shadowBlur = 0;
+  context.beginPath();
+  context.arc(source.x, source.y, Math.max(1, radius - 6), 0, Math.PI * 2);
+  context.stroke();
   context.strokeStyle = color;
   context.lineWidth = 4;
   context.shadowColor = color;
@@ -571,9 +609,9 @@ function drawReflectionMode(
       context.beginPath();
       context.rect(92, 245, 572, 218);
       context.clip();
-      drawParallelWavefronts(context, { x: 378, y: 425 }, { x: 0, y: -1 }, wavelengthPixels, -phase, 7, 260, "rgba(244,255,255,0.9)");
+      drawParallelWavefronts(context, { x: 378, y: 425 }, { x: 0, y: -1 }, wavelengthPixels, phase, 7, 260, "rgba(244,255,255,0.9)");
       context.restore();
-      drawCircularWaves(context, focus, wavelengthPixels, phase, "rgba(255,229,127,0.92)", 170, Math.PI, Math.PI * 2);
+      drawCircularWaves(context, focus, wavelengthPixels, -phase, "rgba(255,229,127,0.92)", 170, Math.PI, Math.PI * 2);
       drawDirectionArrow(context, { x: 270, y: 410 }, { x: 270, y: 292 }, "GELEN DÜZ DALGA");
       drawDirectionArrow(context, { x: 246, y: 236 }, { x: 354, y: 315 }, "ODAĞA YANSIYAN DALGA", "#ffe176");
     } else {
@@ -601,7 +639,7 @@ function drawReflectionMode(
     if (sourceType === "plane") {
       const incoming = { x: 0, y: -1 };
       const reflected = reflect(incoming, normal);
-      drawParallelWavefronts(context, { x: 378, y: 410 }, incoming, wavelengthPixels, -phase, 5, 250, "rgba(244,255,255,0.92)");
+      drawParallelWavefronts(context, { x: 378, y: 410 }, incoming, wavelengthPixels, phase, 5, 250, "rgba(244,255,255,0.92)");
       drawParallelWavefronts(context, add(center, reflected, 76), reflected, wavelengthPixels, phase, 5, 155, "rgba(255,223,111,0.93)");
     } else {
       const pulseRadius = (time * frequency * wavelengthPixels * 0.58) % 360;
@@ -673,7 +711,7 @@ function drawMeasurementMode(
     { x: 378, y: 445 },
     { x: 0, y: -1 },
     wavelengthPixels,
-    -phase,
+    phase,
     11,
     280,
     `rgba(247,255,255,${clamp(0.58 + amplitude * 0.16, 0.65, 0.98)})`,
@@ -751,7 +789,7 @@ function drawDiffractionMode(
   context.beginPath();
   context.rect(TANK.x + 13, barrierY, TANK.width - 26, TANK.y + TANK.height - barrierY);
   context.clip();
-  drawParallelWavefronts(context, { x: centerX, y: 445 }, { x: 0, y: -1 }, wavelengthPixels, -phase, 8, 280, "rgba(247,255,255,0.94)");
+  drawParallelWavefronts(context, { x: centerX, y: 445 }, { x: 0, y: -1 }, wavelengthPixels, phase, 8, 280, "rgba(247,255,255,0.94)");
   context.restore();
 
   context.strokeStyle = "#6c4a31";
@@ -826,14 +864,14 @@ function drawRefractionMode(
   context.beginPath();
   context.rect(70, boundaryY - 3, 620, 205);
   context.clip();
-  drawParallelWavefronts(context, { x: 330, y: 430 }, incidentDirection, wavelengthDeepPixels, -deepPhase, 8, 300, "rgba(247,255,255,0.95)");
+  drawParallelWavefronts(context, { x: 330, y: 430 }, incidentDirection, wavelengthDeepPixels, deepPhase, 8, 300, "rgba(247,255,255,0.95)");
   context.restore();
 
   context.save();
   context.beginPath();
   context.rect(70, 70, 620, boundaryY - 65);
   context.clip();
-  drawParallelWavefronts(context, { x: 410, y: 238 }, refractedDirection, wavelengthShallowPixels, -shallowPhase, 11, 300, "rgba(255,225,118,0.96)");
+  drawParallelWavefronts(context, { x: 410, y: 238 }, refractedDirection, wavelengthShallowPixels, shallowPhase, 11, 300, "rgba(255,225,118,0.96)");
   context.restore();
 
   context.strokeStyle = "rgba(46,87,91,0.7)";

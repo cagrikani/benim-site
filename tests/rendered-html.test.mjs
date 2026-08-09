@@ -441,6 +441,11 @@ test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sun
   assert.match(page, /KIRILAN DALGA/);
   assert.match(page, /KIRINAN DALGA/);
   assert.match(page, /İKİ NOKTASAL DALGA KAYNAĞI/);
+  assert.match(page, /rgba\(16, 78, 96, 0\.36\)/);
+  assert.match(page, /incidentDirection, wavelengthDeepPixels, deepPhase/);
+  assert.match(page, /refractedDirection, wavelengthShallowPixels, shallowPhase/);
+  assert.doesNotMatch(page, /incidentDirection, wavelengthDeepPixels, -deepPhase/);
+  assert.doesNotMatch(page, /\{ x: centerX, y: 445 \}, \{ x: 0, y: -1 \}, wavelengthPixels, -phase/);
   assert.match(page, /onPointerDown/);
   assert.match(page, /setPointerCapture/);
   assert.match(page, /İDEAL ÖLÇÜM TABLOSU/);
