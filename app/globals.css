@@ -30282,3 +30282,145 @@ footer > a {
   .cern-detector-guide > p { grid-column: auto; }
   .cern-collision-result { padding: 0 12px 12px; }
 }
+
+.cern-energy-bars {
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 3px;
+  height: 15px;
+  font-style: normal;
+  text-decoration: none;
+}
+.cern-energy-bars u,
+.cern-atlas-energy i u {
+  display: block;
+  width: 15px;
+  border-radius: 2px 2px 0 0;
+  background: #dce5e3;
+  text-decoration: none;
+}
+.cern-energy-bars u:nth-child(1),
+.cern-atlas-energy i u:nth-child(1) { height: 5px; }
+.cern-energy-bars u:nth-child(2),
+.cern-atlas-energy i u:nth-child(2) { height: 9px; }
+.cern-energy-bars u:nth-child(3),
+.cern-atlas-energy i u:nth-child(3) { height: 14px; }
+.cern-energy-bars u.on:nth-child(1),
+.cern-atlas-energy i u.on:nth-child(1) { background: #4ebca9; }
+.cern-energy-bars u.on:nth-child(2),
+.cern-atlas-energy i u.on:nth-child(2) { background: #e5b441; }
+.cern-energy-bars u.on:nth-child(3),
+.cern-atlas-energy i u.on:nth-child(3) { background: #e5687d; }
+.cern-energy-choice > em {
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: #f0f5f3;
+  line-height: 1.45;
+}
+.cern-energy-choice > em b { color: #5d4386; }
+
+.cern-particle-primer {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);
+  align-items: center;
+  gap: 18px;
+  background: linear-gradient(135deg, #132d3e, #1b4255) !important;
+  color: #eaf8fc;
+}
+.cern-particle-primer header { display: grid; gap: 7px; }
+.cern-particle-primer header > span {
+  color: #78d8c7;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+}
+.cern-particle-primer h2 {
+  margin: 0;
+  color: #f2fbff;
+  font-size: 24px;
+  line-height: 1.08;
+}
+.cern-particle-primer header p {
+  color: #b7d0da;
+  font-size: 9px;
+}
+.cern-particle-primer > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+.cern-particle-primer article {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  align-items: center;
+  gap: 7px;
+  min-height: 112px;
+  padding: 10px;
+  border: 1px solid rgba(152, 205, 220, 0.19);
+  border-radius: 11px;
+  background: rgba(255,255,255,0.07);
+}
+.cern-particle-primer article > strong {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: #e07c58;
+  color: #fff;
+  font-family: Georgia, serif;
+  font-size: 19px;
+}
+.cern-particle-primer article.fundamental > strong { background: #4fae9d; }
+.cern-particle-primer article > span { display: grid; gap: 2px; }
+.cern-particle-primer article > span b { color: #f3fbfe; font-size: 9px; }
+.cern-particle-primer article > span small { color: #7ee0c9; font-size: 7px; font-weight: 900; }
+.cern-particle-primer article.composite > span small { color: #ffb37f; }
+.cern-particle-primer article > p {
+  grid-column: 1 / -1;
+  color: #b9d0d9;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.cern-atlas-energy {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+  padding: 9px 11px;
+  border: 1px solid rgba(157, 211, 227, 0.24);
+  border-radius: 11px;
+  background: rgba(4, 19, 31, 0.45);
+}
+.cern-atlas-energy > span { display: grid; gap: 2px; }
+.cern-atlas-energy small { color: #7bbbc9; font-size: 7px; font-weight: 950; letter-spacing: 0.1em; }
+.cern-atlas-energy b { color: #f1fbff; font-size: 11px; }
+.cern-atlas-energy i {
+  display: flex;
+  align-items: end;
+  gap: 3px;
+  height: 16px;
+  font-style: normal;
+}
+.cern-atlas-energy i u { width: 18px; background: #315263; }
+.cern-collision-result article.energy-effect.low { border-left: 5px solid #4ebca9; }
+.cern-collision-result article.energy-effect.medium { border-left: 5px solid #e5b441; }
+.cern-collision-result article.energy-effect.high { border-left: 5px solid #e5687d; }
+
+@media (max-width: 960px) {
+  .cern-particle-primer { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 820px) {
+  .cern-particle-primer > div { grid-template-columns: repeat(2, 1fr); }
+  .cern-atlas-titlebar { flex-wrap: wrap; }
+  .cern-atlas-energy { order: 3; width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .cern-particle-primer > div { grid-template-columns: 1fr; }
+  .cern-particle-primer article { min-height: 92px; }
+}

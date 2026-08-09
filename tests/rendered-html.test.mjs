@@ -809,7 +809,11 @@ test("Modern Fizik alanı sade CERN hızlandırıcı ve büyütülmüş ATLAS de
   assert.match(page, /u \+ u \+ d/);
   assert.match(page, /Enerji ne işe yarar\?/);
   assert.match(page, /yeni parçacıkların[\s\S]*kütlesine ve hareketine/);
-  assert.match(page, /ENERJİ NE YAPTI\?/);
+  assert.match(page, /ENERJİYLE NE DEĞİŞTİ\?/);
+  assert.match(page, /trackBend/);
+  assert.match(page, /signalRadius/);
+  assert.match(page, /flashRadius/);
+  assert.match(page, /İzler en az kıvrılır/);
   assert.match(page, /ATLAS’IN İÇİNDE/);
   assert.match(page, /Büyütülmüş çarpışma görüntüsü/);
   assert.match(page, /Üç basit bölge/);
@@ -819,6 +823,11 @@ test("Modern Fizik alanı sade CERN hızlandırıcı ve büyütülmüş ATLAS de
   assert.match(page, /Elektron çifti/);
   assert.match(page, /İki foton/);
   assert.match(page, /Müon çifti/);
+  assert.match(page, /TEMEL PARÇACIK NEDİR\?/);
+  assert.match(page, /Daha küçük bir bileşeni bilinmeyen parçacık/);
+  assert.match(page, /Temel değil/);
+  assert.match(page, /Maddeyi oluşturan leptonlardan biridir/);
+  assert.match(page, /Işığı ve elektromanyetik etkileşimi taşır/);
   assert.doesNotMatch(page, /jet|Üst kuark|STANDART MODEL|İDEAL OLAY KAYITLARI/i);
   assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
 });
@@ -834,8 +843,11 @@ test("CERN laboratuvarı sade halka, büyüyen ATLAS ekranı ve responsive düze
   assert.match(css, /\.cern-accelerator-canvas\s*,[\s\S]*\.cern-atlas-canvas/);
   assert.match(css, /\.cern-simple-console\s*\{/);
   assert.match(css, /\.cern-energy-choice\s*>\s*div\s*\{/);
+  assert.match(css, /\.cern-energy-bars\s*\{/);
   assert.match(css, /\.cern-event-choice\s*>\s*div\s*\{/);
+  assert.match(css, /\.cern-particle-primer\s*\{/);
   assert.match(css, /\.cern-atlas-zoom\s*\{/);
+  assert.match(css, /\.cern-atlas-energy\s*\{/);
   assert.match(css, /\.cern-atlas-layout\s*\{/);
   assert.match(css, /\.cern-detector-guide\s*\{/);
   assert.match(css, /\.cern-collision-result\s*\{/);

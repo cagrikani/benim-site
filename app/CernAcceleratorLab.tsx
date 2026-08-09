@@ -77,21 +77,41 @@ const ACCELERATOR_PARTS: AcceleratorPart[] = [
 
 const SETUP_ORDER = ACCELERATOR_PARTS.map((part) => part.kind);
 
-const ENERGY_LEVELS: Record<EnergyKind, { label: string; beam: number; summary: string }> = {
+const ENERGY_LEVELS: Record<EnergyKind, {
+  label: string;
+  beam: number;
+  summary: string;
+  detectorEffect: string;
+  trackBend: number;
+  signalRadius: number;
+  flashRadius: number;
+}> = {
   low: {
     label: "Düşük",
     beam: 0.45,
     summary: "Protonlar daha az çarpışma enerjisi taşır.",
+    detectorEffect: "Yüklü parçacık izleri daha fazla kıvrılır; enerji parıltıları daha küçük görünür.",
+    trackBend: 58,
+    signalRadius: 12,
+    flashRadius: 18,
   },
   medium: {
     label: "Orta",
     beam: 3.5,
     summary: "Yeni parçacık oluşturmak için daha çok enerji vardır.",
+    detectorEffect: "İzler daha az kıvrılır; enerji sensöründeki parıltılar büyür.",
+    trackBend: 34,
+    signalRadius: 20,
+    flashRadius: 28,
   },
   high: {
     label: "Yüksek",
     beam: 6.8,
     summary: "Daha ağır parçacıkların oluşabilme olasılığı artar.",
+    detectorEffect: "İzler en az kıvrılır; enerji sensöründe en büyük ve parlak sinyal görülür.",
+    trackBend: 14,
+    signalRadius: 29,
+    flashRadius: 40,
   },
 };
 
@@ -124,6 +144,37 @@ const EVENTS: Record<EventKind, CollisionEvent> = {
     layers: ["track", "outer"],
   },
 };
+
+const PARTICLE_PRIMER = [
+  {
+    symbol: "p⁺",
+    name: "Proton",
+    kind: "Temel değil",
+    description: "İki yukarı ve bir aşağı kuarktan oluşur: u + u + d.",
+    fundamental: false,
+  },
+  {
+    symbol: "e⁻",
+    name: "Elektron",
+    kind: "Temel parçacık",
+    description: "Maddeyi oluşturan leptonlardan biridir.",
+    fundamental: true,
+  },
+  {
+    symbol: "μ",
+    name: "Müon",
+    kind: "Temel parçacık",
+    description: "Elektronun daha ağır akrabası olan bir leptondur.",
+    fundamental: true,
+  },
+  {
+    symbol: "γ",
+    name: "Foton",
+    kind: "Temel parçacık",
+    description: "Işığı ve elektromanyetik etkileşimi taşır.",
+    fundamental: true,
+  },
+];
 
 const clamp = (value: number, minimum: number, maximum: number) =>
   Math.min(maximum, Math.max(minimum, value));
@@ -182,11 +233,15 @@ function roundedPanel(
 function CernAcceleratorCanvas({
   installedCount,
   runState,
+  energyKind,
 }: {
   installedCount: number;
   runState: RunState;
+  energyKind: EnergyKind;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const energy = ENERGY_LEVELS[energyKind];
+  const energyIndex = energyKind === "low" ? 0 : energyKind === "medium" ? 1 : 2;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -214,6 +269,19 @@ function CernAcceleratorCanvas({
       context.fillStyle = "#e7f8ff";
       context.font = "900 20px Arial";
       context.fillText("Proton kaynağından LHC halkasına", 42, 70);
+
+      roundedPanel(context, 750, 24, 255, 62, "rgba(5,22,35,0.88)", "rgba(111,191,207,0.3)", 13);
+      context.fillStyle = "#7db7c8";
+      context.font = "900 9px Arial";
+      context.textAlign = "left";
+      context.fillText("SEÇİLEN ÇARPIŞMA GÜCÜ", 766, 44);
+      [0, 1, 2].forEach((level) => {
+        context.fillStyle = level <= energyIndex ? ["#5ecfbd", "#f1c05b", "#ef7b91"][level] : "#284656";
+        context.fillRect(766 + level * 39, 56, 30, 9);
+      });
+      context.fillStyle = "#f0fbff";
+      context.font = "900 13px Arial";
+      context.fillText(`${energy.label.toUpperCase()} · ${format(energy.beam * 2)} TeV`, 895, 66);
 
       const nodes = [
         { x: 80, label: "KAYNAK" },
@@ -311,13 +379,17 @@ function CernAcceleratorCanvas({
           const blueAngle = moving + index * (Math.PI / 4);
           const pinkAngle = -moving + index * (Math.PI / 4);
           context.fillStyle = "#67e6ff";
+          context.shadowColor = "#67e6ff";
+          context.shadowBlur = 4 + energyIndex * 5;
           context.beginPath();
-          context.arc(500 + Math.cos(blueAngle) * 350, 372 + Math.sin(blueAngle) * 96, 6, 0, Math.PI * 2);
+          context.arc(500 + Math.cos(blueAngle) * 350, 372 + Math.sin(blueAngle) * 96, 5 + energyIndex, 0, Math.PI * 2);
           context.fill();
           context.fillStyle = "#ff91bc";
+          context.shadowColor = "#ff91bc";
           context.beginPath();
-          context.arc(500 + Math.cos(pinkAngle) * 350, 384 + Math.sin(pinkAngle) * 108, 6, 0, Math.PI * 2);
+          context.arc(500 + Math.cos(pinkAngle) * 350, 384 + Math.sin(pinkAngle) * 108, 5 + energyIndex, 0, Math.PI * 2);
           context.fill();
+          context.shadowBlur = 0;
         }
       }
 
@@ -344,7 +416,7 @@ function CernAcceleratorCanvas({
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [installedCount, runState]);
+  }, [energy, energyIndex, installedCount, runState]);
 
   return (
     <canvas
@@ -384,11 +456,15 @@ function drawTag(
 function CernAtlasCanvas({
   phase,
   event,
+  energyKind,
 }: {
   phase: "colliding" | "result";
   event: CollisionEvent;
+  energyKind: EnergyKind;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const energy = ENERGY_LEVELS[energyKind];
+  const energyIndex = energyKind === "low" ? 0 : energyKind === "medium" ? 1 : 2;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -438,16 +514,16 @@ function CernAtlasCanvas({
         const progress = clamp(elapsed / 1.35, 0, 1);
         const leftX = 92 + (center.x - 92) * progress;
         const rightX = 668 - (668 - center.x) * progress;
-        context.shadowBlur = 18;
+        context.shadowBlur = 12 + energyIndex * 8;
         context.shadowColor = "#67e6ff";
         context.fillStyle = "#67e6ff";
         context.beginPath();
-        context.arc(leftX, center.y, 12, 0, Math.PI * 2);
+        context.arc(leftX, center.y, 9 + energyIndex * 2, 0, Math.PI * 2);
         context.fill();
         context.shadowColor = "#ff91bc";
         context.fillStyle = "#ff91bc";
         context.beginPath();
-        context.arc(rightX, center.y, 12, 0, Math.PI * 2);
+        context.arc(rightX, center.y, 9 + energyIndex * 2, 0, Math.PI * 2);
         context.fill();
         context.shadowBlur = 0;
         context.fillStyle = "#9aefff";
@@ -457,10 +533,10 @@ function CernAtlasCanvas({
         context.fillStyle = "#ffaad0";
         context.fillText("← p⁺", rightX, center.y + 43);
         if (progress > 0.88) {
-          const flash = 18 + Math.sin(elapsed * 12) * 6;
+          const flash = energy.flashRadius + Math.sin(elapsed * 12) * 5;
           context.fillStyle = "rgba(255,255,255,0.9)";
           context.shadowColor = "#fff4ab";
-          context.shadowBlur = 34;
+          context.shadowBlur = 24 + energyIndex * 14;
           context.beginPath();
           context.arc(center.x, center.y, flash, 0, Math.PI * 2);
           context.fill();
@@ -485,15 +561,25 @@ function CernAtlasCanvas({
 
         if (event.key === "electrons") {
           context.strokeStyle = "#70f0cf";
-          context.lineWidth = 6;
+          context.lineWidth = 4 + energyIndex;
           context.beginPath();
           context.moveTo(center.x, center.y);
-          context.quadraticCurveTo(485, 244, 552, 170);
+          context.quadraticCurveTo(
+            466 + energy.trackBend * 0.6,
+            235 + energy.trackBend * 0.8,
+            552,
+            170,
+          );
           context.stroke();
           context.strokeStyle = "#ff8cb8";
           context.beginPath();
           context.moveTo(center.x, center.y);
-          context.quadraticCurveTo(274, 356, 208, 430);
+          context.quadraticCurveTo(
+            294 - energy.trackBend * 0.6,
+            365 - energy.trackBend * 0.8,
+            208,
+            430,
+          );
           context.stroke();
           [
             { x: 525, y: 187, color: "#ffe77b" },
@@ -501,9 +587,9 @@ function CernAtlasCanvas({
           ].forEach((point) => {
             context.fillStyle = point.color;
             context.shadowColor = point.color;
-            context.shadowBlur = 22;
+            context.shadowBlur = energy.signalRadius * 1.4;
             context.beginPath();
-            context.arc(point.x, point.y, 19, 0, Math.PI * 2);
+            context.arc(point.x, point.y, energy.signalRadius, 0, Math.PI * 2);
             context.fill();
             context.shadowBlur = 0;
           });
@@ -516,7 +602,7 @@ function CernAtlasCanvas({
             const endX = center.x + Math.cos(angle) * 184;
             const endY = center.y + Math.sin(angle) * 184;
             context.strokeStyle = "#ffe367";
-            context.lineWidth = 5;
+            context.lineWidth = 3 + energyIndex;
             context.setLineDash([11, 8]);
             context.beginPath();
             context.moveTo(center.x, center.y);
@@ -525,9 +611,9 @@ function CernAtlasCanvas({
             context.setLineDash([]);
             context.fillStyle = "#fff08a";
             context.shadowColor = "#ffe367";
-            context.shadowBlur = 28;
+            context.shadowBlur = energy.signalRadius * 1.55;
             context.beginPath();
-            context.arc(endX, endY, 24, 0, Math.PI * 2);
+            context.arc(endX, endY, energy.signalRadius, 0, Math.PI * 2);
             context.fill();
             context.shadowBlur = 0;
             drawTag(
@@ -545,11 +631,16 @@ function CernAtlasCanvas({
           [0.32, Math.PI + 0.32].forEach((angle, index) => {
             const endX = center.x + Math.cos(angle) * 255;
             const endY = center.y + Math.sin(angle) * 255;
+            const midpointX = (center.x + endX) / 2;
+            const midpointY = (center.y + endY) / 2;
+            const curveDirection = index === 0 ? 1 : -1;
+            const controlX = midpointX - Math.sin(angle) * energy.trackBend * curveDirection;
+            const controlY = midpointY + Math.cos(angle) * energy.trackBend * curveDirection;
             context.strokeStyle = index === 0 ? "#7cd9ff" : "#b7a1ff";
-            context.lineWidth = 7;
+            context.lineWidth = 5 + energyIndex;
             context.beginPath();
             context.moveTo(center.x, center.y);
-            context.lineTo(endX, endY);
+            context.quadraticCurveTo(controlX, controlY, endX, endY);
             context.stroke();
             drawTag(
               context,
@@ -585,7 +676,7 @@ function CernAtlasCanvas({
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [event, phase]);
+  }, [energy, energyIndex, event, phase]);
 
   return (
     <canvas
@@ -607,14 +698,17 @@ function PartIcon({ kind }: { kind: PartKind }) {
 function CernAtlasZoom({
   phase,
   event,
-  totalEnergy,
+  energyKind,
   onBack,
 }: {
   phase: "colliding" | "result";
   event: CollisionEvent;
-  totalEnergy: number;
+  energyKind: EnergyKind;
   onBack: () => void;
 }) {
+  const energy = ENERGY_LEVELS[energyKind];
+  const totalEnergy = energy.beam * 2;
+  const energyIndex = energyKind === "low" ? 0 : energyKind === "medium" ? 1 : 2;
   const layerInfo: Array<{ key: DetectorLayer; number: number; title: string; text: string }> = [
     { key: "track", number: 1, title: "İz sensörü", text: "Yüklü parçacıkların geçtiği yolu gösterir." },
     { key: "energy", number: 2, title: "Enerji sensörü", text: "Elektron ve fotonun bıraktığı enerjiyi gösterir." },
@@ -625,6 +719,12 @@ function CernAtlasZoom({
     <div className="cern-atlas-zoom">
       <div className="cern-atlas-titlebar">
         <span><small>ATLAS’IN İÇİNDE</small><b>Büyütülmüş çarpışma görüntüsü</b></span>
+        <div className={`cern-atlas-energy ${energyKind}`}>
+          <span><small>ÇARPIŞMA GÜCÜ</small><b>{energy.label} · {format(totalEnergy)} TeV</b></span>
+          <i aria-hidden="true">
+            {[0, 1, 2].map((level) => <u key={level} className={level <= energyIndex ? "on" : ""} />)}
+          </i>
+        </div>
         {phase === "result" && <button type="button" onClick={onBack}>LHC halkasına dön</button>}
       </div>
       <div className="cern-atlas-layout">
@@ -642,12 +742,16 @@ function CernAtlasZoom({
           ))}
           <p><i /> Ortadaki beyaz nokta, iki protonun çarpıştığı yerdir.</p>
         </aside>
-        <CernAtlasCanvas phase={phase} event={event} />
+        <CernAtlasCanvas phase={phase} event={event} energyKind={energyKind} />
       </div>
       {phase === "result" && (
         <div className="cern-collision-result">
           <article><small>GİREN</small><b>Proton p⁺ + Proton p⁺</b></article>
-          <article><small>ENERJİ NE YAPTI?</small><b>{format(totalEnergy)} TeV; yeni parçacıkların kütlesi ve hareketi için kullanıldı.</b></article>
+          <article className={`energy-effect ${energyKind}`}>
+            <small>ENERJİYLE NE DEĞİŞTİ?</small>
+            <b>{energy.label} · {format(totalEnergy)} TeV</b>
+            <span>{energy.detectorEffect}</span>
+          </article>
           <article><small>DEDEKTÖRDE GÖRÜLEN</small><b>{event.symbol}</b><span>{event.plainName}</span></article>
         </div>
       )}
@@ -672,7 +776,6 @@ export default function CernAcceleratorLab() {
   const nextPart = ACCELERATOR_PARTS[installed.length] ?? null;
   const energy = ENERGY_LEVELS[energyKind];
   const event = EVENTS[selectedEvent];
-  const totalEnergy = energy.beam * 2;
   const atlasOpen = runState === "colliding" || runState === "result";
 
   const statusLabel = runState === "accelerating"
@@ -733,7 +836,7 @@ export default function CernAcceleratorLab() {
     setMessage("ATLAS büyütüldü. İki proton çarpışma noktasına yaklaşıyor.");
     timerRef.current = setTimeout(() => {
       setRunState("result");
-      setMessage(`${event.plainName} oluştu. Renkli yolları ve kullanılan dedektör bölgesini incele.`);
+      setMessage(`${energy.label} enerjide ${event.plainName} oluştu. ${energy.detectorEffect}`);
     }, 1800);
   };
 
@@ -843,11 +946,15 @@ export default function CernAcceleratorLab() {
             <CernAtlasZoom
               phase={runState === "colliding" ? "colliding" : "result"}
               event={event}
-              totalEnergy={totalEnergy}
+              energyKind={energyKind}
               onBack={returnToRing}
             />
           ) : (
-            <CernAcceleratorCanvas installedCount={installed.length} runState={runState} />
+            <CernAcceleratorCanvas
+              installedCount={installed.length}
+              runState={runState}
+              energyKind={energyKind}
+            />
           )}
 
           <div className="cern-message" role="status"><i />{message}</div>
@@ -874,12 +981,17 @@ export default function CernAcceleratorLab() {
                         setRunState("idle");
                       }}
                     >
+                      <i className="cern-energy-bars" aria-hidden="true">
+                        {[0, 1, 2].map((level) => (
+                          <u key={level} className={level <= (key === "low" ? 0 : key === "medium" ? 1 : 2) ? "on" : ""} />
+                        ))}
+                      </i>
                       <small>{ENERGY_LEVELS[key].label}</small>
                       <b>{format(ENERGY_LEVELS[key].beam * 2)} TeV</b>
                     </button>
                   ))}
                 </div>
-                <em>{energy.summary}</em>
+                <em><b>Dedektörde fark:</b> {energy.detectorEffect}</em>
               </section>
 
               <section className="cern-event-choice">
@@ -903,6 +1015,27 @@ export default function CernAcceleratorLab() {
                   ))}
                 </div>
                 <p><b>{event.explanation}</b> {event.detectorFinding}</p>
+              </section>
+
+              <section className="cern-particle-primer">
+                <header>
+                  <span>TEMEL PARÇACIK NEDİR?</span>
+                  <h2>Daha küçük bir bileşeni bilinmeyen parçacık</h2>
+                  <p>
+                    Bugünkü ölçümlere göre kuarklar ve leptonlar temel parçacıktır.
+                    Foton da bir temel kuvvet taşıyıcısıdır. Proton ise kuarklardan
+                    oluştuğu için temel parçacık değildir.
+                  </p>
+                </header>
+                <div>
+                  {PARTICLE_PRIMER.map((item) => (
+                    <article key={item.symbol} className={item.fundamental ? "fundamental" : "composite"}>
+                      <strong>{item.symbol}</strong>
+                      <span><b>{item.name}</b><small>{item.kind}</small></span>
+                      <p>{item.description}</p>
+                    </article>
+                  ))}
+                </div>
               </section>
 
               <button
