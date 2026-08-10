@@ -319,6 +319,57 @@ test("direnç bağlantıları düzeneği sürüklenebilir gerçek devre elemanla
   assert.match(css, /\.ohm-circuit-switch\s*\{/);
 });
 
+test("Elektrik alanı TYMM uyumlu manyetik alan deneyini sunar", async () => {
+  const hub = await readFile(
+    new URL("app/ElectricityLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(
+    new URL("app/MagneticFieldLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(hub, /MagneticFieldLab/);
+  assert.match(hub, /Manyetik alan/);
+  assert.match(hub, /electricity-magnetic-field\.webp/);
+  assert.match(page, /application\/x-magnetic-field-equipment/);
+  assert.match(page, /600 sarımlı ana bobin/);
+  assert.match(page, /Yoklama kangalı/);
+  assert.match(page, /Alternatif akım kaynağı/);
+  assert.match(page, /AC multimetre/);
+  assert.match(page, /CORE_SETUP/);
+  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onStageDrop/);
+  assert.match(page, /positionFromPointer/);
+  assert.match(page, /Bobini ters çevir/);
+  assert.match(page, /Manyetik alan – konum/);
+  assert.match(page, /Gösterge gerilimi – akım/);
+  assert.match(page, /Ölçümü kaydet/);
+  assert.match(page, /TYMM KISA DENEY RAPORU/);
+  assert.match(page, /İDEAL ÖLÇÜM/);
+  assert.match(page, /same/);
+  assert.match(page, /opposite/);
+  assert.doesNotMatch(page, /Math\.random|NOISE|belirsiz|hata/i);
+});
+
+test("manyetik alan düzeneği gerçekçi ray, bobin, yoklama kangalı ve grafikler içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.magnetic-field-lab\s*\{/);
+  assert.match(css, /\.mfl-builder\s*\{/);
+  assert.match(css, /\.mfl-equipment-panel,/);
+  assert.match(css, /\.mfl-stage\s*\{/);
+  assert.match(css, /\.mfl-rail\s*\{/);
+  assert.match(css, /\.mfl-power-supply\s*\{/);
+  assert.match(css, /\.mfl-solenoid\s*\{/);
+  assert.match(css, /\.mfl-probe\s*\{/);
+  assert.match(css, /\.mfl-multimeter\s*\{/);
+  assert.match(css, /\.mfl-cables\s*\{/);
+  assert.match(css, /\.mfl-field-visual\s*\{/);
+  assert.match(css, /\.mfl-control-grid\s*\{/);
+  assert.match(css, /\.mfl-graph-grid\s*\{/);
+  assert.match(css, /\.mfl-graph-canvas\s*\{/);
+  assert.match(css, /\.mfl-report\s*\{/);
+});
+
 test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla sunar", async () => {
   const hub = await readFile(
     new URL("app/OpticsLabHub.tsx", projectRoot),
