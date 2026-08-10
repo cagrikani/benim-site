@@ -311,7 +311,7 @@ export default function MagneticFieldLab() {
   const field = fieldAt(probePosition, current, secondCoil, secondGap, direction);
   const inducedVoltage = tidy(Math.abs(field) * 0.36, 3);
   const probePercent = 22 + ((probePosition - DOMAIN_MIN) / (DOMAIN_MAX - DOMAIN_MIN)) * 58;
-  const secondPercent = 51.2 + secondGap * 1.93;
+  const secondPercent = 50.5 + secondGap * 1.55;
   const setupLabel = secondCoil
     ? `${secondGap} cm · ${direction === "same" ? "aynı yön" : "zıt yön"}`
     : "Tek bobin";
@@ -338,14 +338,15 @@ export default function MagneticFieldLab() {
   const positionFromPointer = useCallback((clientX: number) => {
     const rect = stageRef.current?.getBoundingClientRect();
     if (!rect) return;
+    if (dragMode.current === "coil") {
+      const stagePercent = clamp(((clientX - rect.left) / rect.width) * 100, 50.5, 59.8);
+      setSecondGap(clamp(Math.round((stagePercent - 50.5) / 1.55), 0, 6));
+      return;
+    }
     const trackRatio = clamp((clientX - rect.left - rect.width * 0.22) / (rect.width * 0.58), 0, 1);
     const position = DOMAIN_MIN + trackRatio * (DOMAIN_MAX - DOMAIN_MIN);
     if (dragMode.current === "probe") {
       setProbePosition(Math.round(position * 2) / 2);
-    }
-    if (dragMode.current === "coil") {
-      const rawGap = position - MAIN_CENTER - 9;
-      setSecondGap(clamp(Math.round(rawGap), 0, 6));
     }
   }, []);
 
@@ -466,6 +467,7 @@ export default function MagneticFieldLab() {
                 <i className="mfl-source-knob" />
                 <i className="mfl-source-port red" />
                 <i className="mfl-source-port black" />
+                <em className="mfl-device-tag">AC ÇIKIŞ</em>
               </div>
             )}
             {placed.includes("rail") && (
@@ -483,6 +485,10 @@ export default function MagneticFieldLab() {
                 <span className="mfl-coil-winding" />
                 <span className="mfl-coil-bore" />
                 <span className="mfl-coil-end right" />
+                <span className="mfl-coil-pole left">S</span>
+                <span className="mfl-coil-pole right">N</span>
+                <span className="mfl-coil-terminal red" />
+                <span className="mfl-coil-terminal black" />
                 <small>ANA BOBİN · 600 SARIM</small>
               </div>
             )}
@@ -498,12 +504,16 @@ export default function MagneticFieldLab() {
                 <span className="mfl-coil-winding" />
                 <span className="mfl-coil-bore" />
                 <span className="mfl-coil-end right" />
+                <span className="mfl-coil-pole left">{direction === "same" ? "S" : "N"}</span>
+                <span className="mfl-coil-pole right">{direction === "same" ? "N" : "S"}</span>
                 <small>2. BOBİN · SÜRÜKLE</small>
               </button>
             )}
             {coreReady && powerOn && (
-              <div className={`mfl-field-visual ${direction}`} style={{ "--field-strength": `${clamp(Math.abs(field) / 3.2, 0.18, 1)}` } as CSSProperties} aria-hidden="true">
+              <div className={`mfl-field-visual ${direction}`} style={{ "--field-strength": `${clamp(Math.abs(field) / 2.6, 0.52, 1)}` } as CSSProperties} aria-hidden="true">
                 <i /><i /><i /><i /><i />
+                <b>{direction === "same" ? "B ALAN YÖNÜ  →" : "ALANLAR ZIT  →  ←"}</b>
+                <span className="mfl-axis-arrows"><em>→</em><em>→</em><em>→</em><em>→</em></span>
               </div>
             )}
             {placed.includes("probe-coil") && (
@@ -517,6 +527,7 @@ export default function MagneticFieldLab() {
                 <span className="mfl-probe-ring"><i /></span>
                 <span className="mfl-probe-stem" />
                 <span className="mfl-probe-carriage" />
+                <span className="mfl-probe-ports"><i /><i /></span>
                 <small>YOKLAMA KANGALI</small>
               </button>
             )}
@@ -524,12 +535,26 @@ export default function MagneticFieldLab() {
               <div className="mfl-multimeter">
                 <span>AC VOLTMETRE</span>
                 <b>{inducedVoltage.toFixed(3)}<small> V~</small></b>
+                <em>YOKLAMA KANGALI ÖLÇÜMÜ</em>
                 <i className="mfl-meter-dial" />
                 <i className="mfl-meter-port red" />
                 <i className="mfl-meter-port black" />
               </div>
             )}
-            {placed.includes("cables") && <div className="mfl-cables" aria-hidden="true"><i /><i /><i /><i /></div>}
+            {placed.includes("cables") && (
+              <>
+                <div className="mfl-cables" style={{ "--probe-left": `${probePercent}%` } as CSSProperties} aria-hidden="true">
+                  <span className="mfl-cable drive red"><i /><b>1</b></span>
+                  <span className="mfl-cable drive black"><i /><b>1</b></span>
+                  <span className="mfl-cable measure red"><i /><b>2</b></span>
+                  <span className="mfl-cable measure black"><i /><b>2</b></span>
+                </div>
+                <div className="mfl-connection-guide">
+                  <span><i>1</i><b>Güç devresi</b> Kaynak → ana bobin</span>
+                  <span><i>2</i><b>Ölçüm devresi</b> Yoklama kangalı → AC voltmetre</span>
+                </div>
+              </>
+            )}
             {!coreReady && (
               <div className="mfl-drop-prompt">
                 <ApparatusIcon kind={nextEquipment ?? "rail"} />
@@ -574,7 +599,7 @@ export default function MagneticFieldLab() {
               </div>
               <div className="mfl-live-readout">
                 <span>CANLI ÖLÇÜM</span>
-                <div><p><small>Konum</small><b>{probePosition.toFixed(1)} cm</b></p><p><small>Akım</small><b>{current.toFixed(2)} A</b></p><p><small>Alan</small><b>{Math.abs(field).toFixed(3)} mT</b></p><p><small>Kangal</small><b>{inducedVoltage.toFixed(3)} V~</b></p></div>
+                <div><p><small>Konum</small><b>{probePosition.toFixed(1)} cm</b></p><p><small>Bobin akımı</small><b>{current.toFixed(2)} A</b></p><p><small>Manyetik alan</small><b>{Math.abs(field).toFixed(3)} mT</b></p><p><small>Yoklama gerilimi · alan göstergesi</small><b>{inducedVoltage.toFixed(3)} V~</b><em>Alan büyüdükçe bu değer artar.</em></p></div>
                 <div className="mfl-live-actions">
                   <button type="button" className={powerOn ? "stop" : "start"} onClick={() => setPowerOn((value) => !value)} disabled={!coreReady}>{powerOn ? "Gücü kapat" : "Deneyi çalıştır"}</button>
                   <button type="button" onClick={recordMeasurement} disabled={!powerOn}>Ölçümü kaydet</button>

@@ -341,6 +341,13 @@ test("Elektrik alanı TYMM uyumlu manyetik alan deneyini sunar", async () => {
   assert.match(page, /onStageDrop/);
   assert.match(page, /positionFromPointer/);
   assert.match(page, /Bobini ters çevir/);
+  assert.match(page, /Güç devresi/);
+  assert.match(page, /Ölçüm devresi/);
+  assert.match(page, /B ALAN YÖNÜ/);
+  assert.match(page, /YOKLAMA KANGALI ÖLÇÜMÜ/);
+  assert.match(page, /mfl-coil-pole/);
+  assert.match(page, /mfl-cable drive red/);
+  assert.match(page, /mfl-cable measure red/);
   assert.match(page, /Manyetik alan – konum/);
   assert.match(page, /Gösterge gerilimi – akım/);
   assert.match(page, /Ölçümü kaydet/);
@@ -363,6 +370,11 @@ test("manyetik alan düzeneği gerçekçi ray, bobin, yoklama kangalı ve grafik
   assert.match(css, /\.mfl-probe\s*\{/);
   assert.match(css, /\.mfl-multimeter\s*\{/);
   assert.match(css, /\.mfl-cables\s*\{/);
+  assert.match(css, /\.mfl-cable\.drive\s*\{/);
+  assert.match(css, /\.mfl-cable\.measure\s*\{/);
+  assert.match(css, /\.mfl-connection-guide\s*\{/);
+  assert.match(css, /\.mfl-coil-pole\s*\{/);
+  assert.match(css, /\.mfl-axis-arrows\s*\{/);
   assert.match(css, /\.mfl-field-visual\s*\{/);
   assert.match(css, /\.mfl-control-grid\s*\{/);
   assert.match(css, /\.mfl-graph-grid\s*\{/);
