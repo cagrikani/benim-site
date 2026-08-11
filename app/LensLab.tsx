@@ -253,8 +253,13 @@ export default function LensLab() {
   const finiteImage = Number.isFinite(imageX);
   const realImage = finiteImage && imageDistance > 0;
   const imageOnRail = finiteImage && imageX >= 0 && imageX <= 100;
-  const screenAligned = ready && lightOn && realImage && imageOnRail && Math.abs(screenX - imageX) <= 1.5;
   const imageHeight = atInfinity ? Number.POSITIVE_INFINITY : Math.abs(magnification) * objectHeight;
+  const screenDistance = realImage && imageOnRail ? Math.abs(screenX - imageX) : Number.POSITIVE_INFINITY;
+  const focusQuality = ready && lightOn && realImage && imageOnRail
+    ? clamp(Math.round(100 - screenDistance * 22), 0, 100)
+    : 0;
+  const screenAligned = focusQuality >= 88;
+  const screenCanProject = ready && lightOn && realImage && imageOnRail;
 
   let imageDescription = "Görüntü oluşumu bekleniyor";
   let situation = "Düzeneği kur";
@@ -280,18 +285,37 @@ export default function LensLab() {
     }
   }
 
+  const imageKind = atInfinity ? "Sonlu görüntü yok" : realImage ? "Gerçek" : "Sanal";
+  const imageOrientation = atInfinity ? "—" : magnification < 0 ? "Ters" : "Düz";
+  const imageSize = atInfinity
+    ? "—"
+    : Math.abs(magnification) > 1.05
+      ? "Büyük"
+      : Math.abs(magnification) < 0.95
+        ? "Küçük"
+        : "Aynı boy";
+  const screenMoveDirection = !realImage || !imageOnRail
+    ? "Ekranla yakalanamaz"
+    : screenAligned
+      ? "Odak düzlemi bulundu"
+      : screenX < imageX
+        ? `Ekranı sağa ${(imageX - screenX).toFixed(1)} cm taşı`
+        : `Ekranı sola ${(screenX - imageX).toFixed(1)} cm taşı`;
+
   let screenMessage = "Düzenek tamamlanınca ekranı rayda hareket ettir.";
   if (ready && !lightOn) screenMessage = "Işığı aç ve ekranı görüntü konumuna taşı.";
   if (ready && lightOn && atInfinity) screenMessage = "Işınlar paralel çıkıyor; görüntü bu ray üzerinde yakalanamaz.";
   if (ready && lightOn && !realImage) screenMessage = "Sanal görüntü ekrana düşmez; sağdan merceğe bakıldığında görülür.";
   if (ready && lightOn && realImage && !imageOnRail) screenMessage = "Gerçek görüntü rayın ölçüm alanının dışında oluşuyor.";
-  if (ready && lightOn && realImage && imageOnRail && !screenAligned) screenMessage = `Net görüntü için ekranı ${imageX.toFixed(1)} cm konumuna taşı.`;
+  if (ready && lightOn && realImage && imageOnRail && !screenAligned) screenMessage = `${screenMoveDirection}; hedef ${imageX.toFixed(1)} cm.`;
   if (screenAligned) screenMessage = "Net gerçek görüntü ekranda oluştu.";
 
   const toPercent = (position: number) => 10 + position * 0.8;
   const focusPositions = [lensX - 2 * focalLength, lensX - focalLength, lensX + focalLength, lensX + 2 * focalLength]
     .filter((position) => position >= 0 && position <= 100);
   const screenImageHeight = clamp(imageHeight * 14, 16, 145);
+  const screenBlur = screenCanProject ? clamp(screenDistance * 1.25, 0, 8) : 0;
+  const screenImageOpacity = screenCanProject ? clamp(1 - screenDistance * 0.07, .22, 1) : 0;
 
   const placeEquipment = (kind: EquipmentKind) => {
     if (kind !== nextEquipment || placed.includes(kind)) return;
@@ -312,10 +336,10 @@ export default function LensLab() {
     const rect = stageRef.current?.getBoundingClientRect();
     const dragging = dragRef.current;
     if (!rect || !dragging) return;
-    const position = Math.round(clamp(((clientX - rect.left - rect.width * 0.1) / (rect.width * 0.8)) * 100, 0, 100));
-    if (dragging === "object") setObjectX(clamp(position, 5, lensX - 5));
-    if (dragging === "lens") setLensX(clamp(position, objectX + 5, screenX - 5));
-    if (dragging === "screen") setScreenX(clamp(position, lensX + 5, 95));
+    const rawPosition = clamp(((clientX - rect.left - rect.width * 0.1) / (rect.width * 0.8)) * 100, 0, 100);
+    if (dragging === "object") setObjectX(clamp(Math.round(rawPosition), 5, lensX - 5));
+    if (dragging === "lens") setLensX(clamp(Math.round(rawPosition), objectX + 5, screenX - 5));
+    if (dragging === "screen") setScreenX(clamp(Math.round(rawPosition * 2) / 2, lensX + 5, 95));
   }, [lensX, objectX, screenX]);
 
   useEffect(() => {
@@ -430,6 +454,7 @@ export default function LensLab() {
             onDrop={onStageDrop}
           >
             <div className="oll-lab-wall"><span>FİZİK ATÖLYESİ · MERCEK DENEY MASASI</span></div>
+            <div className="oll-lab-fixtures" aria-hidden="true"><i /><i /><i /></div>
             <div className="oll-bench" />
             <RayDiagram
               objectX={objectX}
@@ -447,10 +472,10 @@ export default function LensLab() {
             {placed.includes("rail") && (
               <div className="oll-rail">
                 <div>{[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((value) => <span key={value}>{value}</span>)}</div>
-                <i className="first" /><i className="second" /><b className="left" /><b className="right" />
+                <i className="first" /><i className="second" /><i className="third" /><b className="left" /><b className="right" />
               </div>
             )}
-            {placed.includes("ray-box") && <div className={`oll-ray-box ${lightOn ? "on" : ""}`} style={{ "--object-left": `${toPercent(objectX) - 5}%` } as CSSProperties}><b>12 V</b><i /><span>IŞIKLI CİSİM</span></div>}
+            {placed.includes("ray-box") && <div className={`oll-ray-box ${lightOn ? "on" : ""}`} style={{ "--object-left": `${toPercent(objectX) - 5}%` } as CSSProperties}><b>12 V</b><i /><em /><span>IŞIKLI CİSİM</span></div>}
             {placed.includes("object") && (
               <button
                 type="button"
@@ -468,7 +493,7 @@ export default function LensLab() {
                 onPointerDown={(event) => beginMove(event, "lens")}
                 aria-label={`${lensType === "converging" ? "İnce" : "Kalın"} kenarlı mercek ${lensX} santimetrede; ray üzerinde sürükle`}
               >
-                <span className="oll-lens-frame"><i className="oll-lens-glass" /><em>O</em></span>
+                <span className="oll-lens-frame"><i className="oll-lens-glass"><span /></i><i className="oll-lens-lock" /><em>O</em></span>
                 <span className="oll-lens-post" /><span className="oll-lens-carriage" />
                 <b>{lensType === "converging" ? "İNCE KENARLI" : "KALIN KENARLI"} · {lensX} cm</b>
               </button>
@@ -476,17 +501,26 @@ export default function LensLab() {
             {placed.includes("screen") && (
               <button
                 type="button"
-                className={`oll-screen ${screenAligned ? "sharp" : ""}`}
-                style={{ "--screen-left": `${toPercent(screenX)}%` } as CSSProperties}
+                className={`oll-screen ${screenAligned ? "sharp" : ""} ${screenCanProject ? "projecting" : ""}`}
+                style={{ "--screen-left": `${toPercent(screenX)}%`, "--focus-quality": `${focusQuality}%` } as CSSProperties}
                 onPointerDown={(event) => beginMove(event, "screen")}
                 aria-label={`Ekran ${screenX} santimetrede; ray üzerinde sürükle`}
               >
                 <span className="oll-screen-face">
-                  {screenAligned && <i className="oll-screen-image" style={{ "--image-height": `${screenImageHeight}px` } as CSSProperties} />}
-                  {!screenAligned && lightOn && <em>{realImage ? "NETLİK ARA" : "SANAL GÖRÜNTÜ"}</em>}
+                  <span className="oll-screen-surface-label">BEYAZ GÖRÜNTÜ EKRANI</span>
+                  {screenCanProject && <i className={`oll-screen-image ${screenAligned ? "focused" : "defocused"}`} style={{ "--image-height": `${screenImageHeight}px`, "--image-blur": `${screenBlur}px`, "--image-opacity": screenImageOpacity } as CSSProperties} />}
+                  {lightOn && !screenCanProject && <i className="oll-no-projection">×</i>}
+                  <span className="oll-screen-info">
+                    <small>EKRAN ANALİZİ</small>
+                    <strong>{lightOn ? imageKind : "Işık bekleniyor"}</strong>
+                    <em>{lightOn ? `${imageOrientation} · ${imageSize}` : "Tür · yön · boyut"}</em>
+                    <span className="oll-focus-meter"><i /></span>
+                    <b>{screenCanProject ? `Netlik ${focusQuality}%` : lightOn ? "Ekrana düşmez" : "—"}</b>
+                  </span>
                 </span>
                 <span className="oll-screen-post" /><span className="oll-screen-carriage" />
-                <b>EKRAN · {screenX} cm</b>
+                <span className="oll-screen-move"><i />{lightOn ? screenMoveDirection : "Ekranı rayda sürükle"}</span>
+                <b>EKRAN · {screenX.toFixed(1)} cm</b>
               </button>
             )}
             {ready && focusPositions.map((position) => {
@@ -511,7 +545,7 @@ export default function LensLab() {
               <label><span>Cisim yüksekliği <b>{objectHeight} cm</b></span><input type="range" min="2" max="6" step="1" value={objectHeight} onChange={(event) => setObjectHeight(Number(event.target.value))} disabled={!ready} /><small>Görüntü büyüklüğünü karşılaştırmak için değiştir.</small></label>
               <div className="oll-ray-controls"><span>Özel ışınlar</span><button type="button" className={rays.parallel ? "active orange" : ""} onClick={() => toggleRay("parallel")} disabled={!ready}>Paralel → F</button><button type="button" className={rays.center ? "active teal" : ""} onClick={() => toggleRay("center")} disabled={!ready}>Optik merkez</button><button type="button" className={rays.focus ? "active blue" : ""} onClick={() => toggleRay("focus")} disabled={!ready}>F → paralel</button></div>
               <div className="oll-live-reading">
-                <span>CANLI SONUÇ</span><b>{imageDescription}</b><div><p><small>Cisim uzaklığı</small><strong>{objectDistance.toFixed(1)} cm</strong></p><p><small>Görüntü uzaklığı</small><strong>{atInfinity ? "Sonsuz" : `${imageDistance.toFixed(1)} cm`}</strong></p><p><small>Büyütme</small><strong>{atInfinity ? "—" : `${Math.abs(magnification).toFixed(2)}×`}</strong></p><p><small>Ekran</small><strong>{screenAligned ? "Net" : realImage ? "Taşı" : "Düşmez"}</strong></p></div>
+                <span>CANLI SONUÇ</span><b>{imageDescription}</b><div><p><small>Cisim uzaklığı</small><strong>{objectDistance.toFixed(1)} cm</strong></p><p><small>Görüntü uzaklığı</small><strong>{atInfinity ? "Sonsuz" : `${imageDistance.toFixed(1)} cm`}</strong></p><p><small>Büyütme</small><strong>{atInfinity ? "—" : `${Math.abs(magnification).toFixed(2)}×`}</strong></p><p><small>Ekran netliği</small><strong>{screenCanProject ? `%${focusQuality}` : "Düşmez"}</strong></p></div>
                 <div><button type="button" className={lightOn ? "stop" : "start"} onClick={() => setLightOn((value) => !value)} disabled={!ready}>{lightOn ? "Işığı kapat" : "Işığı aç"}</button><button type="button" onClick={recordReading} disabled={!lightOn}>Ölçümü kaydet</button></div>
               </div>
             </div>
