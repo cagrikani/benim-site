@@ -1134,8 +1134,10 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(page, /SimplePendulumLab/);
   assert.match(page, /SpringCoil/);
   assert.match(page, /createLinearGradient/);
-  assert.match(page, /--shm-mass-top/);
-  assert.match(page, /313 \+ displacement \* 6\.4/);
+  assert.match(page, /const oscillatorOffsetPixels = displacement \* 6\.4/);
+  assert.match(page, /<SpringCoil offset=\{oscillatorOffsetPixels\}/);
+  assert.match(page, /translate3d\(0, \$\{oscillatorOffsetPixels\}px, 0\)/);
+  assert.doesNotMatch(page, /--shm-mass-top/);
   assert.match(page, /application\/x-harmonic-motion-equipment/);
   assert.match(page, /Statif ve bağlantı kıskacı/);
   assert.match(page, /Sarmal yay/);
@@ -1167,6 +1169,7 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(css, /\.shm-stand\s*\{/);
   assert.match(css, /\.shm-spring\s*\{/);
   assert.match(css, /\.shm-mass\s*\{/);
+  assert.match(css, /\.shm-mass\s*\{[^}]*top:\s*313px;[^}]*transition:\s*transform/s);
   assert.match(css, /\.shm-ruler\s*\{/);
   assert.match(css, /\.shm-motion-sensor\s*\{/);
   assert.match(css, /\.shm-data-logger\s*\{/);

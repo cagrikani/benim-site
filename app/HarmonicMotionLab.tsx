@@ -5,7 +5,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -96,9 +95,9 @@ function EquipmentIcon({ kind }: { kind: EquipmentKind }) {
   );
 }
 
-function SpringCoil({ displacement }: { displacement: number }) {
+function SpringCoil({ offset }: { offset: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const height = clamp(188 + displacement * 6.4, 122, 258);
+  const height = clamp(188 + offset, 122, 258);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -497,14 +496,7 @@ export default function HarmonicMotionLab() {
     setMessage("İdeal ölçüm deney günlüğüne kaydedildi.");
   };
 
-  const apparatusStyle = useMemo(
-    () =>
-      ({
-        "--shm-mass-top": `${313 + displacement * 6.4}px`,
-        "--shm-equilibrium-extension": `${equilibriumExtension * 100}cm`,
-      }) as React.CSSProperties,
-    [displacement, equilibriumExtension],
-  );
+  const oscillatorOffsetPixels = displacement * 6.4;
   const energySafeTotal = Math.max(totalEnergy, 0.000001);
 
   const changeExperiment = (mode: "spring" | "pendulum") => {
@@ -631,7 +623,7 @@ export default function HarmonicMotionLab() {
             </div>
           </div>
 
-          <div className="shm-apparatus" style={apparatusStyle}>
+          <div className="shm-apparatus">
             <div className="shm-lab-wall">
               <span>YAY–KÜTLE DENEYİ</span>
             </div>
@@ -651,12 +643,17 @@ export default function HarmonicMotionLab() {
               </div>
             )}
 
-            {installed.includes("spring") && <SpringCoil displacement={displacement} />}
+            {installed.includes("spring") && (
+              <SpringCoil offset={oscillatorOffsetPixels} />
+            )}
 
             {installed.includes("mass") && (
               <button
                 className={`shm-mass ${setupComplete ? "grabbable" : ""}`}
                 type="button"
+                style={{
+                  transform: `translate3d(0, ${oscillatorOffsetPixels}px, 0)`,
+                }}
                 aria-label="Kütleyi aşağı çekip bırak"
                 onPointerDown={onMassPointerDown}
                 onPointerMove={onMassPointerMove}

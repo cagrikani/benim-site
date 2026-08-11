@@ -31823,7 +31823,7 @@ footer > a {
 .shm-mass {
   position: absolute;
   z-index: 5;
-  top: var(--shm-mass-top);
+  top: 313px;
   left: 424px;
   width: 76px;
   height: 94px;
@@ -31835,7 +31835,8 @@ footer > a {
   color: white;
   cursor: default;
   touch-action: none;
-  transition: top 28ms linear;
+  transition: transform 28ms linear;
+  will-change: transform;
 }
 
 .shm-mass.grabbable { cursor: ns-resize; }
