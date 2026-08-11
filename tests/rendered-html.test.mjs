@@ -112,7 +112,7 @@ test("sekiz modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /Çarpışmalar/);
   assert.match(page, /Balistik sarkaç/);
   assert.match(page, /Dönme dinamiği ve tork/);
-  assert.match(page, /Düzgün harmonik hareket/);
+  assert.match(page, /Basit harmonik hareket/);
   assert.match(page, /mechanics-vectors\.webp/);
   assert.match(page, /mechanics-motion\.webp/);
   assert.match(page, /mechanics-freefall\.webp/);
@@ -1122,12 +1122,18 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /KISA DENEY RAPORU/);
 });
 
-test("düzgün harmonik hareket modülü gerçek yay-kütle düzeneği ve ideal ölçüm sunar", async () => {
+test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar", async () => {
   const page = await readFile(
     new URL("app/HarmonicMotionLab.tsx", projectRoot),
     "utf8",
   );
   assert.match(page, /TYMM · 12\. SINIF/);
+  assert.match(page, /Basit Harmonik Hareket/);
+  assert.match(page, /Yay–kütle sistemi/);
+  assert.match(page, /Basit sarkaç/);
+  assert.match(page, /SimplePendulumLab/);
+  assert.match(page, /SpringCoil/);
+  assert.match(page, /createLinearGradient/);
   assert.match(page, /application\/x-harmonic-motion-equipment/);
   assert.match(page, /Statif ve bağlantı kıskacı/);
   assert.match(page, /Sarmal yay/);
@@ -1164,6 +1170,48 @@ test("düzgün harmonik hareket modülü gerçek yay-kütle düzeneği ve ideal 
   assert.match(css, /\.shm-data-logger\s*\{/);
   assert.match(css, /\.shm-motion-graph\s*\{/);
   assert.match(css, /\.shm-energy-bar\s*\{/);
+});
+
+test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", async () => {
+  const page = await readFile(
+    new URL("app/SimplePendulumLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(page, /application\/x-simple-pendulum-equipment/);
+  assert.match(page, /Ağır tabanlı statif/);
+  assert.match(page, /Sarkaç kıskacı/);
+  assert.match(page, /İp ve metal bilye/);
+  assert.match(page, /Metre cetveli/);
+  assert.match(page, /Optik geçiş kapısı/);
+  assert.match(page, /Dijital zamanlayıcı/);
+  assert.match(page, /OSCILLATION_COUNT = 10/);
+  assert.match(page, /GRAVITY = 9\.81/);
+  assert.match(page, /2 \* Math\.PI \* Math\.sqrt\(lengthMeters \/ GRAVITY\)/);
+  assert.match(page, /4 \* Math\.PI \*\* 2 \* lengthMeters/);
+  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onStageDrop/);
+  assert.match(page, /onBobPointerDown/);
+  assert.match(page, /onBobPointerMove/);
+  assert.match(page, /onBobPointerUp/);
+  assert.match(page, /setPointerCapture/);
+  assert.match(page, /requestAnimationFrame/);
+  assert.match(page, /10 salınım süresi/);
+  assert.match(page, /Hesaplanan g/);
+  assert.match(page, /g = 4π²L \/ T²/);
+  assert.match(page, /KISA DENEY RAPORU/);
+  assert.doesNotMatch(page, /Math\.random|hata kaynağı|ölçüm belirsizliği|Yüzdesel fark/i);
+
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.pend-workspace\s*\{/);
+  assert.match(css, /\.pend-apparatus\s*\{/);
+  assert.match(css, /\.pend-stand\s*\{/);
+  assert.match(css, /\.pend-clamp-block\s*\{/);
+  assert.match(css, /\.pend-swing-arm\s*\{/);
+  assert.match(css, /\.pend-string\s*\{/);
+  assert.match(css, /\.pend-bob\s*\{/);
+  assert.match(css, /\.pend-ruler\s*\{/);
+  assert.match(css, /\.pend-photogate\s*\{/);
+  assert.match(css, /\.pend-timer\s*\{/);
 });
 
 test("tork düzeneği yatay disk, optik okuyucu ve masa makarasını gerçekçi sahnede gösterir", async () => {
@@ -1483,6 +1531,7 @@ test("tüm deney modülleri ideal ölçüm politikası uygular", async () => {
     "app/BallisticPendulumLab.tsx",
     "app/TorqueLab.tsx",
     "app/HarmonicMotionLab.tsx",
+    "app/SimplePendulumLab.tsx",
     "app/PrismLab.tsx",
     "app/PhotoelectricLab.tsx",
     "app/CernAcceleratorLab.tsx",

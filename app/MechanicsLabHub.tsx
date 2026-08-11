@@ -820,7 +820,7 @@ export default function MechanicsLabHub({
             type="button"
             onClick={() => setActiveModule("harmonic-motion")}
           >
-            Harmonik hareket
+            Basit harmonik hareket
           </button>
         </nav>
         <span className="curriculum-chip">
@@ -985,8 +985,8 @@ export default function MechanicsLabHub({
             </span>
             <span className="module-choice-copy">
               <small>MODÜL 08 · DENEY 8</small>
-              <b>Düzgün harmonik hareket</b>
-              <em>Yay–kütle düzeneğini kur, çek ve bırak</em>
+              <b>Basit harmonik hareket</b>
+              <em>Yay–kütle ve basit sarkaç deneyleri</em>
             </span>
             <strong>
               {activeModule === "harmonic-motion" ? "Açık" : "Deneyi aç"} →
@@ -1035,7 +1035,7 @@ export default function MechanicsLabHub({
           {activeModule === "torque" &&
             "TYMM FİZ.12.1.1 ve FİZ.12.1.5 öğrenme çıktılarıyla uyumludur."}
           {activeModule === "harmonic-motion" &&
-            "TYMM 12. sınıf düzgün harmonik hareket öğrenme çıktılarıyla uyumludur."}
+            "TYMM 12. sınıf basit harmonik hareket öğrenme çıktılarıyla uyumludur."}
           {activeModule !== "free-fall" &&
             activeModule !== "two-dimensional" &&
             activeModule !== "collisions" &&

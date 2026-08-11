@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import SimplePendulumLab from "./SimplePendulumLab";
 
 type EquipmentKind =
   | "stand"
@@ -92,6 +93,99 @@ function EquipmentIcon({ kind }: { kind: EquipmentKind }) {
       <i />
       <i />
     </span>
+  );
+}
+
+function SpringCoil({ displacement }: { displacement: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const height = clamp(188 + displacement * 6.4, 122, 258);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const width = 54;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+
+    const center = width / 2;
+    const coilTop = 12;
+    const coilBottom = height - 13;
+    const turns = 17;
+    const drawCoil = (stroke: string, lineWidth: number, offset = 0) => {
+      context.beginPath();
+      context.moveTo(center + offset, 0);
+      context.lineTo(center + offset, coilTop);
+      const samples = turns * 22;
+      for (let sample = 0; sample <= samples; sample += 1) {
+        const progress = sample / samples;
+        const x = center + Math.sin(progress * Math.PI * 2 * turns) * 18 + offset;
+        const y = coilTop + progress * (coilBottom - coilTop);
+        context.lineTo(x, y);
+      }
+      context.lineTo(center + offset, height);
+      context.strokeStyle = stroke;
+      context.lineWidth = lineWidth;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.stroke();
+    };
+
+    context.shadowColor = "rgba(20, 42, 47, 0.28)";
+    context.shadowBlur = 4;
+    context.shadowOffsetX = 2;
+    drawCoil("#263b40", 5.2);
+    context.shadowColor = "transparent";
+    const gradient = context.createLinearGradient(7, 0, 47, 0);
+    gradient.addColorStop(0, "#52676b");
+    gradient.addColorStop(0.28, "#eef3f1");
+    gradient.addColorStop(0.5, "#829296");
+    gradient.addColorStop(0.74, "#f7faf8");
+    gradient.addColorStop(1, "#40565b");
+    drawCoil(gradient, 2.8);
+    drawCoil("rgba(255,255,255,0.58)", 0.8, -0.8);
+  }, [height]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="shm-spring"
+      style={{ height: `${height}px` }}
+      aria-label="Gerçekçi metal sarmal yay"
+    />
+  );
+}
+
+function ExperimentTabs({
+  active,
+  onChange,
+}: {
+  active: "spring" | "pendulum";
+  onChange: (mode: "spring" | "pendulum") => void;
+}) {
+  return (
+    <div className="shm-experiment-tabs" aria-label="Basit harmonik hareket deneyleri">
+      <button
+        type="button"
+        className={active === "spring" ? "active" : ""}
+        onClick={() => onChange("spring")}
+      >
+        <span className="shm-tab-spring" aria-hidden="true"><i /><i /><i /></span>
+        <span><small>DENEY 1</small><b>Yay–kütle sistemi</b><em>Periyot ve enerji dönüşümü</em></span>
+      </button>
+      <button
+        type="button"
+        className={active === "pendulum" ? "active" : ""}
+        onClick={() => onChange("pendulum")}
+      >
+        <span className="shm-tab-pendulum" aria-hidden="true"><i /><i /><i /></span>
+        <span><small>DENEY 2</small><b>Basit sarkaç</b><em>Periyottan yer çekimi ivmesi</em></span>
+      </button>
+    </div>
   );
 }
 
@@ -212,6 +306,7 @@ function MotionGraph({
 }
 
 export default function HarmonicMotionLab() {
+  const [experimentMode, setExperimentMode] = useState<"spring" | "pendulum">("spring");
   const [installed, setInstalled] = useState<EquipmentKind[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [mass, setMass] = useState(200);
@@ -406,30 +501,64 @@ export default function HarmonicMotionLab() {
     () =>
       ({
         "--shm-mass-y": `${displacement * 6.4}px`,
-        "--shm-spring-stretch": `${Math.max(0, displacement * 5.6)}px`,
         "--shm-equilibrium-extension": `${equilibriumExtension * 100}cm`,
       }) as React.CSSProperties,
     [displacement, equilibriumExtension],
   );
   const energySafeTotal = Math.max(totalEnergy, 0.000001);
 
+  const changeExperiment = (mode: "spring" | "pendulum") => {
+    stopAnimation();
+    setRunState("ready");
+    setTime(0);
+    startTimeRef.current = null;
+    elapsedBeforeStartRef.current = 0;
+    setExperimentMode(mode);
+  };
+
+  if (experimentMode === "pendulum") {
+    return (
+      <section className="harmonic-lab" id="basit-harmonik-hareket">
+        <div className="shm-heading">
+          <div>
+            <span>MODÜL 08 · BASİT HARMONİK HAREKET</span>
+            <h2>Basit Harmonik Hareket</h2>
+            <p>
+              İki gerçek laboratuvar düzeneğinden birini seç; sistemi kendin kur,
+              hareketi başlat ve ideal ölçümleri canlı olarak incele.
+            </p>
+          </div>
+          <aside>
+            <b>TYMM · 12. SINIF</b>
+            <span>Deney tasarlama · veri okuryazarlığı</span>
+            <small>İdeal, sürtünmesiz ve sönümsüz hareket modeli</small>
+          </aside>
+        </div>
+        <ExperimentTabs active={experimentMode} onChange={changeExperiment} />
+        <SimplePendulumLab />
+      </section>
+    );
+  }
+
   return (
-    <section className="harmonic-lab" id="duzgun-harmonik-hareket">
+    <section className="harmonic-lab" id="basit-harmonik-hareket">
       <div className="shm-heading">
         <div>
-          <span>MODÜL 08 · DENEY 8</span>
-          <h2>Yay–kütle sistemiyle düzgün harmonik hareket</h2>
+          <span>MODÜL 08 · BASİT HARMONİK HAREKET</span>
+          <h2>Basit Harmonik Hareket</h2>
           <p>
-            Gerçek laboratuvar parçalarını kur; kütleyi elle çekip bırak ve konum,
-            hız, ivme ile enerji değişimini aynı ölçümde incele.
+            İki gerçek laboratuvar düzeneğinden birini seç; sistemi kendin kur,
+            hareketi başlat ve ideal ölçümleri canlı olarak incele.
           </p>
         </div>
         <aside>
           <b>TYMM · 12. SINIF</b>
           <span>Deney tasarlama · veri okuryazarlığı</span>
-          <small>İdeal yay · sürtünmesiz ve sönümsüz hareket</small>
+          <small>İdeal, sürtünmesiz ve sönümsüz hareket modeli</small>
         </aside>
       </div>
+
+      <ExperimentTabs active={experimentMode} onChange={changeExperiment} />
 
       <div className="shm-learning-strip">
         <span><b>1</b> Düzeneği kur</span>
@@ -482,7 +611,7 @@ export default function HarmonicMotionLab() {
             if (!event.currentTarget.contains(event.relatedTarget as Node)) setIsDragOver(false);
           }}
           onDrop={onStageDrop}
-          aria-label="Düzgün harmonik hareket deney tezgâhı"
+          aria-label="Basit harmonik hareket yay-kütle deney tezgâhı"
         >
           <div className="shm-stage-toolbar">
             <div>
@@ -522,11 +651,7 @@ export default function HarmonicMotionLab() {
               </div>
             )}
 
-            {installed.includes("spring") && (
-              <div className={`shm-spring ${runState === "running" ? "moving" : ""}`}>
-                {Array.from({ length: 15 }, (_, index) => <i key={index} />)}
-              </div>
-            )}
+            {installed.includes("spring") && <SpringCoil displacement={displacement} />}
 
             {installed.includes("mass") && (
               <button
@@ -769,7 +894,7 @@ export default function HarmonicMotionLab() {
         </label>
         <label>
           <span>4 · Denge ve uç konumlarda enerji nasıl dönüştü?</span>
-          <textarea rows={4} aria-label="Düzgün harmonik harekette enerji dönüşümü" />
+          <textarea rows={4} aria-label="Basit harmonik harekette enerji dönüşümü" />
         </label>
       </section>
     </section>
