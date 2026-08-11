@@ -12,6 +12,7 @@ import {
 import CollisionLab from "./CollisionLab";
 import BallisticPendulumLab from "./BallisticPendulumLab";
 import FreeFallLab from "./FreeFallLab";
+import HarmonicMotionLab from "./HarmonicMotionLab";
 import MotionLab from "./MotionLab";
 import TorqueLab from "./TorqueLab";
 import TwoDimensionalMotionLab from "./TwoDimensionalMotionLab";
@@ -24,6 +25,7 @@ type ActiveModule =
   | "collisions"
   | "ballistic-pendulum"
   | "torque"
+  | "harmonic-motion"
   | null;
 type GridPoint = { x: number; y: number };
 type WorkspaceVector = {
@@ -813,12 +815,20 @@ export default function MechanicsLabHub({
           >
             Tork
           </button>
+          <button
+            className={activeModule === "harmonic-motion" ? "active" : ""}
+            type="button"
+            onClick={() => setActiveModule("harmonic-motion")}
+          >
+            Harmonik hareket
+          </button>
         </nav>
         <span className="curriculum-chip">
           TYMM ·{" "}
           {activeModule === "collisions" ||
           activeModule === "ballistic-pendulum" ||
-          activeModule === "torque"
+          activeModule === "torque" ||
+          activeModule === "harmonic-motion"
             ? "12."
             : activeModule === "free-fall" ||
                 activeModule === "two-dimensional"
@@ -961,6 +971,27 @@ export default function MechanicsLabHub({
             </span>
             <strong>{activeModule === "torque" ? "Açık" : "Deneyi aç"} →</strong>
           </button>
+          <button
+            className={`harmonic-module-choice ${activeModule === "harmonic-motion" ? "active" : ""}`}
+            type="button"
+            aria-pressed={activeModule === "harmonic-motion"}
+            onClick={() => setActiveModule("harmonic-motion")}
+          >
+            <span
+              className="module-choice-visual harmonic-choice-visual"
+              aria-hidden="true"
+            >
+              <img src="./mechanics-harmonic-motion.webp" alt="" draggable="false" />
+            </span>
+            <span className="module-choice-copy">
+              <small>MODÜL 08 · DENEY 8</small>
+              <b>Düzgün harmonik hareket</b>
+              <em>Yay–kütle düzeneğini kur, çek ve bırak</em>
+            </span>
+            <strong>
+              {activeModule === "harmonic-motion" ? "Açık" : "Deneyi aç"} →
+            </strong>
+          </button>
         </div>
       </section>
 
@@ -982,6 +1013,8 @@ export default function MechanicsLabHub({
 
       {activeModule === "torque" && <TorqueLab />}
 
+      {activeModule === "harmonic-motion" && <HarmonicMotionLab />}
+
       <footer>
         <div className="brand footer-brand">
           <span className="brand-mark">FA</span>
@@ -1001,11 +1034,14 @@ export default function MechanicsLabHub({
             "TYMM FİZ.12.1.4 ve FİZ.12.2.5 öğrenme çıktılarıyla uyumludur."}
           {activeModule === "torque" &&
             "TYMM FİZ.12.1.1 ve FİZ.12.1.5 öğrenme çıktılarıyla uyumludur."}
+          {activeModule === "harmonic-motion" &&
+            "TYMM 12. sınıf düzgün harmonik hareket öğrenme çıktılarıyla uyumludur."}
           {activeModule !== "free-fall" &&
             activeModule !== "two-dimensional" &&
             activeModule !== "collisions" &&
             activeModule !== "ballistic-pendulum" &&
             activeModule !== "torque" &&
+            activeModule !== "harmonic-motion" &&
             "TYMM FİZ.9.2.3 ve FİZ.9.2.4 öğrenme çıktılarıyla uyumludur."}
         </p>
         <a href="#ust">Başa dön ↑</a>

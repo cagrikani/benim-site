@@ -32,6 +32,7 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "mechanics-collisions.webp",
     "mechanics-ballistic.webp",
     "mechanics-torque.webp",
+    "mechanics-harmonic-motion.webp",
     "electricity-ohm.webp",
     "electricity-resistors.webp",
     "optics-mirrors.webp",
@@ -80,7 +81,7 @@ test("vektör çalışma alanı hazır teori ve formül sunmaz", async () => {
   assert.doesNotMatch(page, /\|A\||R =|Math\.hypot/);
 });
 
-test("yedi modül ve serbest vektör çizimi etkileşimlidir", async () => {
+test("sekiz modül ve serbest vektör çizimi etkileşimlidir", async () => {
   const page = await readFile(new URL("app/MechanicsLabHub.tsx", projectRoot), "utf8");
   assert.match(page, /activeModule/);
   assert.match(page, /module-choice-grid/);
@@ -91,6 +92,7 @@ test("yedi modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /setActiveModule\("collisions"\)/);
   assert.match(page, /setActiveModule\("ballistic-pendulum"\)/);
   assert.match(page, /setActiveModule\("torque"\)/);
+  assert.match(page, /setActiveModule\("harmonic-motion"\)/);
   assert.match(page, /activeModule === "vectors"/);
   assert.match(page, /activeModule === "motion"/);
   assert.match(page, /activeModule === "free-fall"/);
@@ -98,16 +100,19 @@ test("yedi modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /activeModule === "collisions"/);
   assert.match(page, /activeModule === "ballistic-pendulum"/);
   assert.match(page, /activeModule === "torque"/);
+  assert.match(page, /activeModule === "harmonic-motion"/);
   assert.match(page, /FreeFallLab/);
   assert.match(page, /TwoDimensionalMotionLab/);
   assert.match(page, /CollisionLab/);
   assert.match(page, /BallisticPendulumLab/);
   assert.match(page, /TorqueLab/);
+  assert.match(page, /HarmonicMotionLab/);
   assert.match(page, /Serbest düşme/);
   assert.match(page, /İki boyutta hareket/);
   assert.match(page, /Çarpışmalar/);
   assert.match(page, /Balistik sarkaç/);
   assert.match(page, /Dönme dinamiği ve tork/);
+  assert.match(page, /Düzgün harmonik hareket/);
   assert.match(page, /mechanics-vectors\.webp/);
   assert.match(page, /mechanics-motion\.webp/);
   assert.match(page, /mechanics-freefall\.webp/);
@@ -115,6 +120,7 @@ test("yedi modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /mechanics-collisions\.webp/);
   assert.match(page, /mechanics-ballistic\.webp/);
   assert.match(page, /mechanics-torque\.webp/);
+  assert.match(page, /mechanics-harmonic-motion\.webp/);
   assert.match(page, /onPointerDown/);
   assert.match(page, /setPointerCapture/);
   assert.match(page, /pointFromPointer/);
@@ -1116,6 +1122,50 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /KISA DENEY RAPORU/);
 });
 
+test("düzgün harmonik hareket modülü gerçek yay-kütle düzeneği ve ideal ölçüm sunar", async () => {
+  const page = await readFile(
+    new URL("app/HarmonicMotionLab.tsx", projectRoot),
+    "utf8",
+  );
+  assert.match(page, /TYMM · 12\. SINIF/);
+  assert.match(page, /application\/x-harmonic-motion-equipment/);
+  assert.match(page, /Statif ve bağlantı kıskacı/);
+  assert.match(page, /Sarmal yay/);
+  assert.match(page, /Kütle askısı/);
+  assert.match(page, /Düşey cetvel/);
+  assert.match(page, /Hareket algılayıcısı/);
+  assert.match(page, /Dijital zamanlayıcı/);
+  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onStageDrop/);
+  assert.match(page, /onMassPointerDown/);
+  assert.match(page, /onMassPointerMove/);
+  assert.match(page, /onMassPointerUp/);
+  assert.match(page, /setPointerCapture/);
+  assert.match(page, /requestAnimationFrame/);
+  assert.match(page, /Math\.sqrt\(springConstant \/ massKg\)/);
+  assert.match(page, /2 \* Math\.PI \* Math\.sqrt\(massKg \/ springConstant\)/);
+  assert.match(page, /Konum x/);
+  assert.match(page, /Hız v/);
+  assert.match(page, /İvme a/);
+  assert.match(page, /Toplam enerji sabit kalır/);
+  assert.match(page, /İdeal sistemde korunur/);
+  assert.match(page, /DENEY GÜNLÜĞÜ/);
+  assert.match(page, /KISA DENEY RAPORU/);
+  assert.doesNotMatch(page, /Math\.random|hata kaynağı|ölçüm belirsizliği|Yüzdesel fark/i);
+
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.shm-workspace\s*\{/);
+  assert.match(css, /\.shm-apparatus\s*\{/);
+  assert.match(css, /\.shm-stand\s*\{/);
+  assert.match(css, /\.shm-spring\s*\{/);
+  assert.match(css, /\.shm-mass\s*\{/);
+  assert.match(css, /\.shm-ruler\s*\{/);
+  assert.match(css, /\.shm-motion-sensor\s*\{/);
+  assert.match(css, /\.shm-data-logger\s*\{/);
+  assert.match(css, /\.shm-motion-graph\s*\{/);
+  assert.match(css, /\.shm-energy-bar\s*\{/);
+});
+
 test("tork düzeneği yatay disk, optik okuyucu ve masa makarasını gerçekçi sahnede gösterir", async () => {
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
   assert.match(css, /\.torque-choice-visual\s*\{/);
@@ -1432,6 +1482,7 @@ test("tüm deney modülleri ideal ölçüm politikası uygular", async () => {
     "app/CollisionLab.tsx",
     "app/BallisticPendulumLab.tsx",
     "app/TorqueLab.tsx",
+    "app/HarmonicMotionLab.tsx",
     "app/PrismLab.tsx",
     "app/PhotoelectricLab.tsx",
     "app/CernAcceleratorLab.tsx",
