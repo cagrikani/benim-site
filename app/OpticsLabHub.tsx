@@ -5,11 +5,12 @@
 import { useState } from "react";
 import ConcaveMirrorLab from "./ConcaveMirrorLab";
 import ConvexMirrorLab from "./ConvexMirrorLab";
+import LensLab from "./LensLab";
 import PlaneMirrorLab from "./PlaneMirrorLab";
 import PrismLab from "./PrismLab";
 import RippleTankLab from "./RippleTankLab";
 
-type OpticsTopic = "waves" | "prism" | "mirrors" | null;
+type OpticsTopic = "waves" | "prism" | "mirrors" | "lenses" | null;
 type MirrorType = "plane" | "concave" | "convex" | null;
 
 export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
@@ -43,6 +44,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
           <button className={activeTopic === "waves" ? "active" : ""} type="button" onClick={() => openTopic("waves")}>Dalga leğeni</button>
           <button className={activeTopic === "prism" ? "active" : ""} type="button" onClick={() => openTopic("prism")}>Kırılma ve prizma</button>
           <button className={activeTopic === "mirrors" ? "active" : ""} type="button" onClick={() => openTopic("mirrors")}>Aynalar</button>
+          <button className={activeTopic === "lenses" ? "active" : ""} type="button" onClick={() => openTopic("lenses")}>Mercekler</button>
         </nav>
         <span className="curriculum-chip">TYMM · Lise</span>
       </header>
@@ -70,6 +72,11 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
               <span className="optics-topic-image"><img src="./optics-mirrors.webp" alt="" draggable="false" /></span>
               <span><small>OPTİK ALANI 02</small><b>Aynalar</b><em>Düzlem, çukur ve tümsek aynaları deneyle.</em></span>
               <strong>{activeTopic === "mirrors" ? "Açık" : "Alanı aç"} →</strong>
+            </button>
+            <button className={activeTopic === "lenses" ? "active" : ""} type="button" onClick={() => openTopic("lenses")}>
+              <span className="optics-topic-image"><img src="./optics-lenses.webp" alt="" draggable="false" /></span>
+              <span><small>OPTİK ALANI 03</small><b>Mercekler</b><em>İnce ve kalın kenarlı merceklerle görüntü oluştur.</em></span>
+              <strong>{activeTopic === "lenses" ? "Açık" : "Alanı aç"} →</strong>
             </button>
           </div>
         </section>
@@ -103,6 +110,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
 
         {activeTopic === "waves" && <RippleTankLab />}
         {activeTopic === "prism" && <PrismLab />}
+        {activeTopic === "lenses" && <LensLab />}
         {activeTopic === "mirrors" && activeMirror === "plane" && <PlaneMirrorLab />}
         {activeTopic === "mirrors" && activeMirror === "concave" && <ConcaveMirrorLab />}
         {activeTopic === "mirrors" && activeMirror === "convex" && <ConvexMirrorLab />}
@@ -116,7 +124,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
             <small>Dalgalar - Optik deney setleri</small>
           </span>
         </div>
-        <p>Dalga leğeni, kırılma, prizma ve ayna deneyleri TYMM lise düzeyine uygun ideal ölçümlerle hazırlanır.</p>
+        <p>Dalga leğeni, kırılma, prizma, ayna ve mercek deneyleri TYMM lise düzeyine uygun ideal ölçümlerle hazırlanır.</p>
         <a href="#optik-ust">Başa dön ↑</a>
       </footer>
     </main>

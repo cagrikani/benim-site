@@ -382,6 +382,62 @@ test("manyetik alan düzeneği gerçekçi ray, bobin, yoklama kangalı ve grafik
   assert.match(css, /\.mfl-report\s*\{/);
 });
 
+test("Dalgalar-Optik alanı ince ve kalın kenarlı mercek deneyini sunar", async () => {
+  const hub = await readFile(
+    new URL("app/OpticsLabHub.tsx", projectRoot),
+    "utf8",
+  );
+  const page = await readFile(new URL("app/LensLab.tsx", projectRoot), "utf8");
+  assert.match(hub, /LensLab/);
+  assert.match(hub, /Mercekler/);
+  assert.match(hub, /optics-lenses\.webp/);
+  assert.match(hub, /activeTopic === "lenses" && <LensLab/);
+  assert.match(page, /application\/x-lens-lab-equipment/);
+  assert.match(page, /Cetvelli optik ray/);
+  assert.match(page, /Işıklı cisim kutusu/);
+  assert.match(page, /İnce ve kalın kenarlı mercek/);
+  assert.match(page, /Beyaz görüntü ekranı/);
+  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onStageDrop/);
+  assert.match(page, /moveFromPointer/);
+  assert.match(page, /RayDiagram/);
+  assert.match(page, /parallel: true/);
+  assert.match(page, /center: true/);
+  assert.match(page, /focus: true/);
+  assert.match(page, /1 \/ signedFocal - 1 \/ objectDistance/);
+  assert.match(page, /Cisim 2F'nin dışında/);
+  assert.match(page, /Cisim F ile 2F arasında/);
+  assert.match(page, /Cisim mercek ile F arasında/);
+  assert.match(page, /Sanal · düz · cisimden küçük/);
+  assert.match(page, /Sanal görüntü ekrana düşmez/);
+  assert.match(page, /Net gerçek görüntü ekranda oluştu/);
+  assert.match(page, /Ölçümü kaydet/);
+  assert.match(page, /TYMM KISA DENEY RAPORU/);
+  assert.match(page, /İDEAL SİSTEM/);
+  assert.doesNotMatch(page, /Math\.random|NOISE|hata|belirsiz/i);
+});
+
+test("mercek laboratuvarı gerçek optik ray, mercek, ekran ve özel ışın görselleri içerir", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(css, /\.optics-lens-lab\s*\{/);
+  assert.match(css, /\.oll-workspace\s*\{/);
+  assert.match(css, /\.oll-equipment-panel,/);
+  assert.match(css, /\.oll-stage\s*\{/);
+  assert.match(css, /\.oll-ray-canvas\s*\{/);
+  assert.match(css, /\.oll-rail\s*\{/);
+  assert.match(css, /\.oll-ray-box\s*\{/);
+  assert.match(css, /\.oll-object\s*\{/);
+  assert.match(css, /\.oll-lens-assembly\s*\{/);
+  assert.match(css, /\.oll-lens-assembly\.converging/);
+  assert.match(css, /\.oll-lens-assembly\.diverging/);
+  assert.match(css, /\.oll-screen\s*\{/);
+  assert.match(css, /\.oll-focus-marker\s*\{/);
+  assert.match(css, /\.oll-eye\s*\{/);
+  assert.match(css, /\.oll-control-grid\s*\{/);
+  assert.match(css, /\.oll-property-grid\s*\{/);
+  assert.match(css, /\.oll-report\s*\{/);
+});
+
 test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla sunar", async () => {
   const hub = await readFile(
     new URL("app/OpticsLabHub.tsx", projectRoot),
@@ -1368,6 +1424,7 @@ test("tüm deney modülleri ideal ölçüm politikası uygular", async () => {
     "app/CernAcceleratorLab.tsx",
     "app/OhmLawLab.tsx",
     "app/ResistorConnectionsLab.tsx",
+    "app/LensLab.tsx",
   ];
   const pages = await Promise.all(
     labFiles.map((file) => readFile(new URL(file, projectRoot), "utf8")),
