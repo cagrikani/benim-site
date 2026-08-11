@@ -17,8 +17,11 @@ type EquipmentKind =
   | "photogate"
   | "timer";
 type RunState = "ready" | "running" | "complete";
+type EnvironmentId = "earth" | "moon" | "mars" | "jupiter";
 type Trial = {
   id: number;
+  environment: EnvironmentId;
+  environmentName: string;
   length: number;
   releaseDistance: number;
   tenPeriodTime: number;
@@ -27,8 +30,43 @@ type Trial = {
 };
 
 const MIME = "application/x-simple-pendulum-equipment";
-const GRAVITY = 9.81;
 const OSCILLATION_COUNT = 10;
+const ENVIRONMENTS: Array<{
+  id: EnvironmentId;
+  name: string;
+  gravity: number;
+  level: string;
+  observation: string;
+}> = [
+  {
+    id: "moon",
+    name: "Ay",
+    gravity: 1.62,
+    level: "Çok düşük çekim",
+    observation: "Sarkaç belirgin biçimde yavaşlar.",
+  },
+  {
+    id: "mars",
+    name: "Mars",
+    gravity: 3.71,
+    level: "Düşük çekim",
+    observation: "Periyot Dünya’dakinden daha uzundur.",
+  },
+  {
+    id: "earth",
+    name: "Dünya",
+    gravity: 9.81,
+    level: "Referans ortam",
+    observation: "Laboratuvar ölçümünün temel karşılaştırmasıdır.",
+  },
+  {
+    id: "jupiter",
+    name: "Jüpiter",
+    gravity: 24.79,
+    level: "Çok güçlü çekim",
+    observation: "Sarkaç daha kısa sürede salınır.",
+  },
+];
 const EQUIPMENT_ORDER: EquipmentKind[] = [
   "stand",
   "clamp",
@@ -168,6 +206,7 @@ export default function SimplePendulumLab() {
   const [installed, setInstalled] = useState<EquipmentKind[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [length, setLength] = useState(60);
+  const [environmentId, setEnvironmentId] = useState<EnvironmentId>("earth");
   const [releaseDistance, setReleaseDistance] = useState(8);
   const [previewAngle, setPreviewAngle] = useState(-7.7);
   const [runState, setRunState] = useState<RunState>("ready");
@@ -181,8 +220,12 @@ export default function SimplePendulumLab() {
 
   const setupComplete = installed.length === EQUIPMENT_ORDER.length;
   const nextEquipment = EQUIPMENT_ORDER[installed.length];
+  const selectedEnvironment =
+    ENVIRONMENTS.find((environment) => environment.id === environmentId) ??
+    ENVIRONMENTS[2];
   const lengthMeters = length / 100;
-  const period = 2 * Math.PI * Math.sqrt(lengthMeters / GRAVITY);
+  const period =
+    2 * Math.PI * Math.sqrt(lengthMeters / selectedEnvironment.gravity);
   const omega = (2 * Math.PI) / period;
   const initialAngle =
     Math.sign(previewAngle || -1) * Math.asin(clamp(releaseDistance / length, 0, 0.18));
@@ -265,7 +308,7 @@ export default function SimplePendulumLab() {
     setRunState("ready");
     setTime(0);
     startTimeRef.current = null;
-    const nextAngle = Math.asin(clamp(nextDistance / length, 0, 0.22));
+    const nextAngle = Math.asin(clamp(nextDistance / length, 0, 0.18));
     setPreviewAngle(-(nextAngle * 180) / Math.PI);
   }, [length, releaseDistance, stopAnimation]);
 
@@ -335,6 +378,18 @@ export default function SimplePendulumLab() {
     setMessage("Başlangıç uzaklığı ayarlandı. Bilyeyi serbest bırak.");
   };
 
+  const changeEnvironment = (nextEnvironment: EnvironmentId) => {
+    stopAnimation();
+    setEnvironmentId(nextEnvironment);
+    setRunState("ready");
+    setTime(0);
+    startTimeRef.current = null;
+    const environment = ENVIRONMENTS.find((item) => item.id === nextEnvironment);
+    setMessage(
+      `${environment?.name ?? "Yeni"} ortamı seçildi. Aynı sarkaçla yeni ölçümü başlat.`,
+    );
+  };
+
   const recordTrial = () => {
     if (runState !== "complete") {
       setMessage("Kaydetmek için önce on tam salınımı tamamla.");
@@ -344,6 +399,8 @@ export default function SimplePendulumLab() {
       ...current,
       {
         id: nextTrialIdRef.current++,
+        environment: selectedEnvironment.id,
+        environmentName: selectedEnvironment.name,
         length,
         releaseDistance,
         tenPeriodTime,
@@ -358,6 +415,12 @@ export default function SimplePendulumLab() {
     "--pend-angle": `${currentAngleDegrees}deg`,
     "--pend-length": `${stringLengthPixels}px`,
   } as React.CSSProperties;
+  const environmentResults = ENVIRONMENTS.map((environment) => ({
+    ...environment,
+    trial: [...trials]
+      .reverse()
+      .find((trial) => trial.environment === environment.id),
+  }));
 
   return (
     <div className="pendulum-experiment">
@@ -367,6 +430,32 @@ export default function SimplePendulumLab() {
         <span><b>3</b> Bilyeyi çekip bırak</span>
         <span><b>4</b> 10 salınımdan g’yi bul</span>
       </div>
+
+      <section className="pend-environment-selector">
+        <div>
+          <small>ÇEKİM ORTAMI</small>
+          <h3>Aynı sarkacı farklı gök cisimlerinde dene</h3>
+          <p>Uzunluğu sabit tutarak yalnızca ortamı değiştir ve salınım süresini karşılaştır.</p>
+        </div>
+        <div className="pend-environment-options">
+          {ENVIRONMENTS.map((environment) => (
+            <button
+              key={environment.id}
+              type="button"
+              className={`${environment.id} ${environmentId === environment.id ? "active" : ""}`}
+              onClick={() => changeEnvironment(environment.id)}
+              disabled={runState === "running"}
+            >
+              <i aria-hidden="true" />
+              <span>
+                <b>{environment.name}</b>
+                <small>{environment.level}</small>
+              </span>
+              <strong>{environmentId === environment.id ? "SEÇİLİ" : "DENE"}</strong>
+            </button>
+          ))}
+        </div>
+      </section>
 
       <div className="pend-workspace">
         <aside className="pend-equipment-panel">
@@ -416,7 +505,9 @@ export default function SimplePendulumLab() {
         >
           <div className="pend-stage-toolbar">
             <div>
-              <small>BASİT SARKAÇ DENEYİ</small>
+              <small>
+                BASİT SARKAÇ · {selectedEnvironment.name.toLocaleUpperCase("tr-TR")} ORTAMI
+              </small>
               <b>{setupComplete ? "Optik geçiş sayacı hazır" : "Parçaları bu alana bırak"}</b>
             </div>
             <div className="pend-live-counter">
@@ -426,8 +517,17 @@ export default function SimplePendulumLab() {
             </div>
           </div>
 
-          <div className="pend-apparatus" style={apparatusStyle}>
-            <div className="pend-lab-wall"><span>BASİT SARKAÇ · g ÖLÇÜMÜ</span></div>
+          <div
+            className={`pend-apparatus environment-${selectedEnvironment.id}`}
+            style={apparatusStyle}
+          >
+            <div className="pend-lab-wall">
+              <span>BASİT SARKAÇ · g ÖLÇÜMÜ</span>
+              <div className="pend-environment-window">
+                <i />
+                <b>{selectedEnvironment.name} ortamı</b>
+              </div>
+            </div>
             <div className="pend-bench">
               <i className="pend-bench-top" />
               <i className="pend-bench-leg left" />
@@ -562,13 +662,14 @@ export default function SimplePendulumLab() {
           <small>İŞLEMSEL SONUÇ</small>
           <h3>Yer çekimi ivmesini bul</h3>
           <div>
+            <span><small>Seçilen ortam</small><b>{selectedEnvironment.name}</b></span>
             <span><small>10 salınım</small><b>{runState === "complete" ? `${format(tenPeriodTime, 3)} s` : "Ölçüm bekleniyor"}</b></span>
             <span><small>Bir salınımın periyodu</small><b>{runState === "complete" ? `${format(period, 3)} s` : "—"}</b></span>
             <span><small>Sarkaç uzunluğu</small><b>{format(lengthMeters, 2)} m</b></span>
           </div>
           <p>g = 4π²L / T²</p>
           <strong>{runState === "complete" ? `${format(calculatedGravity, 2)} m/s²` : "—"}</strong>
-          <em>İdeal düzende ölçülen yer çekimi ivmesi</em>
+          <em>{selectedEnvironment.name} ortamında ideal olarak ölçülen değer</em>
         </article>
         <article className="pend-observation-card">
           <small>CANLI GÖZLEM</small>
@@ -578,6 +679,8 @@ export default function SimplePendulumLab() {
             <span><small>Sapma</small><b>{format(Math.abs(currentAngleDegrees), 1)}°</b></span>
             <span><small>Geçen süre</small><b>{format(time, 2)} s</b></span>
             <span><small>Tamamlanan salınım</small><b>{format(countedOscillations, 2)}</b></span>
+            <span><small>Çekim ortamı</small><b>{selectedEnvironment.name}</b></span>
+            <span className="wide"><small>Beklenen davranış</small><b>{selectedEnvironment.observation}</b></span>
           </div>
         </article>
       </section>
@@ -586,8 +689,8 @@ export default function SimplePendulumLab() {
         <div className="pend-data-heading">
           <div>
             <small>DENEY GÜNLÜĞÜ</small>
-            <h3>Uzunluğu değiştir, ölçümü tekrarla</h3>
-            <p>Her uzunluk için on salınımı tamamlayarak g değerini karşılaştır.</p>
+            <h3>Ortamı veya uzunluğu değiştir, ölçümü tekrarla</h3>
+            <p>Her ortamda on salınımı tamamlayarak periyot ve g değerini karşılaştır.</p>
           </div>
           <button type="button" onClick={recordTrial}>ÖLÇÜMÜ KAYDET</button>
         </div>
@@ -596,6 +699,7 @@ export default function SimplePendulumLab() {
             <thead>
               <tr>
                 <th>Deneme</th>
+                <th>Ortam</th>
                 <th>İp uzunluğu L</th>
                 <th>Başlangıç uzaklığı</th>
                 <th>10 salınım süresi</th>
@@ -605,10 +709,11 @@ export default function SimplePendulumLab() {
             </thead>
             <tbody>
               {trials.length === 0 ? (
-                <tr><td colSpan={6}>Bilyeyi bırak, on salınımı tamamla ve ilk ölçümü kaydet.</td></tr>
+                <tr><td colSpan={7}>Bilyeyi bırak, on salınımı tamamla ve ilk ölçümü kaydet.</td></tr>
               ) : trials.map((trial) => (
                 <tr key={trial.id}>
                   <td>{trial.id}</td>
+                  <td>{trial.environmentName}</td>
                   <td>{trial.length} cm</td>
                   <td>{format(trial.releaseDistance, 1)} cm</td>
                   <td>{format(trial.tenPeriodTime, 3)} s</td>
@@ -618,6 +723,40 @@ export default function SimplePendulumLab() {
               ))}
             </tbody>
           </table>
+        </div>
+      </section>
+
+      <section className="pend-gravity-comparison">
+        <div>
+          <small>ORTAMLAR ARASI KARŞILAŞTIRMA</small>
+          <h3>Aynı sarkaç, farklı salınım süreleri</h3>
+          <p>Bir ortamda ölçüm kaydettiğinde o ortama ait sonuç burada görünür.</p>
+        </div>
+        <div className="pend-gravity-bars">
+          {environmentResults.map((environment) => (
+            <article key={environment.id} className={environment.id}>
+              <header><i /><b>{environment.name}</b></header>
+              <div>
+                <span
+                  style={{
+                    width: environment.trial
+                      ? `${(environment.trial.gravity / 24.79) * 100}%`
+                      : "0%",
+                  }}
+                />
+              </div>
+              <strong>
+                {environment.trial
+                  ? `${format(environment.trial.gravity, 2)} m/s²`
+                  : "Ölçüm bekleniyor"}
+              </strong>
+              <small>
+                {environment.trial
+                  ? `T = ${format(environment.trial.period, 3)} s`
+                  : environment.level}
+              </small>
+            </article>
+          ))}
         </div>
       </section>
 
@@ -636,11 +775,11 @@ export default function SimplePendulumLab() {
           <textarea rows={4} aria-label="On salınım ölçmenin gerekçesi" />
         </label>
         <label>
-          <span>3 · Farklı uzunluklarda hesaplanan g değerlerini karşılaştır.</span>
+          <span>3 · Aynı uzunlukta farklı ortamlarda ölçülen periyotları karşılaştır.</span>
           <textarea rows={4} aria-label="Hesaplanan yer çekimi ivmelerinin karşılaştırılması" />
         </label>
         <label>
-          <span>4 · En büyük hız ve en büyük sapma sarkacın hangi konumlarındadır?</span>
+          <span>4 · Çekim ivmesi büyüdükçe sarkacın hareketi nasıl değişti?</span>
           <textarea rows={4} aria-label="Basit sarkaçta hız ve konum yorumu" />
         </label>
       </section>

@@ -500,7 +500,7 @@ export default function HarmonicMotionLab() {
   const apparatusStyle = useMemo(
     () =>
       ({
-        "--shm-mass-y": `${displacement * 6.4}px`,
+        "--shm-mass-top": `${313 + displacement * 6.4}px`,
         "--shm-equilibrium-extension": `${equilibriumExtension * 100}cm`,
       }) as React.CSSProperties,
     [displacement, equilibriumExtension],

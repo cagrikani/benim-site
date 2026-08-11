@@ -1134,6 +1134,8 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(page, /SimplePendulumLab/);
   assert.match(page, /SpringCoil/);
   assert.match(page, /createLinearGradient/);
+  assert.match(page, /--shm-mass-top/);
+  assert.match(page, /313 \+ displacement \* 6\.4/);
   assert.match(page, /application\/x-harmonic-motion-equipment/);
   assert.match(page, /Statif ve bağlantı kıskacı/);
   assert.match(page, /Sarmal yay/);
@@ -1185,8 +1187,13 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(page, /Optik geçiş kapısı/);
   assert.match(page, /Dijital zamanlayıcı/);
   assert.match(page, /OSCILLATION_COUNT = 10/);
-  assert.match(page, /GRAVITY = 9\.81/);
-  assert.match(page, /2 \* Math\.PI \* Math\.sqrt\(lengthMeters \/ GRAVITY\)/);
+  assert.match(page, /ENVIRONMENTS/);
+  assert.match(page, /gravity: 1\.62/);
+  assert.match(page, /gravity: 3\.71/);
+  assert.match(page, /gravity: 9\.81/);
+  assert.match(page, /gravity: 24\.79/);
+  assert.match(page, /selectedEnvironment\.gravity/);
+  assert.match(page, /2 \* Math\.PI \* Math\.sqrt\(lengthMeters \/ selectedEnvironment\.gravity\)/);
   assert.match(page, /4 \* Math\.PI \*\* 2 \* lengthMeters/);
   assert.match(page, /onEquipmentDragStart/);
   assert.match(page, /onStageDrop/);
@@ -1197,6 +1204,9 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(page, /requestAnimationFrame/);
   assert.match(page, /10 salınım süresi/);
   assert.match(page, /Hesaplanan g/);
+  assert.match(page, /Aynı sarkacı farklı gök cisimlerinde dene/);
+  assert.match(page, /ORTAMLAR ARASI KARŞILAŞTIRMA/);
+  assert.match(page, /environmentResults/);
   assert.match(page, /g = 4π²L \/ T²/);
   assert.match(page, /KISA DENEY RAPORU/);
   assert.doesNotMatch(page, /Math\.random|hata kaynağı|ölçüm belirsizliği|Yüzdesel fark/i);
@@ -1212,6 +1222,13 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(css, /\.pend-ruler\s*\{/);
   assert.match(css, /\.pend-photogate\s*\{/);
   assert.match(css, /\.pend-timer\s*\{/);
+  assert.match(css, /\.pend-environment-selector\s*\{/);
+  assert.match(css, /\.pend-environment-window\s*\{/);
+  assert.match(css, /\.environment-moon \.pend-environment-window/);
+  assert.match(css, /\.environment-mars \.pend-environment-window/);
+  assert.match(css, /\.environment-earth \.pend-environment-window/);
+  assert.match(css, /\.environment-jupiter \.pend-environment-window/);
+  assert.match(css, /\.pend-gravity-comparison\s*\{/);
 });
 
 test("tork düzeneği yatay disk, optik okuyucu ve masa makarasını gerçekçi sahnede gösterir", async () => {
