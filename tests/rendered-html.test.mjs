@@ -1343,6 +1343,9 @@ test("çarpışmalar modülü PDF düzeneğiyle kurulabilir ve veri üretir", as
   assert.match(page, /collision-foot-pedal-v2\.webp/);
   assert.match(page, /collision-puck-one-v2\.webp/);
   assert.match(page, /collision-puck-two-v2\.webp/);
+  assert.match(page, /puckReachedTableEdge/);
+  assert.match(page, /keepPuckOnTable/);
+  assert.doesNotMatch(page, /motion-lab-bench-v3\.webp/);
 });
 
 test("çarpışma düzeneği hava masası, diskler ve nokta izlerini gerçekçi sahnede gösterir", async () => {

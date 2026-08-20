@@ -149,6 +149,22 @@ function initialPositions(targetY: number) {
   };
 }
 
+function puckReachedTableEdge(position: Point) {
+  return (
+    position.x <= PUCK_RADIUS ||
+    position.x >= TABLE_WIDTH - PUCK_RADIUS ||
+    position.y <= PUCK_RADIUS ||
+    position.y >= TABLE_HEIGHT - PUCK_RADIUS
+  );
+}
+
+function keepPuckOnTable(position: Point): Point {
+  return {
+    x: Math.max(PUCK_RADIUS, Math.min(TABLE_WIDTH - PUCK_RADIUS, position.x)),
+    y: Math.max(PUCK_RADIUS, Math.min(TABLE_HEIGHT - PUCK_RADIUS, position.y)),
+  };
+}
+
 function EquipmentIcon({ kind }: { kind: SetupKind }) {
   const photo = COLLISION_EQUIPMENT_PHOTOS[kind];
 
@@ -1249,6 +1265,16 @@ export default function CollisionLab() {
         }
       }
 
+      const reachedTableEdge =
+        current.collided &&
+        (puckReachedTableEdge(current.positionOne) ||
+          puckReachedTableEdge(current.positionTwo));
+
+      if (reachedTableEdge) {
+        current.positionOne = keepPuckOnTable(current.positionOne);
+        current.positionTwo = keepPuckOnTable(current.positionTwo);
+      }
+
       if (current.time - current.lastSpark >= current.sparkInterval) {
         current.lastSpark = current.time;
         setMarks((previous) => [
@@ -1276,7 +1302,7 @@ export default function CollisionLab() {
 
       if (
         current.collided &&
-        current.time - current.collisionTime >= 0.92
+        (current.time - current.collisionTime >= 0.92 || reachedTableEdge)
       ) {
         finishRun(current);
         return;
@@ -1425,13 +1451,6 @@ export default function CollisionLab() {
           </div>
 
           <div className="collision-apparatus">
-            <div className="collision-lab-floor" />
-            <div className="collision-workbench">
-              <img src="./motion-lab-bench-v3.webp" alt="" draggable={false} />
-              <i />
-              <i />
-            </div>
-
             {installed.includes("air-table") && (
               <div
                 className={`collision-air-table ${balanced ? "balanced" : ""} ${compressorOn ? "air-on" : ""}`}

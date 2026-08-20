@@ -33741,7 +33741,11 @@ footer > a {
 .collision-apparatus {
   min-height: 740px;
   isolation: isolate;
-  background: #d8dfdd;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.88), transparent 62%),
+    linear-gradient(90deg, rgba(53, 79, 82, 0.035) 1px, transparent 1px) 0 0 / 46px 46px,
+    linear-gradient(rgba(53, 79, 82, 0.035) 1px, transparent 1px) 0 0 / 46px 46px,
+    #e4ebe8;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.62),
     0 12px 26px rgba(25, 57, 63, 0.13);
@@ -34036,12 +34040,12 @@ footer > a {
 }
 
 .collision-compressor .compressor-hose {
-  top: -57%;
+  top: -28%;
   right: -1%;
   left: auto;
   z-index: 1;
-  width: 58%;
-  height: 86%;
+  width: 29%;
+  height: 64%;
   border-top: 7px solid #314f55;
   border-right: 7px solid #314f55;
   border-radius: 0 25px 0 0;
