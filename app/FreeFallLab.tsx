@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type CSSProperties,
   type DragEvent as ReactDragEvent,
@@ -50,6 +52,12 @@ const EQUIPMENT: Array<{
   { kind: "timer", name: "Dijital kronometre", shortName: "Kronometre" },
   { kind: "ruler", name: "Yükseklik cetveli", shortName: "Cetvel" },
 ];
+const EQUIPMENT_PHOTOS: Partial<Record<SetupKind, string>> = {
+  stand: "./freefall-equipment-stand.webp",
+  release: "./freefall-equipment-release.webp",
+  sensor: "./freefall-equipment-sensor.webp",
+  timer: "./freefall-equipment-timer.webp",
+};
 const BALLS: Record<
   BallKind,
   { name: string; mass: string; colorClass: string }
@@ -74,11 +82,21 @@ function releaseTopForHeight(height: number) {
 }
 
 function EquipmentIcon({ kind }: { kind: SetupKind }) {
+  const photo = EQUIPMENT_PHOTOS[kind];
   return (
-    <span className={`freefall-equipment-icon freefall-icon-${kind}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
+    <span
+      className={`freefall-equipment-icon freefall-icon-${kind}${photo ? " has-photo" : ""}`}
+      aria-hidden="true"
+    >
+      {photo ? (
+        <img src={photo} alt="" draggable={false} />
+      ) : (
+        <>
+          <i />
+          <i />
+          <i />
+        </>
+      )}
     </span>
   );
 }
@@ -643,15 +661,20 @@ export default function FreeFallLab() {
               </span>
             </div>
             <div className="freefall-bench">
-              <i />
-              <i />
+              <img
+                src="./motion-lab-bench-v3.webp"
+                alt=""
+                draggable={false}
+              />
             </div>
 
             {installed.includes("stand") && (
               <div className="freefall-stand">
-                <span className="freefall-stand-base" />
-                <span className="freefall-stand-rod" />
-                <span className="freefall-stand-clamp" />
+                <img
+                  src="./freefall-equipment-stand.webp"
+                  alt="Gerçekçi metal statif ve düşey çubuk"
+                  draggable={false}
+                />
               </div>
             )}
 
@@ -672,33 +695,46 @@ export default function FreeFallLab() {
               <button
                 type="button"
                 className="freefall-release-carriage"
-                style={{ top: `${releaseTop}%` }}
+                style={{ "--release-top": `${releaseTop}%` } as CSSProperties}
                 aria-label={`Bırakma mekanizması, yükseklik ${heightCm} santimetre. Dikey sürükleyerek ayarla.`}
                 onPointerDown={startReleaseDrag}
                 onPointerMove={moveRelease}
                 onPointerUp={stopReleaseDrag}
                 onPointerCancel={stopReleaseDrag}
               >
-                <span className="release-arm" />
-                <span className="release-coil" />
-                <span className="release-knob" />
+                <img
+                  className="freefall-release-photo"
+                  src="./freefall-equipment-release.webp"
+                  alt=""
+                  draggable={false}
+                />
                 <b>{heightCm} cm</b>
               </button>
             )}
 
             {installed.includes("sensor") && (
               <div className={`freefall-sensor ${ballState === "landed" ? "hit" : ""}`}>
-                <span />
+                <img
+                  src="./freefall-equipment-sensor.webp"
+                  alt="Gerçekçi darbe algılayıcı tablası"
+                  draggable={false}
+                />
+                <span aria-hidden="true" />
                 <b>Algılayıcı tabla</b>
               </div>
             )}
 
             {installed.includes("timer") && (
               <div className="freefall-timer-station">
-                <span className="freefall-timer-handle" aria-hidden="true" />
+                <img
+                  className="freefall-timer-photo"
+                  src="./freefall-equipment-timer.webp"
+                  alt="Gerçekçi dijital laboratuvar kronometresi"
+                  draggable={false}
+                />
                 <div className="freefall-timer">
                   <div className="freefall-timer-brand">
-                    <small>SPEKTRUM · ZAMAN ÖLÇER</small>
+                    <small>DİJİTAL ZAMAN ÖLÇER</small>
                     <i className={ballState === "falling" ? "live" : ""} />
                   </div>
                   <div className="freefall-timer-screen">
@@ -715,14 +751,7 @@ export default function FreeFallLab() {
                       CH 2 · DARBE
                     </span>
                   </div>
-                  <div className="freefall-timer-keys" aria-hidden="true">
-                    <i />
-                    <i />
-                    <i />
-                  </div>
                 </div>
-                <span className="freefall-timer-foot foot-left" aria-hidden="true" />
-                <span className="freefall-timer-foot foot-right" aria-hidden="true" />
               </div>
             )}
 

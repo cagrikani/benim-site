@@ -41,6 +41,10 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "motion-equipment-pulley.webp",
     "motion-equipment-hanger.webp",
     "motion-equipment-mass.webp",
+    "freefall-equipment-stand.webp",
+    "freefall-equipment-release.webp",
+    "freefall-equipment-sensor.webp",
+    "freefall-equipment-timer.webp",
     "electricity-ohm.webp",
     "electricity-resistors.webp",
     "optics-mirrors.webp",
@@ -1446,6 +1450,11 @@ test("serbest düşme modülü PDF düzeneğiyle kurulabilir ve ölçüm yapar",
   assert.match(page, /Hesaplanan g/);
   assert.doesNotMatch(page, /DROP_NOISE|const noise|<th>Fark<\/th>/);
   assert.match(page, /Hava sürtünmesi ihmal edilmiştir/);
+  assert.match(page, /freefall-equipment-stand\.webp/);
+  assert.match(page, /freefall-equipment-release\.webp/);
+  assert.match(page, /freefall-equipment-sensor\.webp/);
+  assert.match(page, /freefall-equipment-timer\.webp/);
+  assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.match(page, /KISA DENEY RAPORU/);
 });
 
@@ -1467,6 +1476,9 @@ test("serbest düşme düzeneği statif, bırakma mekanizması ve algılayıcıy
   assert.match(css, /\.freefall-dropping-ball\.falling/);
   assert.match(css, /\.freefall-ruler\s*\{/);
   assert.match(css, /\.freefall-bench\s*\{/);
+  assert.match(css, /\.freefall-equipment-icon\.has-photo\s*\{/);
+  assert.match(css, /\.freefall-release-photo\s*\{/);
+  assert.match(css, /\.freefall-timer-photo\s*\{/);
 });
 
 test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => {

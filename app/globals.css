@@ -10127,6 +10127,309 @@ footer > a {
   margin-top: 14px;
 }
 
+/* Gerçekçi serbest düşme tezgâhı */
+.freefall-equipment-icon.has-photo {
+  overflow: hidden;
+  border: 1px solid #d5e1df;
+  background:
+    radial-gradient(circle at 50% 38%, #ffffff 0 40%, #e7efed 100%);
+  box-shadow: inset 0 1px 0 #ffffff;
+}
+
+.freefall-equipment-icon.has-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 3px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 4px rgba(21, 48, 54, 0.22));
+  pointer-events: none;
+}
+
+.freefall-apparatus {
+  min-height: 600px;
+  isolation: isolate;
+  background: #dfe6e4;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 12px 26px rgba(25, 57, 63, 0.12);
+}
+
+.freefall-lab-wall {
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(11, 39, 49, 0.08), transparent 18% 82%, rgba(11, 39, 49, 0.08)),
+    linear-gradient(rgba(255, 255, 255, 0.08), transparent 45%);
+  pointer-events: none;
+}
+
+.freefall-bench {
+  inset: 0;
+  z-index: 0;
+  height: 100%;
+  overflow: hidden;
+  border: 0;
+  background: #d8dddb;
+  pointer-events: none;
+}
+
+.freefall-bench img {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: block;
+  width: auto;
+  max-width: none;
+  height: 145%;
+  transform: translateX(-50%);
+  user-select: none;
+}
+
+.freefall-bench i,
+.freefall-stand-base,
+.freefall-stand-rod,
+.freefall-stand-clamp,
+.release-arm,
+.release-coil,
+.release-knob,
+.freefall-timer-handle,
+.freefall-timer-foot {
+  display: none;
+}
+
+.freefall-stand {
+  position: absolute;
+  inset: auto;
+  bottom: 14%;
+  left: 46%;
+  z-index: 2;
+  width: 19%;
+  height: 76%;
+  pointer-events: none;
+}
+
+.freefall-stand img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(9px 10px 9px rgba(24, 38, 39, 0.3));
+  user-select: none;
+}
+
+.freefall-ruler {
+  top: 14%;
+  bottom: 17%;
+  left: 27%;
+  z-index: 3;
+  border-color: #9b6d2a;
+  box-shadow:
+    0 5px 10px rgba(44, 35, 20, 0.23),
+    inset 4px 0 rgba(255, 255, 255, 0.35);
+}
+
+.freefall-release-carriage {
+  top: calc(var(--release-top) - 10%);
+  left: 35%;
+  z-index: 5;
+  width: 28%;
+  height: 20%;
+  overflow: visible;
+  filter: drop-shadow(5px 8px 6px rgba(22, 40, 42, 0.26));
+}
+
+.freefall-release-carriage:focus-visible {
+  border-radius: 10px;
+  outline: 4px solid rgba(239, 159, 40, 0.7);
+  outline-offset: 4px;
+}
+
+.freefall-release-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+}
+
+.freefall-release-carriage > b {
+  top: 48%;
+  left: -61px;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 5px 12px rgba(16, 43, 52, 0.22);
+  transform: translateY(-50%);
+}
+
+.freefall-sensor {
+  bottom: 15%;
+  left: 28.5%;
+  z-index: 4;
+  width: 20%;
+  min-width: 150px;
+  height: auto;
+}
+
+.freefall-sensor > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(5px 8px 6px rgba(21, 42, 45, 0.28));
+  user-select: none;
+}
+
+.freefall-sensor > span {
+  position: absolute;
+  inset: 7% 2% 24%;
+  display: block;
+  height: auto;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.freefall-sensor.hit > span {
+  background: rgba(246, 171, 52, 0.32);
+  box-shadow: 0 0 24px 10px rgba(246, 171, 52, 0.32);
+}
+
+.freefall-sensor b {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  margin: 0;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 10px rgba(20, 46, 51, 0.14);
+  color: #314f55;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.freefall-timer-station {
+  right: 3.5%;
+  bottom: 16%;
+  z-index: 6;
+  width: 31%;
+  max-width: 280px;
+  height: auto;
+  filter: drop-shadow(7px 11px 9px rgba(18, 39, 43, 0.3));
+}
+
+.freefall-timer-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+.freefall-timer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.freefall-timer-brand {
+  position: absolute;
+  top: 7%;
+  right: 15%;
+  left: 15%;
+}
+
+.freefall-timer-brand small {
+  color: #d8e3e0;
+  font-size: 5px;
+  text-shadow: 0 1px 2px #12252b;
+}
+
+.freefall-timer-screen {
+  position: absolute;
+  top: 18%;
+  left: 20%;
+  display: grid;
+  width: 61%;
+  height: 25%;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 0 7%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.freefall-timer-screen b {
+  color: #8df3c6;
+  font-size: clamp(16px, 2.1vw, 27px);
+  line-height: 1;
+  text-shadow:
+    0 0 5px rgba(119, 250, 193, 0.74),
+    0 1px #06170f;
+}
+
+.freefall-timer-screen span {
+  padding: 0 0 1px 4px;
+  color: #99d4b9;
+}
+
+.freefall-timer-channels {
+  position: absolute;
+  right: 17%;
+  bottom: 22%;
+  left: 17%;
+  justify-content: space-between;
+}
+
+.freefall-timer-channels > span {
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(247, 249, 248, 0.86);
+  font-size: 4px;
+}
+
+.cable-sensor {
+  right: 21%;
+  bottom: 22.5%;
+  left: 48%;
+  height: 7%;
+}
+
+.freefall-dropping-ball {
+  left: 38.5%;
+  width: 27px;
+  height: 27px;
+  border-width: 1px;
+  box-shadow:
+    inset -5px -7px 8px rgba(10, 25, 31, 0.45),
+    inset 4px 4px 5px rgba(255, 255, 255, 0.65),
+    0 7px 9px rgba(19, 34, 37, 0.35);
+}
+
+.freefall-dropping-ball::after {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  width: 7px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.84);
+  content: "";
+  filter: blur(0.4px);
+}
+
+.freefall-empty-target {
+  z-index: 8;
+  background: rgba(241, 249, 246, 0.86);
+  backdrop-filter: blur(3px);
+}
+
 @media (max-width: 980px) {
   .freefall-module-choice {
     grid-column: auto;
@@ -10300,6 +10603,63 @@ footer > a {
 
   .freefall-report-grid {
     grid-template-columns: 1fr;
+  }
+
+  .freefall-stand {
+    bottom: 14%;
+    left: 43%;
+    width: 25%;
+    height: 72%;
+  }
+
+  .freefall-ruler {
+    left: 9%;
+  }
+
+  .freefall-release-carriage {
+    left: 27%;
+    width: 39%;
+    height: 19%;
+  }
+
+  .freefall-release-carriage > b {
+    left: -41px;
+  }
+
+  .freefall-dropping-ball {
+    left: 31%;
+  }
+
+  .freefall-sensor {
+    left: 14%;
+    width: 34%;
+    min-width: 108px;
+  }
+
+  .freefall-timer-station {
+    right: 1%;
+    bottom: 16%;
+    width: 45%;
+    max-width: 180px;
+    height: auto;
+  }
+
+  .freefall-timer {
+    inset: 0;
+    padding: 0;
+  }
+
+  .freefall-timer-screen {
+    top: 18%;
+    left: 20%;
+    width: 61%;
+    height: 25%;
+    padding: 0 6%;
+  }
+
+  .freefall-timer-brand small,
+  .freefall-timer-channels > span {
+    font-size: 3.5px;
   }
 }
 
