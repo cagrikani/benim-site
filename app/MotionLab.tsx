@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
@@ -221,6 +223,7 @@ const SECOND_GATE_MIN_X = 40;
 const SECOND_GATE_MAX_X = 84;
 const GATE_CM_PER_STAGE_PERCENT = 1.25;
 const RUN_ANIMATION_MS = 1800;
+const LOAD_DROP_PERCENT = 6.3;
 
 function average(values: number[]): number {
   return values.length ? values.reduce((total, value) => total + value, 0) / values.length : 0;
@@ -245,6 +248,8 @@ export default function MotionLab() {
   const [toolDragKind, setToolDragKind] = useState<EquipmentKind | null>(null);
   const [hangingMass, setHangingMass] = useState(40);
   const [stopwatchMs, setStopwatchMs] = useState(0);
+  const [visualRunDurationMs, setVisualRunDurationMs] = useState(RUN_ANIMATION_MS);
+  const [runCompleted, setRunCompleted] = useState(false);
   const [records, setRecords] = useState<Record<MotionMode, RecordRow[]>>({
     uniform: [],
     accelerated: [],
@@ -270,16 +275,12 @@ export default function MotionLab() {
     : 0;
   const gliderItem = items.find((item) => item.kind === "glider");
   const pulleyItem = items.find((item) => item.kind === "pulley");
+  const hangerItem = items.find((item) => item.kind === "hanger");
   const runEndX = (endGateItem?.x ?? 68) + 6;
   const stringStartX = (gliderItem?.x ?? 17) + 3;
   const stringPulleyX = (pulleyItem?.x ?? 93) - 1;
   const stringRunStartX = Math.min(runEndX + 2, stringPulleyX - 8);
-  const connectedStringStyle = {
-    left: `${stringStartX}%`,
-    width: `${Math.max(8, stringPulleyX - stringStartX)}%`,
-    "--string-run-left": `${stringRunStartX}%`,
-    "--string-run-width": `${Math.max(8, stringPulleyX - stringRunStartX)}%`,
-  } as CSSProperties;
+  const completedLoadDrop = Math.max(0, (hangerItem?.y ?? 76) - 76);
   const hasItem = (kind: EquipmentKind) => items.some((item) => item.kind === kind);
   const baseReady =
     hasItem("rail") &&
@@ -299,6 +300,19 @@ export default function MotionLab() {
       ? "force"
       : "accelerated"
     : "uniform";
+  const connectedStringStyle = {
+    left: `${stringStartX}%`,
+    width: `${Math.max(8, stringPulleyX - stringStartX)}%`,
+    "--string-run-left": `${stringRunStartX}%`,
+    "--string-run-width": `${Math.max(8, stringPulleyX - stringRunStartX)}%`,
+    "--string-height": `calc(31% + ${completedLoadDrop}%)`,
+    "--string-run-height": `calc(31% + ${LOAD_DROP_PERCENT}%)`,
+    "--run-duration": `${visualRunDurationMs}ms`,
+    "--run-easing":
+      mode === "uniform"
+        ? "linear"
+        : "cubic-bezier(0.55, 0.05, 0.9, 0.45)",
+  } as CSSProperties;
   const ready = uniformReady || acceleratedReady;
   const detectedSetup = acceleratedReady
     ? mode === "force"
@@ -309,6 +323,19 @@ export default function MotionLab() {
       : "Düzenek henüz tamamlanmadı";
   const setupPlacedCount = logicalSlots.filter(isSlotComplete).length;
   const modeRows = records[mode];
+  const gateDelaySeconds = (gateX: number) => {
+    const travelWidth = Math.max(0.01, runEndX - (gliderItem?.x ?? 18));
+    const spatialProgress = Math.max(
+      0,
+      Math.min(
+        1,
+        (gateX - (gliderItem?.x ?? 18)) / travelWidth,
+      ),
+    );
+    const timeProgress =
+      mode === "uniform" ? spatialProgress : Math.sqrt(spatialProgress);
+    return timeProgress * (visualRunDurationMs / 1000);
+  };
 
   useEffect(() => {
     return () => {
@@ -514,6 +541,7 @@ export default function MotionLab() {
     setItems([]);
     setSelectedId(null);
     setIsRunning(false);
+    setRunCompleted(false);
     setStopwatchMs(0);
     setNotice("Sahne temizlendi. 1. adım: Hava rayını tezgâhtaki uzun hedefe sürükle.");
   };
@@ -525,9 +553,29 @@ export default function MotionLab() {
     setNotice("Seçili araç sahneden kaldırıldı.");
   };
 
+  const resetMovingParts = () => {
+    if (isRunning) return;
+    setItems((current) =>
+      current.map((item) => {
+        if (!(["glider", "hanger", "mass"] as EquipmentKind[]).includes(item.kind)) {
+          return item;
+        }
+        const home = SETUP_SLOTS.find((slot) => slot.id === item.slotId);
+        return home ? { ...item, x: home.x, y: home.y } : item;
+      }),
+    );
+    setRunCompleted(false);
+    setStopwatchMs(0);
+    setNotice("Kızak ve asılı yük başlangıç konumuna getirildi. Yeni ölçüme hazırsın.");
+  };
+
   const runExperiment = () => {
     if (!ready) {
       checkSetup();
+      return;
+    }
+    if (runCompleted) {
+      setNotice("Yeni ölçümden önce kızağı başlangıç konumuna getir.");
       return;
     }
     const key = mode === "force" ? hangingMass : distance;
@@ -546,14 +594,23 @@ export default function MotionLab() {
       seconds = Math.sqrt((2 * distanceMeter) / acceleration);
     }
     const milliseconds = seconds * 1000;
+    const nextVisualDurationMs = Math.max(
+      1200,
+      Math.min(3200, milliseconds * 2300),
+    );
     const glider = items.find((item) => item.kind === "glider");
     const gliderStartX = glider?.x ?? 18;
     const gliderEndX = (endGateItem?.x ?? 68) + 6;
-    const firstGateProgress = Math.max(
+    const firstGateSpatialProgress = Math.max(
       0,
       Math.min(0.75, (FIRST_GATE_X - gliderStartX) / (gliderEndX - gliderStartX)),
     );
+    const firstGateTimeProgress =
+      mode === "uniform"
+        ? firstGateSpatialProgress
+        : Math.sqrt(firstGateSpatialProgress);
 
+    setVisualRunDurationMs(nextVisualDurationMs);
     setIsRunning(true);
     setStopwatchMs(0);
     setNotice("Kızak hareket ediyor; optik kapılar kronometreyi otomatik kontrol ediyor.");
@@ -562,11 +619,14 @@ export default function MotionLab() {
     }
     const animationStartedAt = performance.now();
     const updateStopwatch = (now: number) => {
-      const progress = Math.min(1, (now - animationStartedAt) / RUN_ANIMATION_MS);
+      const progress = Math.min(1, (now - animationStartedAt) / nextVisualDurationMs);
       const measuredProgress =
-        progress <= firstGateProgress
+        progress <= firstGateTimeProgress
           ? 0
-          : Math.min(1, (progress - firstGateProgress) / (1 - firstGateProgress));
+          : Math.min(
+              1,
+              (progress - firstGateTimeProgress) / (1 - firstGateTimeProgress),
+            );
       setStopwatchMs(milliseconds * measuredProgress);
 
       if (progress < 1) {
@@ -575,6 +635,20 @@ export default function MotionLab() {
       }
 
       stopwatchFrameRef.current = null;
+      setItems((current) =>
+        current.map((item) => {
+          if (item.kind === "glider") {
+            return { ...item, x: gliderEndX };
+          }
+          if (
+            mode !== "uniform" &&
+            (item.kind === "hanger" || item.kind === "mass")
+          ) {
+            return { ...item, y: item.y + LOAD_DROP_PERCENT };
+          }
+          return item;
+        }),
+      );
       setRecords((current) => {
         const rows = current[mode];
         const existing = rows.find((row) => row.key === key);
@@ -586,6 +660,7 @@ export default function MotionLab() {
         return { ...current, [mode]: nextRows };
       });
       setIsRunning(false);
+      setRunCompleted(true);
       setNotice(
         `${mode === "force" ? `${hangingMass} g` : `${distance} cm`} için kızağın bayrağı iki kapı arasını ${(milliseconds / 1000).toFixed(3)} saniyede geçti.`,
       );
@@ -742,12 +817,14 @@ export default function MotionLab() {
                 if (event.target === event.currentTarget) setSelectedId(null);
               }}
             >
+              <img
+                className="motion-stage-photo"
+                src="./motion-lab-bench-v2.webp"
+                alt=""
+                draggable="false"
+                aria-hidden="true"
+              />
               <div className="stage-grid" />
-              {hasItem("rail") && (
-                <div className="air-track-bench" aria-hidden="true">
-                  <span />
-                </div>
-              )}
               <div className="stage-top-label">
                 <span>{MODE_INFO[mode].short}</span>
                 <div>
@@ -805,19 +882,14 @@ export default function MotionLab() {
                 <SceneEquipment
                   item={item}
                   selected={item.id === selectedId}
-                  running={isRunning && item.kind === "glider"}
+                  running={isRunning}
+                  motionMode={mode}
                   reading={isRunning && item.kind === "gate"}
                   readingDelay={
-                    item.kind === "gate"
-                      ? Math.max(
-                          0,
-                          ((item.x - (gliderItem?.x ?? 18)) /
-                            (runEndX - (gliderItem?.x ?? 18))) *
-                            (RUN_ANIMATION_MS / 1000)
-                        )
-                      : 0
+                    item.kind === "gate" ? gateDelaySeconds(item.x) : 0
                   }
                   runEndX={runEndX}
+                  runDurationMs={visualRunDurationMs}
                   stopwatchSeconds={stopwatchMs / 1000}
                   onPointerDown={(event) => startSceneDrag(event, item)}
                   key={item.id}
@@ -876,11 +948,26 @@ export default function MotionLab() {
             <button
               className="run-motion-button"
               type="button"
-              disabled={isRunning || !ready}
+              disabled={isRunning || !ready || runCompleted}
               onClick={runExperiment}
             >
-              {isRunning ? "Ölçüm yapılıyor..." : ready ? "Kızağı bırak ve ölç" : "Önce düzeneği tamamla"}
+              {isRunning
+                ? "Ölçüm yapılıyor..."
+                : runCompleted
+                  ? "Kızak ölçüm sonunda"
+                  : ready
+                    ? "Kızağı bırak ve ölç"
+                    : "Önce düzeneği tamamla"}
             </button>
+            {runCompleted && (
+              <button
+                className="reset-motion-button"
+                type="button"
+                onClick={resetMovingParts}
+              >
+                Kızağı başlangıca getir
+              </button>
+            )}
             <button
               className="clear-records-button"
               type="button"
@@ -962,18 +1049,22 @@ function SceneEquipment({
   item,
   selected,
   running,
+  motionMode,
   reading,
   readingDelay,
   runEndX,
+  runDurationMs,
   stopwatchSeconds,
   onPointerDown,
 }: {
   item: SceneItem;
   selected: boolean;
   running: boolean;
+  motionMode: MotionMode;
   reading: boolean;
   readingDelay: number;
   runEndX: number;
+  runDurationMs: number;
   stopwatchSeconds: number;
   onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 }) {
@@ -983,11 +1074,18 @@ function SceneEquipment({
     top: `${item.y}%`,
     "--run-end-left": `${runEndX}%`,
     "--gate-delay": `${readingDelay}s`,
+    "--run-duration": `${runDurationMs}ms`,
+    "--run-easing": motionMode === "uniform" ? "linear" : "cubic-bezier(0.55, 0.05, 0.9, 0.45)",
   } as CSSProperties;
+  const gliderRunning = running && item.kind === "glider";
+  const loadRunning =
+    running &&
+    motionMode !== "uniform" &&
+    (item.kind === "hanger" || item.kind === "mass");
 
   return (
     <button
-      className={`scene-equipment equipment-${item.kind} ${item.slotId === "gate-2" ? "sliding-gate" : ""} ${selected ? "selected" : ""} ${running ? "run-glider" : ""} ${reading ? "reading-gate" : ""}`}
+      className={`scene-equipment equipment-${item.kind} ${item.slotId === "gate-2" ? "sliding-gate" : ""} ${selected ? "selected" : ""} ${running ? "equipment-running" : ""} ${gliderRunning ? `run-glider run-${motionMode}` : ""} ${loadRunning ? "run-load" : ""} ${reading ? "reading-gate" : ""}`}
       style={style}
       type="button"
       aria-label={

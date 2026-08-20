@@ -32,6 +32,7 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "mechanics-ballistic.webp",
     "mechanics-torque.webp",
     "mechanics-harmonic-motion.webp",
+    "motion-lab-bench-v2.webp",
     "electricity-ohm.webp",
     "electricity-resistors.webp",
     "optics-mirrors.webp",
@@ -1497,7 +1498,8 @@ test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => 
   assert.match(page, /stopwatchMs/);
   assert.match(page, /timerValue/);
   assert.match(page, /Ölçülen: turuncu bayrak/);
-  assert.match(page, /air-track-bench/);
+  assert.doesNotMatch(page, /className="air-track-bench"/);
+  assert.match(page, /motion-lab-bench-v2\.webp/);
   assert.match(page, /pulley-sequence-warning/);
   assert.match(page, /stage-pulley-alert/);
   assert.match(page, /Makara ilk deney için gerekli değildir/);
@@ -1515,6 +1517,11 @@ test("hava rayı tam genişlikte çizilir ve optik kapı ayakları raya oturur",
   assert.match(css, /\.gate-base::after\s*\{/);
   assert.match(css, /\.equipment-gate\.selected\s*\{/);
   assert.match(css, /\.air-track-bench\s*\{/);
+  assert.match(css, /\.motion-stage-photo\s*\{/);
+  assert.match(css, /\.run-load\s*\{/);
+  assert.match(css, /@keyframes air-track-pulley-turn/);
+  assert.match(css, /@keyframes air-pump-fan/);
+  assert.match(css, /@keyframes launcher-release/);
 });
 
 test("hareket ölçümleri iki eşzamanlı grafik, sade tablo, kronometre ve rapor sunar", async () => {
@@ -1534,6 +1541,11 @@ test("hareket ölçümleri iki eşzamanlı grafik, sade tablo, kronometre ve rap
   assert.match(page, /calculateAcceleration/);
   assert.doesNotMatch(page, /const variation|hata kaynağı/);
   assert.match(page, /Kızağı bırak ve ölç/);
+  assert.match(page, /Kızağı başlangıca getir/);
+  assert.match(page, /runCompleted/);
+  assert.match(page, /visualRunDurationMs/);
+  assert.match(page, /firstGateTimeProgress/);
+  assert.match(page, /run-load/);
   assert.match(page, /student-report/);
   assert.match(page, /textarea/);
   assert.doesNotMatch(page, /motion-theory-grid/);
