@@ -558,7 +558,7 @@ export default function FreeFallLab() {
   };
 
   const ballStyle = {
-    "--release-top": `${releaseTop - 1}%`,
+    "--release-top": `${releaseTop}%`,
     "--fall-time": `${dropDuration}s`,
   } as CSSProperties;
 

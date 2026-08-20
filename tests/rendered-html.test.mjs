@@ -1480,11 +1480,14 @@ test("serbest düşme düzeneği statif, bırakma mekanizması ve algılayıcıy
   assert.match(css, /\.freefall-bench\s*\{/);
   assert.match(css, /\.freefall-equipment-icon\.has-photo\s*\{/);
   assert.match(css, /\.freefall-release-photo\s*\{/);
+  assert.match(css, /\.freefall-release-carriage::before\s*\{/);
+  assert.match(css, /\.freefall-release-carriage::after\s*\{/);
   assert.match(css, /\.freefall-timer-photo\s*\{/);
   assert.match(css, /\.freefall-ruler\s*>\s*img\s*\{/);
   assert.match(css, /\.cable-sensor::before\s*\{/);
   assert.match(css, /transform:\s*scaleX\(1\.235\)/);
-  assert.match(css, /\.freefall-stand\s*\{[^}]*left:\s*44%;[^}]*width:\s*22%;[^}]*height:\s*77%;/s);
+  assert.match(css, /\.freefall-stand\s*\{[^}]*left:\s*42\.6%;[^}]*width:\s*22%;[^}]*height:\s*77%;/s);
+  assert.match(css, /\.freefall-dropping-ball\s*\{[^}]*top:\s*calc\(var\(--release-top\) \+ 2\.2%\);[^}]*left:\s*39\.4%;[^}]*width:\s*21px;[^}]*height:\s*21px;/s);
 });
 
 test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => {
