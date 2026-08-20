@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type CSSProperties,
   type DragEvent as ReactDragEvent,
@@ -116,6 +118,20 @@ const EQUIPMENT: Array<{
   },
 ];
 const PHYSICS_EPSILON = 1e-10;
+const AIR_TABLE_SURFACE = {
+  left: 6,
+  top: 9,
+  width: 88,
+  height: 82,
+} as const;
+
+const COLLISION_EQUIPMENT_PHOTOS: Partial<Record<SetupKind, string>> = {
+  "air-table": "./collision-air-table-v2.webp",
+  compressor: "./collision-compressor-v2.webp",
+  "spark-timer": "./collision-spark-timer-v2.webp",
+  "puck-one": "./collision-puck-one-v2.webp",
+  "puck-two": "./collision-puck-two-v2.webp",
+};
 
 function exactZero(value: number) {
   return Math.abs(value) < PHYSICS_EPSILON ? 0 : value;
@@ -134,11 +150,22 @@ function initialPositions(targetY: number) {
 }
 
 function EquipmentIcon({ kind }: { kind: SetupKind }) {
+  const photo = COLLISION_EQUIPMENT_PHOTOS[kind];
+
   return (
-    <span className={`collision-equipment-icon collision-icon-${kind}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
+    <span
+      className={`collision-equipment-icon collision-icon-${kind}${photo ? " has-photo" : ""}`}
+      aria-hidden="true"
+    >
+      {photo ? (
+        <img src={photo} alt="" draggable={false} />
+      ) : (
+        <>
+          <i />
+          <i />
+          <i />
+        </>
+      )}
     </span>
   );
 }
@@ -955,7 +982,9 @@ export default function CollisionLab() {
     if (!draggingTargetRef.current || !airTableRef.current) return;
     const rect = airTableRef.current.getBoundingClientRect();
     const localY = (event.clientY - rect.top) / rect.height;
-    const nextY = Math.max(0.42, Math.min(0.58, localY)) * TABLE_HEIGHT;
+    const surfaceY = (localY - AIR_TABLE_SURFACE.top / 100) /
+      (AIR_TABLE_SURFACE.height / 100);
+    const nextY = Math.max(0.42, Math.min(0.58, surfaceY)) * TABLE_HEIGHT;
     setTargetY(nextY);
     setPositions((current) => ({
       ...current,
@@ -1306,10 +1335,10 @@ export default function CollisionLab() {
   };
 
   const apparatusStyle = {
-    "--puck-one-x": `${(positions.one.x / TABLE_WIDTH) * 100}%`,
-    "--puck-one-y": `${(positions.one.y / TABLE_HEIGHT) * 100}%`,
-    "--puck-two-x": `${(positions.two.x / TABLE_WIDTH) * 100}%`,
-    "--puck-two-y": `${(positions.two.y / TABLE_HEIGHT) * 100}%`,
+    "--puck-one-x": `${AIR_TABLE_SURFACE.left + (positions.one.x / TABLE_WIDTH) * AIR_TABLE_SURFACE.width}%`,
+    "--puck-one-y": `${AIR_TABLE_SURFACE.top + (positions.one.y / TABLE_HEIGHT) * AIR_TABLE_SURFACE.height}%`,
+    "--puck-two-x": `${AIR_TABLE_SURFACE.left + (positions.two.x / TABLE_WIDTH) * AIR_TABLE_SURFACE.width}%`,
+    "--puck-two-y": `${AIR_TABLE_SURFACE.top + (positions.two.y / TABLE_HEIGHT) * AIR_TABLE_SURFACE.height}%`,
   } as CSSProperties;
 
   const readiness = useMemo(
@@ -1398,6 +1427,7 @@ export default function CollisionLab() {
           <div className="collision-apparatus">
             <div className="collision-lab-floor" />
             <div className="collision-workbench">
+              <img src="./motion-lab-bench-v3.webp" alt="" draggable={false} />
               <i />
               <i />
             </div>
@@ -1409,6 +1439,12 @@ export default function CollisionLab() {
                 style={apparatusStyle}
                 aria-label="Üstten görünüşlü hava masası"
               >
+                <img
+                  className="collision-air-table-photo"
+                  src="./collision-air-table-v2.webp"
+                  alt=""
+                  draggable={false}
+                />
                 <span className="collision-table-rim" />
                 <span className="collision-table-corner corner-one" />
                 <span className="collision-table-corner corner-two" />
@@ -1453,7 +1489,7 @@ export default function CollisionLab() {
                   <span
                     className={`collision-puck collision-puck-one ${mode === "inelastic" && velcroInstalled ? "velcro" : ""}`}
                   >
-                    <i />
+                    <img src="./collision-puck-one-v2.webp" alt="" draggable={false} />
                     <b>1</b>
                     <small>{massOne.toFixed(3)} kg</small>
                   </span>
@@ -1469,7 +1505,7 @@ export default function CollisionLab() {
                     onPointerCancel={stopTargetDrag}
                     aria-label="İkinci disk. Düşey sürükleyerek çarpışma doğrultusunu ayarla."
                   >
-                    <i />
+                    <img src="./collision-puck-two-v2.webp" alt="" draggable={false} />
                     <b>2</b>
                     <small>{massTwo.toFixed(3)} kg</small>
                   </button>
@@ -1488,20 +1524,16 @@ export default function CollisionLab() {
 
             {installed.includes("compressor") && (
               <div className={`collision-compressor ${compressorOn ? "running" : ""}`}>
-                <span className="compressor-handle" aria-hidden="true" />
-                <span className="compressor-body">
-                  <span className="compressor-fan" aria-hidden="true">
-                    <i />
-                  </span>
-                  <span className="compressor-gauge" aria-hidden="true">
-                    <i />
-                  </span>
-                  <b>HAVA POMPASI</b>
-                  <em className="compressor-status">
-                    {compressorOn ? "AKIŞ AÇIK" : "KAPALI"}
-                  </em>
-                </span>
-                <span className="compressor-outlet" aria-hidden="true" />
+                <img
+                  className="collision-compressor-photo"
+                  src="./collision-compressor-v2.webp"
+                  alt=""
+                  draggable={false}
+                />
+                <span className="compressor-fan" aria-hidden="true"><i /></span>
+                <em className="compressor-status">
+                  {compressorOn ? "HAVA AKIŞI AÇIK" : "KOMPRESÖR KAPALI"}
+                </em>
                 <span className="compressor-hose" aria-hidden="true">
                   <i />
                 </span>
@@ -1510,7 +1542,12 @@ export default function CollisionLab() {
 
             {installed.includes("spark-timer") && (
               <div className={`collision-spark-timer ${runState === "running" ? "recording" : ""}`}>
-                <div className="spark-timer-handle" />
+                <img
+                  className="collision-spark-timer-photo"
+                  src="./collision-spark-timer-v2.webp"
+                  alt=""
+                  draggable={false}
+                />
                 <span>ARK KRONOMETRESİ</span>
                 <b>{elapsed.toFixed(2)}</b>
                 <small>s</small>
@@ -1522,7 +1559,11 @@ export default function CollisionLab() {
 
             {installed.includes("spark-timer") && (
               <div className={`collision-pedal ${runState === "running" ? "pressed" : ""}`}>
-                <span />
+                <img
+                  src="./collision-foot-pedal-v2.webp"
+                  alt=""
+                  draggable={false}
+                />
                 <b>PEDAL</b>
               </div>
             )}

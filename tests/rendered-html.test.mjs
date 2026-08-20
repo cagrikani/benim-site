@@ -1336,6 +1336,13 @@ test("çarpışmalar modülü PDF düzeneğiyle kurulabilir ve veri üretir", as
   assert.match(page, /Momentum bileşenleri/);
   assert.match(page, /Denemelerde kinetik enerji/);
   assert.match(page, /KISA DENEY RAPORU/);
+  assert.match(page, /AIR_TABLE_SURFACE/);
+  assert.match(page, /collision-air-table-v2\.webp/);
+  assert.match(page, /collision-compressor-v2\.webp/);
+  assert.match(page, /collision-spark-timer-v2\.webp/);
+  assert.match(page, /collision-foot-pedal-v2\.webp/);
+  assert.match(page, /collision-puck-one-v2\.webp/);
+  assert.match(page, /collision-puck-two-v2\.webp/);
 });
 
 test("çarpışma düzeneği hava masası, diskler ve nokta izlerini gerçekçi sahnede gösterir", async () => {
@@ -1356,6 +1363,10 @@ test("çarpışma düzeneği hava masası, diskler ve nokta izlerini gerçekçi 
   assert.match(css, /\.collision-analysis-conclusion\s*\{/);
   assert.doesNotMatch(css, /\.collision-momentum-overlay\s*\{/);
   assert.match(css, /\.collision-compressor\s*\{/);
+  assert.match(css, /\.collision-air-table-photo\s*\{/);
+  assert.match(css, /\.collision-compressor-photo\s*\{/);
+  assert.match(css, /\.collision-spark-timer-photo\s*\{/);
+  assert.match(css, /\.collision-puck > img\s*\{/);
   assert.match(css, /\.collision-table-air-inlet\s*\{/);
   assert.match(css, /\.compressor-handle\s*\{/);
   assert.match(css, /\.compressor-fan\s*\{/);
