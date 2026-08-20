@@ -1509,9 +1509,12 @@ test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => 
   assert.doesNotMatch(page, /className="air-track-bench"/);
   assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.match(page, /EQUIPMENT_PHOTOS/);
+  assert.match(page, /id: "timer",[\s\S]*?x: 93\.5,[\s\S]*?y: 53,/);
+  assert.match(page, /TIMER_CABLE_X = 88\.8/);
   assert.match(page, /EQUIPMENT_GROUPS/);
   assert.match(page, /motion-equipment-pump\.webp/);
   assert.match(page, /motion-equipment-timer\.webp/);
+  assert.match(page, /motion-equipment-launcher\.webp/);
   assert.doesNotMatch(page, /motion-equipment-air-track\.webp/);
   assert.doesNotMatch(page, /motion-equipment-gate\.webp/);
   assert.match(page, /rail-top-ridge/);
@@ -1564,8 +1567,10 @@ test("hareket ölçümleri iki eşzamanlı grafik, sade tablo, kronometre ve rap
   assert.match(page, /graph-pulley-lock/);
   assert.match(page, /calculateAcceleration/);
   assert.doesNotMatch(page, /const variation|hata kaynağı/);
-  assert.match(page, /Kızağı bırak ve ölç/);
+  assert.match(page, /stage-run-button/);
+  assert.match(page, /Kızağı fırlat ve ölç/);
   assert.match(page, /Kızağı başlangıca getir/);
+  assert.doesNotMatch(page, /className="run-motion-button"/);
   assert.match(page, /runCompleted/);
   assert.match(page, /visualRunDurationMs/);
   assert.match(page, /firstGateTimeProgress/);

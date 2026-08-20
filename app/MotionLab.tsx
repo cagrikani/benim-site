@@ -79,6 +79,7 @@ const EQUIPMENT: Array<{
 const EQUIPMENT_PHOTOS: Partial<Record<EquipmentKind, string>> = {
   pump: "./motion-equipment-pump.webp",
   timer: "./motion-equipment-timer.webp",
+  launcher: "./motion-equipment-launcher.webp",
 };
 
 const UNIFORM_EQUIPMENT: EquipmentKind[] = [
@@ -204,8 +205,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "timer",
     label: "Kronometre",
     instruction: "Kronometreyi iki optik kapının kablo çıkışlarının yanına koy.",
-    x: 83,
-    y: 37,
+    x: 93.5,
+    y: 53,
     dropRadius: 18,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -260,7 +261,7 @@ const FIRST_GATE_X = 36;
 const SECOND_GATE_MIN_X = 49.33;
 const SECOND_GATE_MAX_X = 76;
 const GATE_CM_PER_STAGE_PERCENT = 1.5;
-const TIMER_CABLE_X = 77;
+const TIMER_CABLE_X = 88.8;
 const RUN_ANIMATION_MS = 1800;
 const LOAD_DROP_PERCENT = 6.3;
 
@@ -834,6 +835,20 @@ export default function MotionLab() {
                 </small>
               </div>
               <div>
+                <button
+                  className={`stage-run-button ${runCompleted ? "reset" : ""}`}
+                  type="button"
+                  disabled={isRunning || (!ready && !runCompleted)}
+                  onClick={runCompleted ? resetMovingParts : runExperiment}
+                >
+                  {isRunning
+                    ? "Ölçüm yapılıyor…"
+                    : runCompleted
+                      ? "Kızağı başlangıca getir"
+                      : ready
+                        ? "Kızağı fırlat ve ölç"
+                        : "Kurulumdan sonra fırlat"}
+                </button>
                 <button type="button" onClick={checkSetup}>Bağlantıları kontrol et</button>
                 <button type="button" disabled={!selectedId} onClick={removeSelected}>Seçileni sil</button>
                 <button type="button" onClick={clearScene}>Sahneyi temizle</button>
@@ -1003,29 +1018,6 @@ export default function MotionLab() {
               <span><small>Kefe kütlesi</small><b>5 g</b></span>
               {acceleratedReady && <span><small>Ek kütle</small><b>{hangingMass} g</b></span>}
             </div>
-            <button
-              className="run-motion-button"
-              type="button"
-              disabled={isRunning || !ready || runCompleted}
-              onClick={runExperiment}
-            >
-              {isRunning
-                ? "Ölçüm yapılıyor..."
-                : runCompleted
-                  ? "Kızak ölçüm sonunda"
-                  : ready
-                    ? "Kızağı bırak ve ölç"
-                    : "Önce düzeneği tamamla"}
-            </button>
-            {runCompleted && (
-              <button
-                className="reset-motion-button"
-                type="button"
-                onClick={resetMovingParts}
-              >
-                Kızağı başlangıca getir
-              </button>
-            )}
             <button
               className="clear-records-button"
               type="button"

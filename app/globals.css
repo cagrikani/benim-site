@@ -6699,6 +6699,22 @@ footer > a {
   opacity: 0.45;
 }
 
+.motion-stage-toolbar .stage-run-button {
+  min-width: 142px;
+  border: 0;
+  background: linear-gradient(120deg, #143d58, #167f75);
+  color: white;
+  box-shadow: 0 7px 16px rgba(17, 79, 84, 0.2);
+  font-size: 9px;
+}
+
+.motion-stage-toolbar .stage-run-button.reset {
+  border: 1px solid #d88a1e;
+  background: #fff3df;
+  color: #8d570d;
+  box-shadow: none;
+}
+
 .motion-stage {
   position: relative;
   min-height: 680px;
@@ -7004,19 +7020,18 @@ footer > a {
 
 .stage-sensor-wire {
   position: absolute;
-  top: 40.5%;
+  top: 48%;
   z-index: 4;
-  height: 7.5%;
-  border-top: 2px solid #365a68;
+  height: 6.5%;
+  border-bottom: 2px solid #365a68;
   border-left: 2px solid #365a68;
-  border-radius: 10px 0 0;
+  border-radius: 0 0 0 10px;
   opacity: 0.78;
   pointer-events: none;
 }
 
 .stage-sensor-wire-2 {
-  top: 43%;
-  height: 5%;
+  height: 9%;
   border-color: #6e8390;
 }
 
@@ -7032,13 +7047,13 @@ footer > a {
 }
 
 .stage-sensor-wire::before {
-  bottom: -4px;
+  top: -4px;
   left: -5px;
 }
 
 .stage-sensor-wire::after {
-  top: -5px;
   right: -4px;
+  bottom: -5px;
 }
 
 .empty-stage-message {
@@ -8146,8 +8161,6 @@ footer > a {
   font-size: 10px;
 }
 
-.run-motion-button,
-.reset-motion-button,
 .clear-records-button {
   width: 100%;
   margin-top: 11px;
@@ -8156,23 +8169,6 @@ footer > a {
   cursor: pointer;
   font-size: 9px;
   font-weight: 900;
-}
-
-.run-motion-button {
-  border: 0;
-  background: linear-gradient(120deg, var(--navy), var(--teal));
-  color: white;
-}
-
-.run-motion-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.reset-motion-button {
-  border: 1px solid #d88a1e;
-  background: #fff3df;
-  color: #8d570d;
 }
 
 .clear-records-button {
