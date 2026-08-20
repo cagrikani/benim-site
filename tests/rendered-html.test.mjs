@@ -45,6 +45,7 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "freefall-equipment-release.webp",
     "freefall-equipment-sensor.webp",
     "freefall-equipment-timer.webp",
+    "freefall-equipment-ruler.webp",
     "electricity-ohm.webp",
     "electricity-resistors.webp",
     "optics-mirrors.webp",
@@ -1454,6 +1455,7 @@ test("serbest düşme modülü PDF düzeneğiyle kurulabilir ve ölçüm yapar",
   assert.match(page, /freefall-equipment-release\.webp/);
   assert.match(page, /freefall-equipment-sensor\.webp/);
   assert.match(page, /freefall-equipment-timer\.webp/);
+  assert.match(page, /freefall-equipment-ruler\.webp/);
   assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.match(page, /KISA DENEY RAPORU/);
 });
@@ -1479,6 +1481,8 @@ test("serbest düşme düzeneği statif, bırakma mekanizması ve algılayıcıy
   assert.match(css, /\.freefall-equipment-icon\.has-photo\s*\{/);
   assert.match(css, /\.freefall-release-photo\s*\{/);
   assert.match(css, /\.freefall-timer-photo\s*\{/);
+  assert.match(css, /\.freefall-ruler\s*>\s*img\s*\{/);
+  assert.match(css, /\.cable-sensor::before\s*\{/);
 });
 
 test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => {

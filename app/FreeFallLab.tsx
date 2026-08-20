@@ -57,6 +57,7 @@ const EQUIPMENT_PHOTOS: Partial<Record<SetupKind, string>> = {
   release: "./freefall-equipment-release.webp",
   sensor: "./freefall-equipment-sensor.webp",
   timer: "./freefall-equipment-timer.webp",
+  ruler: "./freefall-equipment-ruler.webp",
 };
 const BALLS: Record<
   BallKind,
@@ -557,7 +558,7 @@ export default function FreeFallLab() {
   };
 
   const ballStyle = {
-    "--release-top": `${releaseTop + 5}%`,
+    "--release-top": `${releaseTop - 1}%`,
     "--fall-time": `${dropDuration}s`,
   } as CSSProperties;
 
@@ -680,9 +681,14 @@ export default function FreeFallLab() {
 
             {installed.includes("ruler") && (
               <div className="freefall-ruler">
+                <img
+                  src="./freefall-equipment-ruler.webp"
+                  alt="Gerçekçi düşey yükseklik cetveli"
+                  draggable={false}
+                />
                 {HEIGHTS.map((height) => (
                   <i
-                    style={{ bottom: `${11 + (height / 150) * 72}%` }}
+                    style={{ bottom: `${11.5 + (height / 150) * 78.5}%` }}
                     key={height}
                   >
                     {height}
@@ -760,7 +766,7 @@ export default function FreeFallLab() {
                 className="freefall-cable cable-release"
                 style={
                   {
-                    "--cable-start": `${releaseTop + 5}%`,
+                    "--cable-start": `${releaseTop - 14}%`,
                   } as CSSProperties
                 }
               >
