@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type CSSProperties,
   type DragEvent as ReactDragEvent,
@@ -41,6 +43,9 @@ type Trajectory = {
 
 const ANGLES = [15, 30, 45, 60, 75] as const;
 const SPEEDS: Record<number, number> = { 1: 2.35, 2: 2.85, 3: 3.35 };
+const LAUNCH_PIVOT = { x: 20.5, y: 53 };
+const MUZZLE_RADIUS = 11;
+const TRAJECTORY_X_SCALE = 43;
 const SETUP_ORDER: SetupKind[] = [
   "launcher",
   "protractor",
@@ -63,16 +68,42 @@ const EQUIPMENT: Array<{
   { kind: "ruler", name: "Bir metre cetvel", shortName: "Cetvel" },
   { kind: "ball", name: "19 mm çelik bilye", shortName: "Çelik bilye" },
 ];
+const EQUIPMENT_PHOTOS: Partial<Record<SetupKind, string>> = {
+  launcher: "./twod-launcher-frame-v2.webp",
+  protractor: "./twod-launcher-frame-v2.webp",
+  sensor: "./twod-speed-sensor-v2.webp",
+  table: "./twod-landing-table-v2.webp",
+  ruler: "./freefall-equipment-ruler.webp",
+};
+
+function launcherMuzzleForAngle(angle: number, stageAspect: number) {
+  const radians = (angle * Math.PI) / 180;
+  return {
+    left: LAUNCH_PIVOT.x + Math.cos(radians) * MUZZLE_RADIUS,
+    top: LAUNCH_PIVOT.y - Math.sin(radians) * MUZZLE_RADIUS * stageAspect,
+  };
+}
+
 function recordKey(angle: number, level: number) {
   return `${angle}-${level}`;
 }
 
 function EquipmentIcon({ kind }: { kind: SetupKind }) {
+  const photo = EQUIPMENT_PHOTOS[kind];
   return (
-    <span className={`twod-equipment-icon twod-icon-${kind}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
+    <span
+      className={`twod-equipment-icon twod-icon-${kind}${photo ? " has-photo" : ""}`}
+      aria-hidden="true"
+    >
+      {photo ? (
+        <img src={photo} alt="" draggable={false} />
+      ) : (
+        <>
+          <i />
+          <i />
+          <i />
+        </>
+      )}
     </span>
   );
 }
@@ -306,6 +337,7 @@ export default function TwoDimensionalMotionLab() {
   const [flightElapsed, setFlightElapsed] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [velocity, setVelocity] = useState({ x: 0, y: 0 });
+  const [stageAspect, setStageAspect] = useState(1.5);
   const [notice, setNotice] = useState(
     "İlk olarak fırlatıcı ünitesini deney alanına yerleştir.",
   );
@@ -323,6 +355,21 @@ export default function TwoDimensionalMotionLab() {
     },
     [],
   );
+
+  useEffect(() => {
+    const apparatus = apparatusRef.current;
+    if (!apparatus) return;
+    const updateAspect = () => {
+      const rect = apparatus.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setStageAspect(rect.width / rect.height);
+      }
+    };
+    updateAspect();
+    const observer = new ResizeObserver(updateAspect);
+    observer.observe(apparatus);
+    return () => observer.disconnect();
+  }, []);
 
   const resetProjectile = (message?: string) => {
     if (projectileState === "flying") return;
@@ -377,7 +424,7 @@ export default function TwoDimensionalMotionLab() {
     if (!apparatus || projectileState === "flying") return;
     const rect = apparatus.getBoundingClientRect();
     const pivotX = rect.left + rect.width * 0.205;
-    const pivotY = rect.top + rect.height * 0.665;
+    const pivotY = rect.top + rect.height * (LAUNCH_PIVOT.y / 100);
     const dx = clientX - pivotX;
     const dy = pivotY - clientY;
     const rawAngle = (Math.atan2(dy, dx) * 180) / Math.PI;
@@ -504,21 +551,19 @@ export default function TwoDimensionalMotionLab() {
   };
 
   const ballPosition = useMemo(() => {
+    const muzzle = launcherMuzzleForAngle(angle, stageAspect);
     if (projectileState === "ready" || !trajectory) {
-      const radians = (angle * Math.PI) / 180;
-      return {
-        left: 20.5 + Math.cos(radians) * 5.2,
-        top: 66.5 - Math.sin(radians) * 8.5,
-      };
+      return muzzle;
     }
     return {
-      left: 20.5 + position.x * 47,
-      top: 66.5 - position.y * 62,
+      left: muzzle.left + position.x * TRAJECTORY_X_SCALE,
+      top: muzzle.top - position.y * TRAJECTORY_X_SCALE * stageAspect,
     };
-  }, [angle, position, projectileState, trajectory]);
+  }, [angle, position, projectileState, stageAspect, trajectory]);
 
   const trajectoryDots = useMemo(() => {
     if (!trajectory) return [];
+    const muzzle = launcherMuzzleForAngle(trajectory.angle, stageAspect);
     const visibleProgress =
       projectileState === "landed"
         ? 1
@@ -533,11 +578,16 @@ export default function TwoDimensionalMotionLab() {
           trajectory.vy0 * time - 0.5 * 9.81 * time ** 2,
         );
         return {
-          left: 20.5 + x * 47,
-          top: 66.5 - y * 62,
+          left: muzzle.left + x * TRAJECTORY_X_SCALE,
+          top: muzzle.top - y * TRAJECTORY_X_SCALE * stageAspect,
         };
       });
-  }, [flightElapsed, projectileState, trajectory]);
+  }, [flightElapsed, projectileState, stageAspect, trajectory]);
+
+  const muzzlePosition = launcherMuzzleForAngle(angle, stageAspect);
+  const apparatusStyle = {
+    "--landing-top": `${muzzlePosition.top}%`,
+  } as CSSProperties;
 
   const velocityStyle = {
     "--vx-length": `${Math.min(70, Math.max(20, Math.abs(velocity.x) * 20))}px`,
@@ -618,17 +668,21 @@ export default function TwoDimensionalMotionLab() {
           <div
             className="twod-apparatus"
             ref={apparatusRef}
+            style={apparatusStyle}
             aria-label="İki boyutta hareket deney düzeneği"
           >
             <div className="twod-lab-wall" />
-            <div className="twod-floor" />
+            <div className="twod-floor">
+              <img src="./motion-lab-bench-v3.webp" alt="" draggable={false} />
+            </div>
 
             {installed.includes("launcher") && (
               <div className="twod-launcher">
-                <span className="twod-launcher-frame" />
-                <span className="twod-launcher-base" />
-                <span className="twod-launcher-pivot" />
-                <span className="twod-launcher-spring" />
+                <img
+                  src="./twod-launcher-frame-v2.webp"
+                  alt="Gerçekçi metal eğik atış fırlatıcı statifi"
+                  draggable={false}
+                />
               </div>
             )}
 
@@ -638,7 +692,8 @@ export default function TwoDimensionalMotionLab() {
                   <i
                     className={angle === option ? "active" : ""}
                     style={{
-                      transform: `rotate(${-option}deg) translateX(86px) rotate(${option}deg)`,
+                      left: `${50 + Math.cos((option * Math.PI) / 180) * 34}%`,
+                      top: `${32 + Math.sin((option * Math.PI) / 180) * 45}%`,
                     }}
                     key={option}
                   >
@@ -652,21 +707,35 @@ export default function TwoDimensionalMotionLab() {
               <button
                 type="button"
                 className="twod-launcher-arm"
-                style={{ transform: `rotate(${-angle}deg)` }}
+                style={
+                  {
+                    "--launcher-angle": `${angle}deg`,
+                    transform: `rotate(${-angle}deg)`,
+                  } as CSSProperties
+                }
                 aria-label={`Fırlatma doğrultusu ${angle} derece. Sürükleyerek ayarla.`}
                 onPointerDown={startAngleDrag}
                 onPointerMove={moveAngleDrag}
                 onPointerUp={stopAngleDrag}
                 onPointerCancel={stopAngleDrag}
               >
-                <span />
+                <img
+                  src="./twod-launcher-barrel-v2.webp"
+                  alt=""
+                  draggable={false}
+                />
                 <b>{angle}°</b>
               </button>
             )}
 
             {installed.includes("sensor") && (
               <div className={`twod-speed-sensor ${sensorReady ? "reset" : ""}`}>
-                <small>İLK HIZ</small>
+                <img
+                  src="./twod-speed-sensor-v2.webp"
+                  alt="Gerçekçi dijital ilk hız sensörü"
+                  draggable={false}
+                />
+                <small>İlk hız sensörü</small>
                 <b>
                   {trajectory
                     ? trajectory.speed.toFixed(2)
@@ -681,30 +750,37 @@ export default function TwoDimensionalMotionLab() {
 
             {installed.includes("table") && (
               <div className="twod-landing-table">
-                <span className="twod-table-top" />
-                <span className="twod-table-leg leg-one" />
-                <span className="twod-table-leg leg-two" />
+                <img
+                  src="./twod-landing-table-v2.webp"
+                  alt="Fırlatıcı ağzıyla aynı yüksekliğe ayarlanmış iniş masası"
+                  draggable={false}
+                />
               </div>
             )}
 
             {installed.includes("paper") && (
               <div className="twod-trace-paper">
                 <span>İz kâğıdı</span>
-                {Object.values(records).map((record) => (
-                  <i
-                    style={{
-                      left: `${Math.max(
-                        2,
-                        Math.min(
-                          96,
-                          ((20.5 + record.measuredRange * 47 - 26) / 69) * 100,
-                        ),
-                      )}%`,
-                    }}
-                    title={`${record.angle}° · ${record.level}. kademe`}
-                    key={recordKey(record.angle, record.level)}
-                  />
-                ))}
+                {Object.values(records).map((record) => {
+                  const recordMuzzle = launcherMuzzleForAngle(
+                    record.angle,
+                    stageAspect,
+                  );
+                  const landingX =
+                    recordMuzzle.left + record.measuredRange * TRAJECTORY_X_SCALE;
+                  return (
+                    <i
+                      style={{
+                        left: `${Math.max(
+                          2,
+                          Math.min(96, ((landingX - 26) / 69) * 100),
+                        )}%`,
+                      }}
+                      title={`${record.angle}° · ${record.level}. kademe`}
+                      key={recordKey(record.angle, record.level)}
+                    />
+                  );
+                })}
               </div>
             )}
 

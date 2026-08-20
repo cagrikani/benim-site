@@ -46,6 +46,10 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "freefall-equipment-sensor.webp",
     "freefall-equipment-timer.webp",
     "freefall-equipment-ruler.webp",
+    "twod-launcher-frame-v2.webp",
+    "twod-launcher-barrel-v2.webp",
+    "twod-landing-table-v2.webp",
+    "twod-speed-sensor-v2.webp",
     "electricity-ohm.webp",
     "electricity-resistors.webp",
     "optics-mirrors.webp",
@@ -1389,6 +1393,13 @@ test("iki boyutta hareket modülü PDF düzeneğiyle kurulabilir ve ölçüm yap
   assert.match(page, /Hız sensörünü sıfırla/);
   assert.match(page, /Pimi çek ve fırlat/);
   assert.match(page, /requestAnimationFrame/);
+  assert.match(page, /ResizeObserver/);
+  assert.match(page, /launcherMuzzleForAngle/);
+  assert.match(page, /twod-launcher-frame-v2\.webp/);
+  assert.match(page, /twod-launcher-barrel-v2\.webp/);
+  assert.match(page, /twod-landing-table-v2\.webp/);
+  assert.match(page, /twod-speed-sensor-v2\.webp/);
+  assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.match(page, /Yatay hız vₓ/);
   assert.match(page, /Düşey hız vᵧ/);
   assert.match(page, /measuredRange/);
@@ -1410,6 +1421,13 @@ test("iki boyutta hareket düzeneği fırlatıcı, masa ve iz kâğıdını ger�
   assert.match(css, /\.twod-meter-ruler\s*\{/);
   assert.match(css, /\.twod-projectile\s*\{/);
   assert.match(css, /\.twod-velocity-arrows\s*\{/);
+  assert.match(css, /\.twod-equipment-icon\.has-photo\s*\{/);
+  assert.match(css, /\.twod-floor img\s*\{/);
+  assert.match(css, /\.twod-launcher\s*>\s*img\s*\{/);
+  assert.match(css, /\.twod-launcher-arm\s*>\s*img\s*\{/);
+  assert.match(css, /\.twod-speed-sensor\s*>\s*img\s*\{/);
+  assert.match(css, /\.twod-landing-table\s*>\s*img\s*\{/);
+  assert.match(css, /top:\s*calc\(var\(--landing-top\) \+ 1\.4%\)/);
 });
 
 test("serbest düşme modülü PDF düzeneğiyle kurulabilir ve ölçüm yapar", async () => {
