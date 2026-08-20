@@ -25,7 +25,6 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "free-waves.webp",
     "free-optics.webp",
     "free-modern.webp",
-    "mechanics-vectors.webp",
     "mechanics-motion.webp",
     "mechanics-freefall.webp",
     "mechanics-two-dimensional.webp",
@@ -47,45 +46,10 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
   );
 });
 
-test("vektör modülü çizim, taşıma, özellik ve yöntem araçları sunar", async () => {
-  const page = await readFile(new URL("app/MechanicsLabHub.tsx", projectRoot), "utf8");
-  assert.match(page, /FİZ\.9\.2\.3/);
-  assert.match(page, /FİZ\.9\.2\.4/);
-  assert.match(page, /VectorWorkspace/);
-  assert.match(page, /blank-vector-canvas/);
-  assert.match(page, /vector-tool-strip/);
-  assert.match(page, /> Taşı/);
-  assert.match(page, /> Uç uca/);
-  assert.match(page, /> Paralelkenar/);
-  assert.match(page, /> Bileşenler/);
-  assert.match(page, /vector-properties/);
-  assert.match(page, /Başlangıç/);
-  assert.match(page, /Bitiş/);
-  assert.match(page, /x bileşeni/);
-  assert.match(page, /y bileşeni/);
-  assert.match(page, /Büyüklük/);
-  assert.match(page, /vector-solution-sheet/);
-  assert.match(page, /Çözüm alanı/);
-  assert.match(page, /Yöntemleri sil/);
-  assert.match(page, /Geri al/);
-  assert.match(page, /Temizle/);
-  assert.match(page, /VECTOR_COLORS/);
-  assert.doesNotMatch(page, /Eşit vektör|Zıt vektör|Reel sayıyla çarpma/);
-});
-
-test("vektör çalışma alanı hazır teori ve formül sunmaz", async () => {
-  const page = await readFile(new URL("app/MechanicsLabHub.tsx", projectRoot), "utf8");
-  assert.doesNotMatch(page, /°|derece|sinüs|kosinüs|tanjant/i);
-  assert.doesNotMatch(page, /WORKSHEET|METHODS|MethodSteps|VectorControl/);
-  assert.doesNotMatch(page, /Bileşkeyi göster|Yardımcı çizgiler|ÇIKIŞ KARTI/);
-  assert.doesNotMatch(page, /\|A\||R =|Math\.hypot/);
-});
-
-test("sekiz modül ve serbest vektör çizimi etkileşimlidir", async () => {
+test("yedi mekanik deneyi etkileşimlidir ve vektör modülü kaldırılmıştır", async () => {
   const page = await readFile(new URL("app/MechanicsLabHub.tsx", projectRoot), "utf8");
   assert.match(page, /activeModule/);
   assert.match(page, /module-choice-grid/);
-  assert.match(page, /setActiveModule\("vectors"\)/);
   assert.match(page, /setActiveModule\("motion"\)/);
   assert.match(page, /setActiveModule\("free-fall"\)/);
   assert.match(page, /setActiveModule\("two-dimensional"\)/);
@@ -93,7 +57,6 @@ test("sekiz modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /setActiveModule\("ballistic-pendulum"\)/);
   assert.match(page, /setActiveModule\("torque"\)/);
   assert.match(page, /setActiveModule\("harmonic-motion"\)/);
-  assert.match(page, /activeModule === "vectors"/);
   assert.match(page, /activeModule === "motion"/);
   assert.match(page, /activeModule === "free-fall"/);
   assert.match(page, /activeModule === "two-dimensional"/);
@@ -113,7 +76,6 @@ test("sekiz modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /Balistik sarkaç/);
   assert.match(page, /Dönme dinamiği ve tork/);
   assert.match(page, /Basit harmonik hareket/);
-  assert.match(page, /mechanics-vectors\.webp/);
   assert.match(page, /mechanics-motion\.webp/);
   assert.match(page, /mechanics-freefall\.webp/);
   assert.match(page, /mechanics-two-dimensional\.webp/);
@@ -121,19 +83,9 @@ test("sekiz modül ve serbest vektör çizimi etkileşimlidir", async () => {
   assert.match(page, /mechanics-ballistic\.webp/);
   assert.match(page, /mechanics-torque\.webp/);
   assert.match(page, /mechanics-harmonic-motion\.webp/);
-  assert.match(page, /onPointerDown/);
-  assert.match(page, /setPointerCapture/);
-  assert.match(page, /pointFromPointer/);
-  assert.match(page, /startInteraction/);
-  assert.match(page, /moveInteraction/);
-  assert.match(page, /finishInteraction/);
-  assert.match(page, /setVectors/);
-  assert.match(page, /distanceToVector/);
-  assert.match(page, /chooseForOperation/);
-  assert.match(page, /head-to-tail/);
-  assert.match(page, /parallelogram/);
-  assert.match(page, /components/);
-  assert.match(page, /textarea/);
+  assert.doesNotMatch(page, /vectors|VectorWorkspace|mechanics-vectors|Vektörler/);
+  assert.match(page, /MODÜL 01 · DENEY 1/);
+  assert.match(page, /MODÜL 07 · DENEY 7/);
 });
 
 test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async () => {
@@ -1066,7 +1018,10 @@ test("deney seçilince kart listesi kapanır ve yalnızca seçilen deney açıl�
     readFile(new URL("app/globals.css", projectRoot), "utf8"),
   ]);
 
-  assert.match(mechanics, /!activeModule && <section className="module-launcher"/);
+  assert.match(
+    mechanics,
+    /!activeModule && \(\s*<section className="module-launcher"/,
+  );
   assert.match(mechanics, /activeModule \? \(\) => setActiveModule\(null\) : onBack/);
   assert.match(mechanics, /id="mekanik-deney"/);
   assert.match(mechanics, /window\.scrollTo\(\{ top: 0, behavior: "auto" \}\)/);

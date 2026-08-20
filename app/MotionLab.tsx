@@ -597,7 +597,7 @@ export default function MotionLab() {
     <section className="motion-lab-section" id="hareket-laboratuvari">
       <div className="motion-lab-inner">
         <div className="section-heading light-heading motion-heading">
-          <span>05 · DENEY 2 · HAVA RAYI</span>
+          <span>DENEY 1 · HAVA RAYI</span>
           <h2>Tek ray, öğrencinin kurduğu deney.</h2>
           <p>
             Tüm malzemeler aynı ekranda açık. Fırlatıcıyı eklersen düzgün doğrusal hareket,

@@ -1326,7 +1326,7 @@ export default function CollisionLab() {
     <section className="collision-lab-section" id="carpismalar-deneyi">
       <div className="collision-heading">
         <div>
-          <span>DENEY 5 · FİZ.12.1.4 · MOMENTUMUN KORUNUMU</span>
+          <span>DENEY 4 · FİZ.12.1.4 · MOMENTUMUN KORUNUMU</span>
           <h2>Çarpışmayı kur, izlerini ölç ve kanıtla.</h2>
         </div>
         <p>

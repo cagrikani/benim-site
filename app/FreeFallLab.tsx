@@ -547,7 +547,7 @@ export default function FreeFallLab() {
     <section className="freefall-lab-section" id="serbest-dusme-deneyi">
       <div className="freefall-heading">
         <div>
-          <span>DENEY 3 · FİZ.10.1.4 · FİZ.10.1.5</span>
+          <span>DENEY 2 · FİZ.10.1.4 · FİZ.10.1.5</span>
           <h2>Serbest düşme deneyini kur ve ölç.</h2>
         </div>
         <p>

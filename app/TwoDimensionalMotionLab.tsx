@@ -548,7 +548,7 @@ export default function TwoDimensionalMotionLab() {
     <section className="twod-lab-section" id="iki-boyutta-hareket-deneyi">
       <div className="twod-heading">
         <div>
-          <span>DENEY 4 · FİZ.10.1.6</span>
+          <span>DENEY 3 · FİZ.10.1.6</span>
           <h2>İki boyutta hareket düzeneğini kur ve incele.</h2>
         </div>
         <p>

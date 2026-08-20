@@ -513,7 +513,7 @@ export default function HarmonicMotionLab() {
       <section className="harmonic-lab" id="basit-harmonik-hareket">
         <div className="shm-heading">
           <div>
-            <span>MODÜL 08 · BASİT HARMONİK HAREKET</span>
+            <span>MODÜL 07 · BASİT HARMONİK HAREKET</span>
             <h2>Basit Harmonik Hareket</h2>
             <p>
               İki gerçek laboratuvar düzeneğinden birini seç; sistemi kendin kur,
@@ -536,7 +536,7 @@ export default function HarmonicMotionLab() {
     <section className="harmonic-lab" id="basit-harmonik-hareket">
       <div className="shm-heading">
         <div>
-          <span>MODÜL 08 · BASİT HARMONİK HAREKET</span>
+          <span>MODÜL 07 · BASİT HARMONİK HAREKET</span>
           <h2>Basit Harmonik Hareket</h2>
           <p>
             İki gerçek laboratuvar düzeneğinden birini seç; sistemi kendin kur,

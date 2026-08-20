@@ -537,7 +537,7 @@ export default function TorqueLab() {
     <section className="torque-lab-section" id="tork-deneyi">
       <div className="torque-heading">
         <div>
-          <span>MODÜL 07 · DENEY 7</span>
+          <span>MODÜL 06 · DENEY 6</span>
           <h2>Dönme dinamiği ve tork</h2>
           <p>
             PDF’deki düzeneği kur; dönme yarıçapı, asılı kütle ve eylemsizlik

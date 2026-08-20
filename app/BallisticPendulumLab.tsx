@@ -502,7 +502,7 @@ export default function BallisticPendulumLab() {
     <section className="ballistic-lab-section" id="balistik-sarkac">
       <div className="ballistic-heading">
         <div>
-          <span>MODÜL 06 · DENEY 6</span>
+          <span>MODÜL 05 · DENEY 5</span>
           <h2>Balistik sarkaç</h2>
           <p>
             Düzeneği kur, hız sensöründen veri topla ve bilyenin ilk hızını
