@@ -10201,10 +10201,10 @@ footer > a {
   position: absolute;
   inset: auto;
   bottom: 20%;
-  left: 47%;
+  left: 44%;
   z-index: 2;
-  width: 17.5%;
-  height: 70%;
+  width: 22%;
+  height: 77%;
   pointer-events: none;
 }
 
@@ -10277,6 +10277,8 @@ footer > a {
   width: 100%;
   height: auto;
   pointer-events: none;
+  transform: scaleX(1.235);
+  transform-origin: left center;
   user-select: none;
 }
 
@@ -10291,7 +10293,7 @@ footer > a {
 
 .freefall-sensor {
   bottom: 20%;
-  left: 31%;
+  left: 32%;
   z-index: 4;
   width: 16%;
   min-width: 130px;
@@ -10445,7 +10447,7 @@ footer > a {
   top: var(--cable-start);
   right: 26%;
   bottom: 32%;
-  left: 46%;
+  left: 48.5%;
   border-width: 0 0 4px 4px;
   border-color: #c77819;
   box-shadow: inset 1px 0 rgba(255, 196, 96, 0.6);
@@ -10455,7 +10457,7 @@ footer > a {
   top: 68%;
   right: 21%;
   bottom: auto;
-  left: 47%;
+  left: 49%;
   height: 6%;
   border: 0;
   border-top: 4px solid #0d756e;
@@ -10492,7 +10494,7 @@ footer > a {
 }
 
 .freefall-dropping-ball {
-  left: 39%;
+  left: 40.2%;
   width: 27px;
   height: 27px;
   border-width: 1px;
@@ -10702,9 +10704,9 @@ footer > a {
 
   .freefall-stand {
     bottom: 20%;
-    left: 44%;
-    width: 23%;
-    height: 66%;
+    left: 29%;
+    width: 46%;
+    height: 75%;
   }
 
   .freefall-ruler {
@@ -10722,11 +10724,11 @@ footer > a {
   }
 
   .freefall-dropping-ball {
-    left: 31%;
+    left: 32.5%;
   }
 
   .freefall-sensor {
-    left: 14%;
+    left: 15.5%;
     width: 34%;
     min-width: 108px;
   }
