@@ -70,10 +70,44 @@ const EQUIPMENT: Array<{
   { kind: "gate", label: "Optik kapı", description: "Kızağın geçişini algılar", symbol: "∩", multiple: true },
   { kind: "timer", label: "Kronometre", description: "İki kapı arasındaki zamanı ölçer", symbol: "00" },
   { kind: "launcher", label: "Fırlatıcı", description: "Kızağa ilk hız kazandırır", symbol: "↦" },
-  { kind: "pulley", label: "Makara", description: "İvmeli hareket aşamasında kullanılır", symbol: "○" },
+  { kind: "pulley", label: "Makara", description: "Ayrı ivmeli hareket deneyinde kullanılır", symbol: "○" },
   { kind: "string", label: "İp", description: "Kızak ile kefeyi bağlar", symbol: "―" },
   { kind: "hanger", label: "Kefe", description: "Asılı kütleleri taşır", symbol: "▽" },
   { kind: "mass", label: "Kütle", description: "Kefeye eklenen çekici kütle", symbol: "g", multiple: true },
+];
+
+const EQUIPMENT_PHOTOS: Partial<Record<EquipmentKind, string>> = {
+  rail: "./motion-equipment-air-track.webp",
+  pump: "./motion-equipment-pump.webp",
+  gate: "./motion-equipment-gate.webp",
+  timer: "./motion-equipment-timer.webp",
+  launcher: "./motion-equipment-launcher.webp",
+  pulley: "./motion-equipment-pulley.webp",
+  hanger: "./motion-equipment-hanger.webp",
+  mass: "./motion-equipment-mass.webp",
+};
+
+const EQUIPMENT_GROUPS: Array<{
+  id: "uniform" | "pulley";
+  eyebrow: string;
+  title: string;
+  note: string;
+  kinds: EquipmentKind[];
+}> = [
+  {
+    id: "uniform",
+    eyebrow: "1 · MAKARASIZ DENEY",
+    title: "Sabit hızlı hareket düzeneği",
+    note: "Hava rayı, pompa, kızak, iki optik kapı, kronometre ve fırlatıcı bu deney için yeterlidir.",
+    kinds: ["rail", "pump", "glider", "gate", "timer", "launcher"],
+  },
+  {
+    id: "pulley",
+    eyebrow: "2 · AYRI DENEY",
+    title: "Makara ile ivmeli hareket",
+    note: "İlk deneyi tamamladıktan sonra makara, ip, kefe ve kütleyi ekleyerek ikinci deneye geçebilirsin.",
+    kinds: ["pulley", "string", "hanger", "mass"],
+  },
 ];
 
 const MODE_INFO: Record<
@@ -107,7 +141,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Hava rayı",
     instruction: "Hava rayını tezgâhın altındaki uzun yuvaya yerleştir.",
     x: 50,
-    y: 62,
+    y: 54,
     dropRadius: 30,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -117,7 +151,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Hava pompası",
     instruction: "Pompayı rayın hava girişinin yanındaki yuvaya yerleştir.",
     x: 9,
-    y: 85,
+    y: 50,
     dropRadius: 16,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -127,7 +161,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Fırlatıcı",
     instruction: "Fırlatıcıyı rayın sol başlangıç ucuna tak.",
     x: 8,
-    y: 53,
+    y: 47,
     dropRadius: 14,
     modes: ["uniform"],
   },
@@ -137,7 +171,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Kızak",
     instruction: "Kızağı hava rayının sol bölümüne oturt.",
     x: 17,
-    y: 55,
+    y: 49,
     dropRadius: 15,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -147,7 +181,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "1. optik kapı",
     instruction: "İlk optik kapıyı raydaki 0 cm başlangıç işaretine tak.",
     x: 28,
-    y: 49,
+    y: 44,
     dropRadius: 14,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -157,7 +191,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "2. optik kapı",
     instruction: "İkinci optik kapıyı raya yerleştir; sonra ray boyunca sürükleyerek mesafeyi ayarla.",
     x: 68,
-    y: 49,
+    y: 44,
     dropRadius: 24,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -167,7 +201,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Kronometre",
     instruction: "Kronometreyi iki optik kapının kablo çıkışlarının yanına koy.",
     x: 72,
-    y: 85,
+    y: 50,
     dropRadius: 18,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -177,7 +211,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Makara",
     instruction: "Makarayı hava rayının sağ ucuna sabitle.",
     x: 93,
-    y: 53,
+    y: 45,
     dropRadius: 12,
     modes: ["accelerated", "force"],
   },
@@ -187,7 +221,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "İp",
     instruction: "İpi kızaktan makaraya uzanan bağlantı hattına yerleştir.",
     x: 54,
-    y: 62,
+    y: 54,
     dropRadius: 32,
     modes: ["accelerated", "force"],
   },
@@ -197,7 +231,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Kefe",
     instruction: "Kefeyi makaranın altındaki ipin ucuna as.",
     x: 93,
-    y: 76,
+    y: 68,
     dropRadius: 13,
     modes: ["accelerated", "force"],
   },
@@ -207,7 +241,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Kütle",
     instruction: "Kütleyi asılı kefenin içine bırak.",
     x: 93,
-    y: 86,
+    y: 78,
     dropRadius: 12,
     modes: ["accelerated", "force"],
   },
@@ -280,7 +314,7 @@ export default function MotionLab() {
   const stringStartX = (gliderItem?.x ?? 17) + 3;
   const stringPulleyX = (pulleyItem?.x ?? 93) - 1;
   const stringRunStartX = Math.min(runEndX + 2, stringPulleyX - 8);
-  const completedLoadDrop = Math.max(0, (hangerItem?.y ?? 76) - 76);
+  const completedLoadDrop = Math.max(0, (hangerItem?.y ?? 68) - 68);
   const hasItem = (kind: EquipmentKind) => items.some((item) => item.kind === kind);
   const baseReady =
     hasItem("rail") &&
@@ -379,7 +413,7 @@ export default function MotionLab() {
       records.uniform.reduce((total, row) => total + row.trials.length, 0) === 0
     ) {
       setNotice(
-        "Makara ikinci aşamanın parçasıdır. Önce fırlatıcıyla sabit hızlı hareket ölçümlerini yapabilir, ardından makara-ip-kefe sistemine geçebilirsin.",
+        "Makara ayrı ivmeli hareket deneyinin parçasıdır. Önce makarasız sabit hızlı hareket ölçümlerini tamamlayabilir, ardından ikinci düzeneği kurabilirsin.",
       );
       return;
     }
@@ -675,8 +709,8 @@ export default function MotionLab() {
           <span>DENEY 1 · HAVA RAYI</span>
           <h2>Tek ray, öğrencinin kurduğu deney.</h2>
           <p>
-            Tüm malzemeler aynı ekranda açık. Fırlatıcıyı eklersen düzgün doğrusal hareket,
-            makara-ip-kefe-kütle sistemini tamamlarsan ivmeli hareket otomatik tanınır.
+            Önce makarasız düzende sabit hızlı hareketi incele. Makara, ip, kefe ve
+            kütle ise aynı hava rayıyla yapılan ayrı bir ivmeli hareket deneyidir.
           </p>
         </div>
 
@@ -708,7 +742,7 @@ export default function MotionLab() {
           </div>
           <div>
             <span>3</span>
-            <p><b>İkinci aşamaya geç</b> Sabit hızlı ölçümlerden sonra makara-ip-kefe-kütle sistemini tamamla.</p>
+            <p><b>Ayrı deneye geç</b> Sabit hızlı ölçümlerden sonra alttaki makara-ip-kefe-kütle grubunu kullan.</p>
           </div>
           <div>
             <span>4</span>
@@ -719,10 +753,10 @@ export default function MotionLab() {
         <div className={`pulley-sequence-warning ${hasItem("pulley") ? "pulley-added" : ""}`}>
           <span>{hasItem("pulley") ? "✓" : "!"}</span>
           <div>
-            <b>Makara ilk deney için gerekli değildir.</b>
+            <b>Makara sistemi ayrı bir deney düzeneğidir.</b>
             <p>
-              Önce fırlatıcıyla makarasız sabit hızlı hareket ölçümlerini tamamla.
-              İvmeli harekete geçerken makara, ip, kefe ve kütleyi ekle.
+              Sabit hızlı hareket deneyi makarasız yapılır. İvmeli hareketi araştırmak
+              istediğinde ikinci malzeme grubundaki makara, ip, kefe ve kütleyi ekle.
             </p>
           </div>
         </div>
@@ -731,47 +765,72 @@ export default function MotionLab() {
           <aside className="equipment-panel">
             <div className="equipment-head">
               <span>TÜM MALZEMELER AÇIK</span>
-              <h3>Tek düzenek araç kutusu</h3>
-              <p>Parçaları istediğin sırayla sürükle; her parça yalnızca şablondaki gerçek bağlantı noktasına oturur.</p>
+              <h3>İki deney için araç kutusu</h3>
+              <p>Önce üst gruptaki makarasız deneyi kur; ikinci deneyin makara parçaları altta ayrı gösterilir.</p>
             </div>
-            <div className="equipment-list">
-              {EQUIPMENT.map((item) => {
-                const neededSlots = activeSlots.filter((slot) => slot.kind === item.kind);
-                const placedCount = items.filter((placed) => placed.kind === item.kind).length;
-                const isNeeded = neededSlots.length > 0;
-                const neededCount = item.kind === "gate" ? 2 : 1;
-                const isComplete = isNeeded && placedCount >= neededCount;
-                const isNext = nextSlot?.kind === item.kind;
-                return (
-                  <button
-                    className={`${isNext ? "next-equipment" : ""} ${isComplete ? "equipment-complete" : ""}`}
-                    type="button"
-                    draggable={isNeeded && !isComplete}
-                    disabled={!isNeeded || isComplete}
-                    key={item.kind}
-                    onDragStart={(event) => {
-                      event.dataTransfer.setData("application/x-spektrum-equipment", item.kind);
-                      event.dataTransfer.effectAllowed = "copy";
-                      setToolDragKind(item.kind);
-                    }}
-                    onDragEnd={() => setToolDragKind(null)}
-                    onClick={() => addByClick(item.kind)}
-                  >
-                    <EquipmentVisual kind={item.kind} mini />
-                    <div>
-                      <b>{item.label}</b>
-                      <small>
-                        {!isNeeded
-                          ? "Bu düzende kullanılmaz"
-                          : isComplete
-                            ? "Doğru yerleştirildi"
-                            : `${placedCount}/${neededCount} · ${item.description}`}
-                      </small>
-                    </div>
-                    <i>{isComplete ? "✓" : isNext ? currentStepNumber : "+"}</i>
-                  </button>
-                );
-              })}
+            <div className="equipment-groups">
+              {EQUIPMENT_GROUPS.map((group) => (
+                <section
+                  className={`equipment-group equipment-group-${group.id}`}
+                  key={group.id}
+                >
+                  <header>
+                    <span>{group.eyebrow}</span>
+                    <b>{group.title}</b>
+                    <small>{group.note}</small>
+                  </header>
+                  <div className="equipment-list">
+                    {EQUIPMENT.filter((item) => group.kinds.includes(item.kind)).map(
+                      (item) => {
+                        const neededSlots = activeSlots.filter(
+                          (slot) => slot.kind === item.kind,
+                        );
+                        const placedCount = items.filter(
+                          (placed) => placed.kind === item.kind,
+                        ).length;
+                        const isNeeded = neededSlots.length > 0;
+                        const neededCount = item.kind === "gate" ? 2 : 1;
+                        const isComplete = isNeeded && placedCount >= neededCount;
+                        const isNext = nextSlot?.kind === item.kind;
+                        return (
+                          <button
+                            className={`${isNext ? "next-equipment" : ""} ${isComplete ? "equipment-complete" : ""}`}
+                            type="button"
+                            draggable={isNeeded && !isComplete}
+                            disabled={!isNeeded || isComplete}
+                            key={item.kind}
+                            onDragStart={(event) => {
+                              event.dataTransfer.setData(
+                                "application/x-spektrum-equipment",
+                                item.kind,
+                              );
+                              event.dataTransfer.effectAllowed = "copy";
+                              setToolDragKind(item.kind);
+                            }}
+                            onDragEnd={() => setToolDragKind(null)}
+                            onClick={() => addByClick(item.kind)}
+                          >
+                            <EquipmentVisual kind={item.kind} mini />
+                            <div>
+                              <b>{item.label}</b>
+                              <small>
+                                {!isNeeded
+                                  ? "Bu düzende kullanılmaz"
+                                  : isComplete
+                                    ? "Doğru yerleştirildi"
+                                    : `${placedCount}/${neededCount} · ${item.description}`}
+                              </small>
+                            </div>
+                            <i>
+                              {isComplete ? "✓" : isNext ? currentStepNumber : "+"}
+                            </i>
+                          </button>
+                        );
+                      },
+                    )}
+                  </div>
+                </section>
+              ))}
             </div>
           </aside>
 
@@ -819,7 +878,7 @@ export default function MotionLab() {
             >
               <img
                 className="motion-stage-photo"
-                src="./motion-lab-bench-v2.webp"
+                src="./motion-lab-bench-v3.webp"
                 alt=""
                 draggable="false"
                 aria-hidden="true"
@@ -832,12 +891,12 @@ export default function MotionLab() {
                   <small>Parçalar raydaki gerçek bağlantı noktalarına oturur.</small>
                 </div>
               </div>
-              {baseReady && !hasItem("pulley") && (
+              {uniformReady && !hasItem("pulley") && (
                 <div className="stage-pulley-alert" role="alert">
                   <span>!</span>
                   <div>
-                    <b>İvmeli hareket deneyi yapmak istiyorsan makarayı bağla.</b>
-                    <small>Makarayı rayın sağ ucundaki bağlantıya yerleştir.</small>
+                    <b>Makarasız sabit hızlı hareket düzeneğin hazır.</b>
+                    <small>Ayrı ivmeli hareket deneyi için aşağıdaki makara grubunu kullanabilirsin.</small>
                   </div>
                 </div>
               )}
@@ -1113,80 +1172,37 @@ function EquipmentVisual({
   mini?: boolean;
   timerValue?: number;
 }) {
+  const photoSource = EQUIPMENT_PHOTOS[kind];
+
   return (
     <span className={`equipment-visual visual-${kind} ${mini ? "mini" : ""}`} aria-hidden="true">
-      {kind === "rail" && (
+      {photoSource ? (
         <>
-          <i className="rail-beam" />
-          <i className="rail-holes" />
-          <i className="rail-ruler" />
-          <i className="rail-leg rail-leg-left" />
-          <i className="rail-leg rail-leg-right" />
-          <i className="rail-inlet" />
-          <i className="rail-endcap rail-endcap-left" />
-          <i className="rail-endcap rail-endcap-right" />
+          <img
+            className={`equipment-photo equipment-photo-${kind}`}
+            src={photoSource}
+            alt=""
+            draggable="false"
+          />
+          {kind === "pump" && (
+            <>
+              <i className="photo-pump-fan" />
+              <i className="photo-pump-status" />
+            </>
+          )}
+          {kind === "gate" && <i className="photo-gate-beam" />}
+          {kind === "timer" && (
+            <i className="photo-timer-reading">{timerValue.toFixed(3)}</i>
+          )}
         </>
-      )}
-      {kind === "pump" && (
-        <>
-          <i className="pump-body" />
-          <i className="pump-grille" />
-          <i className="pump-switch" />
-          <i className="pump-nozzle" />
-        </>
-      )}
-      {kind === "glider" && (
+      ) : kind === "glider" ? (
         <>
           <i className="glider-saddle" />
           <i className="glider-body" />
           <i className="glider-flag" />
         </>
-      )}
-      {kind === "gate" && (
-        <>
-          <i className="gate-base" />
-          <i className="gate-post gate-post-left" />
-          <i className="gate-post gate-post-right" />
-          <i className="gate-beam" />
-          <i className="gate-light" />
-        </>
-      )}
-      {kind === "timer" && (
-        <>
-          <i className="timer-case" />
-          <i className="timer-screen">{timerValue.toFixed(3)}</i>
-          <i className="timer-port timer-port-one" />
-          <i className="timer-port timer-port-two" />
-        </>
-      )}
-      {kind === "launcher" && (
-        <>
-          <i className="launcher-base" />
-          <i className="launcher-spring" />
-          <i className="launcher-stop" />
-        </>
-      )}
-      {kind === "pulley" && (
-        <>
-          <i className="pulley-bracket" />
-          <i className="pulley-wheel" />
-          <i className="pulley-hub" />
-        </>
-      )}
-      {kind === "string" && <i className="string-line" />}
-      {kind === "hanger" && (
-        <>
-          <i className="hanger-cord" />
-          <i className="hanger-hook" />
-          <i className="hanger-cup" />
-        </>
-      )}
-      {kind === "mass" && (
-        <>
-          <i className="mass-handle" />
-          <i className="mass-body" />
-          <i className="mass-mark">g</i>
-        </>
+      ) : (
+        <i className="string-line" />
       )}
     </span>
   );
@@ -1391,7 +1407,7 @@ function MotionGraph({
       {kind === "mass" && !pulleyConnected && (
         <div className="graph-pulley-lock" role="status">
           <span>!</span>
-          <b>İvmeli hareket deneyi yapmak istiyorsan makarayı bağla.</b>
+          <b>Bu grafik ayrı makara deneyini kurduğunda ölçüm göstermeye başlar.</b>
         </div>
       )}
     </div>

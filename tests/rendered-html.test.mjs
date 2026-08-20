@@ -32,7 +32,15 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "mechanics-ballistic.webp",
     "mechanics-torque.webp",
     "mechanics-harmonic-motion.webp",
-    "motion-lab-bench-v2.webp",
+    "motion-lab-bench-v3.webp",
+    "motion-equipment-air-track.webp",
+    "motion-equipment-pump.webp",
+    "motion-equipment-gate.webp",
+    "motion-equipment-timer.webp",
+    "motion-equipment-launcher.webp",
+    "motion-equipment-pulley.webp",
+    "motion-equipment-hanger.webp",
+    "motion-equipment-mass.webp",
     "electricity-ohm.webp",
     "electricity-resistors.webp",
     "optics-mirrors.webp",
@@ -1499,12 +1507,24 @@ test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => 
   assert.match(page, /timerValue/);
   assert.match(page, /Ölçülen: turuncu bayrak/);
   assert.doesNotMatch(page, /className="air-track-bench"/);
-  assert.match(page, /motion-lab-bench-v2\.webp/);
+  assert.match(page, /motion-lab-bench-v3\.webp/);
+  assert.match(page, /EQUIPMENT_PHOTOS/);
+  assert.match(page, /EQUIPMENT_GROUPS/);
+  assert.match(page, /motion-equipment-air-track\.webp/);
+  assert.match(page, /motion-equipment-pump\.webp/);
+  assert.match(page, /motion-equipment-gate\.webp/);
+  assert.match(page, /motion-equipment-timer\.webp/);
+  assert.match(page, /motion-equipment-launcher\.webp/);
+  assert.match(page, /motion-equipment-pulley\.webp/);
+  assert.match(page, /motion-equipment-hanger\.webp/);
+  assert.match(page, /motion-equipment-mass\.webp/);
   assert.match(page, /pulley-sequence-warning/);
   assert.match(page, /stage-pulley-alert/);
-  assert.match(page, /Makara ilk deney için gerekli değildir/);
-  assert.match(page, /Önce fırlatıcıyla makarasız sabit hızlı hareket/);
-  assert.match(page, /İvmeli hareket deneyi yapmak istiyorsan makarayı bağla/);
+  assert.match(page, /1 · MAKARASIZ DENEY/);
+  assert.match(page, /2 · AYRI DENEY/);
+  assert.match(page, /Makara sistemi ayrı bir deney düzeneğidir/);
+  assert.match(page, /Sabit hızlı hareket deneyi makarasız yapılır/);
+  assert.match(page, /Makarasız sabit hızlı hareket düzeneğin hazır/);
   assert.doesNotMatch(page, /gate-end-/);
   assert.doesNotMatch(page, /setDistance/);
 });
@@ -1518,6 +1538,9 @@ test("hava rayı tam genişlikte çizilir ve optik kapı ayakları raya oturur",
   assert.match(css, /\.equipment-gate\.selected\s*\{/);
   assert.match(css, /\.air-track-bench\s*\{/);
   assert.match(css, /\.motion-stage-photo\s*\{/);
+  assert.match(css, /\.equipment-groups\s*\{/);
+  assert.match(css, /\.equipment-photo\s*\{/);
+  assert.match(css, /\.photo-timer-reading\s*\{/);
   assert.match(css, /\.run-load\s*\{/);
   assert.match(css, /@keyframes air-track-pulley-turn/);
   assert.match(css, /@keyframes air-pump-fan/);
