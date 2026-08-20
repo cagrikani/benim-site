@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MagneticFieldLab from "./MagneticFieldLab";
 import OhmLawLab from "./OhmLawLab";
 import ResistorConnectionsLab from "./ResistorConnectionsLab";
@@ -12,34 +12,41 @@ type ActiveExperiment = "ohm" | "resistor-connections" | "magnetic-field" | null
 export default function ElectricityLabHub({ onBack }: { onBack: () => void }) {
   const [activeExperiment, setActiveExperiment] = useState<ActiveExperiment>(null);
 
+  useEffect(() => {
+    if (activeExperiment !== null) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [activeExperiment]);
+
   return (
     <main className="page-shell electricity-hub-shell">
-      <header className="site-header electricity-site-header">
+      <header className={`site-header electricity-site-header ${activeExperiment ? "experiment-focus-header" : ""}`}>
         <button
-          className="mechanics-back-button"
+          className={`mechanics-back-button ${activeExperiment ? "experiment-selection-back" : ""}`}
           type="button"
-          onClick={onBack}
-          aria-label="Fizik deney setlerine dön"
+          onClick={activeExperiment ? () => setActiveExperiment(null) : onBack}
+          aria-label={activeExperiment ? "Elektrik deneylerine dön" : "Fizik deney setlerine dön"}
         >
-          ←
+          <span aria-hidden="true">←</span>
+          {activeExperiment && <b>Deneylere dön</b>}
         </button>
-        <a className="brand" href="#elektrik-ust" aria-label="Fizik Atölyesi Elektrik">
+        <a className="brand" href={activeExperiment ? "#elektrik-deney" : "#elektrik-ust"} aria-label="Fizik Atölyesi Elektrik">
           <span className="brand-mark electricity-brand-mark">FA</span>
           <span>
             <b>FİZİK ATÖLYESİ</b>
             <small>Elektrik deney setleri</small>
           </span>
         </a>
-        <nav aria-label="Elektrik deneyleri">
+        {!activeExperiment && <nav aria-label="Elektrik deneyleri">
           <button type="button" className={activeExperiment === "ohm" ? "active" : ""} onClick={() => setActiveExperiment("ohm")}>Ohm yasası</button>
           <button type="button" className={activeExperiment === "resistor-connections" ? "active" : ""} onClick={() => setActiveExperiment("resistor-connections")}>Direnç bağlantıları</button>
           <button type="button" className={activeExperiment === "magnetic-field" ? "active" : ""} onClick={() => setActiveExperiment("magnetic-field")}>Manyetik alan</button>
-        </nav>
+        </nav>}
         <span className="curriculum-chip">TYMM · 10. Sınıf</span>
       </header>
 
       <div id="elektrik-ust">
-        <section className="electricity-experiment-launcher">
+        {!activeExperiment && <section className="electricity-experiment-launcher">
           <div>
             <span>ELEKTRİK · ETKİLEŞİMLİ DENEYLER</span>
             <h1>Çalışmak istediğin deneyi seç.</h1>
@@ -67,13 +74,15 @@ export default function ElectricityLabHub({ onBack }: { onBack: () => void }) {
               <strong>{activeExperiment === "magnetic-field" ? "Açık" : "Deneyi aç"} →</strong>
             </button>
           </div>
-        </section>
-        {activeExperiment === "ohm" && <OhmLawLab />}
-        {activeExperiment === "resistor-connections" && <ResistorConnectionsLab />}
-        {activeExperiment === "magnetic-field" && <MagneticFieldLab />}
+        </section>}
+        <div id="elektrik-deney" className={activeExperiment ? "focused-experiment-view" : ""}>
+          {activeExperiment === "ohm" && <OhmLawLab />}
+          {activeExperiment === "resistor-connections" && <ResistorConnectionsLab />}
+          {activeExperiment === "magnetic-field" && <MagneticFieldLab />}
+        </div>
       </div>
 
-      <footer>
+      {!activeExperiment && <footer>
         <div className="brand footer-brand">
           <span className="brand-mark electricity-brand-mark">FA</span>
           <span>
@@ -83,7 +92,7 @@ export default function ElectricityLabHub({ onBack }: { onBack: () => void }) {
         </div>
         <p>TYMM elektrik ve manyetizma öğrenme çıktılarıyla uyumludur.</p>
         <a href="#elektrik-ust">Başa dön ↑</a>
-      </footer>
+      </footer>}
     </main>
   );
 }

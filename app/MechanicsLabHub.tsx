@@ -747,25 +747,32 @@ export default function MechanicsLabHub({
 }) {
   const [activeModule, setActiveModule] = useState<ActiveModule>(null);
 
+  useEffect(() => {
+    if (activeModule !== null) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [activeModule]);
+
   return (
     <main className="page-shell mechanics-inner-shell">
-      <header className="site-header">
+      <header className={`site-header ${activeModule ? "experiment-focus-header" : ""}`}>
         <button
-          className="mechanics-back-button"
+          className={`mechanics-back-button ${activeModule ? "experiment-selection-back" : ""}`}
           type="button"
-          onClick={onBack}
-          aria-label="Fizik deney setlerine dön"
+          onClick={activeModule ? () => setActiveModule(null) : onBack}
+          aria-label={activeModule ? "Mekanik deneylerine dön" : "Fizik deney setlerine dön"}
         >
-          ←
+          <span aria-hidden="true">←</span>
+          {activeModule && <b>Deneylere dön</b>}
         </button>
-        <a className="brand" href="#ust" aria-label="Fizik Atölyesi mekanik deneyleri">
+        <a className="brand" href={activeModule ? "#mekanik-deney" : "#ust"} aria-label="Fizik Atölyesi mekanik deneyleri">
           <span className="brand-mark">FA</span>
           <span>
             <b>FİZİK ATÖLYESİ</b>
             <small>Mekanik deney setleri</small>
           </span>
         </a>
-        <nav>
+        {!activeModule && <nav>
           <button
             className={activeModule === "vectors" ? "active" : ""}
             type="button"
@@ -822,7 +829,7 @@ export default function MechanicsLabHub({
           >
             Basit harmonik hareket
           </button>
-        </nav>
+        </nav>}
         <span className="curriculum-chip">
           TYMM ·{" "}
           {activeModule === "collisions" ||
@@ -838,7 +845,7 @@ export default function MechanicsLabHub({
         </span>
       </header>
 
-      <section className="module-launcher" id="ust">
+      {!activeModule && <section className="module-launcher" id="ust">
         <div className="module-launcher-copy">
           <span>MEKANİK · ETKİLEŞİMLİ DENEYLER</span>
           <h1>Çalışmak istediğin modülü seç.</h1>
@@ -993,8 +1000,9 @@ export default function MechanicsLabHub({
             </strong>
           </button>
         </div>
-      </section>
+      </section>}
 
+      <div id="mekanik-deney" className={activeModule ? "focused-experiment-view" : ""}>
       {activeModule === "vectors" && (
         <div className="module-view vector-module-view">
           <VectorWorkspace />
@@ -1014,8 +1022,9 @@ export default function MechanicsLabHub({
       {activeModule === "torque" && <TorqueLab />}
 
       {activeModule === "harmonic-motion" && <HarmonicMotionLab />}
+      </div>
 
-      <footer>
+      {!activeModule && <footer>
         <div className="brand footer-brand">
           <span className="brand-mark">FA</span>
           <span>
@@ -1045,7 +1054,7 @@ export default function MechanicsLabHub({
             "TYMM FİZ.9.2.3 ve FİZ.9.2.4 öğrenme çıktılarıyla uyumludur."}
         </p>
         <a href="#ust">Başa dön ↑</a>
-      </footer>
+      </footer>}
     </main>
   );
 }

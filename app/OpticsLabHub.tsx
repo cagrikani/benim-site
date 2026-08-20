@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ConcaveMirrorLab from "./ConcaveMirrorLab";
 import ConvexMirrorLab from "./ConvexMirrorLab";
 import LensLab from "./LensLab";
@@ -16,41 +16,66 @@ type MirrorType = "plane" | "concave" | "convex" | null;
 export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
   const [activeTopic, setActiveTopic] = useState<OpticsTopic>(null);
   const [activeMirror, setActiveMirror] = useState<MirrorType>(null);
+  const experimentIsOpen =
+    activeTopic === "waves" ||
+    activeTopic === "prism" ||
+    activeTopic === "lenses" ||
+    (activeTopic === "mirrors" && activeMirror !== null);
 
   const openTopic = (topic: Exclude<OpticsTopic, null>) => {
     setActiveTopic(topic);
     if (topic !== "mirrors") setActiveMirror(null);
   };
 
+  useEffect(() => {
+    if (activeTopic !== null) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
+  }, [activeMirror, activeTopic]);
+
+  const goBack = () => {
+    if (activeTopic === "mirrors" && activeMirror !== null) {
+      setActiveMirror(null);
+      return;
+    }
+    if (activeTopic !== null) {
+      setActiveTopic(null);
+      setActiveMirror(null);
+      return;
+    }
+    onBack();
+  };
+
   return (
     <main className="page-shell optics-hub-shell">
-      <header className="site-header optics-site-header">
+      <header className={`site-header optics-site-header ${activeTopic ? "experiment-focus-header" : ""}`}>
         <button
-          className="mechanics-back-button"
+          className={`mechanics-back-button ${activeTopic ? "experiment-selection-back" : ""}`}
           type="button"
-          onClick={onBack}
-          aria-label="Fizik deney setlerine dön"
+          onClick={goBack}
+          aria-label={experimentIsOpen ? "Deney seçimine dön" : activeTopic === "mirrors" ? "Optik alanlarına dön" : "Fizik deney setlerine dön"}
         >
-          ←
+          <span aria-hidden="true">←</span>
+          {activeTopic && <b>{experimentIsOpen ? "Deneylere dön" : "Alanlara dön"}</b>}
         </button>
-        <a className="brand" href="#optik-ust" aria-label="Fizik Atölyesi Dalgalar ve Optik">
+        <a className="brand" href={activeTopic ? "#optik-deney" : "#optik-ust"} aria-label="Fizik Atölyesi Dalgalar ve Optik">
           <span className="brand-mark optics-brand-mark">FA</span>
           <span>
             <b>FİZİK ATÖLYESİ</b>
             <small>Dalgalar - Optik deney setleri</small>
           </span>
         </a>
-        <nav aria-label="Dalgalar ve Optik deneyleri">
+        {!activeTopic && <nav aria-label="Dalgalar ve Optik deneyleri">
           <button className={activeTopic === "waves" ? "active" : ""} type="button" onClick={() => openTopic("waves")}>Dalga leğeni</button>
           <button className={activeTopic === "prism" ? "active" : ""} type="button" onClick={() => openTopic("prism")}>Kırılma ve prizma</button>
           <button className={activeTopic === "mirrors" ? "active" : ""} type="button" onClick={() => openTopic("mirrors")}>Aynalar</button>
           <button className={activeTopic === "lenses" ? "active" : ""} type="button" onClick={() => openTopic("lenses")}>Mercekler</button>
-        </nav>
+        </nav>}
         <span className="curriculum-chip">TYMM · Lise</span>
       </header>
 
       <div id="optik-ust">
-        <section className="optics-topic-launcher">
+        {!activeTopic && <section className="optics-topic-launcher">
           <div className="optics-topic-heading">
             <span>DALGALAR · OPTİK · ETKİLEŞİMLİ DENEYLER</span>
             <h1>Çalışmak istediğin optik alanını seç.</h1>
@@ -79,9 +104,9 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
               <strong>{activeTopic === "lenses" ? "Açık" : "Alanı aç"} →</strong>
             </button>
           </div>
-        </section>
+        </section>}
 
-        {activeTopic === "mirrors" && (
+        {activeTopic === "mirrors" && activeMirror === null && (
           <section className="mirror-type-launcher">
             <div className="mirror-type-heading">
               <span>AYNALAR</span>
@@ -108,15 +133,17 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
           </section>
         )}
 
-        {activeTopic === "waves" && <RippleTankLab />}
-        {activeTopic === "prism" && <PrismLab />}
-        {activeTopic === "lenses" && <LensLab />}
-        {activeTopic === "mirrors" && activeMirror === "plane" && <PlaneMirrorLab />}
-        {activeTopic === "mirrors" && activeMirror === "concave" && <ConcaveMirrorLab />}
-        {activeTopic === "mirrors" && activeMirror === "convex" && <ConvexMirrorLab />}
+        <div id="optik-deney" className={experimentIsOpen ? "focused-experiment-view" : ""}>
+          {activeTopic === "waves" && <RippleTankLab />}
+          {activeTopic === "prism" && <PrismLab />}
+          {activeTopic === "lenses" && <LensLab />}
+          {activeTopic === "mirrors" && activeMirror === "plane" && <PlaneMirrorLab />}
+          {activeTopic === "mirrors" && activeMirror === "concave" && <ConcaveMirrorLab />}
+          {activeTopic === "mirrors" && activeMirror === "convex" && <ConvexMirrorLab />}
+        </div>
       </div>
 
-      <footer>
+      {!activeTopic && <footer>
         <div className="brand footer-brand">
           <span className="brand-mark optics-brand-mark">FA</span>
           <span>
@@ -126,7 +153,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
         </div>
         <p>Dalga leğeni, kırılma, prizma, ayna ve mercek deneyleri TYMM lise düzeyine uygun ideal ölçümlerle hazırlanır.</p>
         <a href="#optik-ust">Başa dön ↑</a>
-      </footer>
+      </footer>}
     </main>
   );
 }

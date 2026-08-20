@@ -1057,6 +1057,48 @@ test("balistik sarkaç modülü PDF düzeneğiyle kurulabilir ve iki yöntemle h
   assert.match(page, /KISA DENEY RAPORU/);
 });
 
+test("deney seçilince kart listesi kapanır ve yalnızca seçilen deney açılır", async () => {
+  const [mechanics, electricity, optics, modern, css] = await Promise.all([
+    readFile(new URL("app/MechanicsLabHub.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/ElectricityLabHub.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/OpticsLabHub.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/ModernPhysicsLabHub.tsx", projectRoot), "utf8"),
+    readFile(new URL("app/globals.css", projectRoot), "utf8"),
+  ]);
+
+  assert.match(mechanics, /!activeModule && <section className="module-launcher"/);
+  assert.match(mechanics, /activeModule \? \(\) => setActiveModule\(null\) : onBack/);
+  assert.match(mechanics, /id="mekanik-deney"/);
+  assert.match(mechanics, /window\.scrollTo\(\{ top: 0, behavior: "auto" \}\)/);
+
+  assert.match(electricity, /!activeExperiment && <section className="electricity-experiment-launcher"/);
+  assert.match(electricity, /activeExperiment \? \(\) => setActiveExperiment\(null\) : onBack/);
+  assert.match(electricity, /id="elektrik-deney"/);
+  assert.match(electricity, /window\.scrollTo\(\{ top: 0, behavior: "auto" \}\)/);
+
+  assert.match(optics, /!activeTopic && <section className="optics-topic-launcher"/);
+  assert.match(optics, /activeTopic === "mirrors" && activeMirror === null/);
+  assert.match(optics, /const experimentIsOpen/);
+  assert.match(optics, /const goBack/);
+  assert.match(optics, /id="optik-deney"/);
+  assert.match(optics, /window\.scrollTo\(\{ top: 0, behavior: "auto" \}\)/);
+
+  assert.match(modern, /useState<"photoelectric" \| "cern" \| null>\(null\)/);
+  assert.match(modern, /!activeExperiment && <div className="modern-experiment-switch"/);
+  assert.match(modern, /activeExperiment === "photoelectric" && <PhotoelectricLab/);
+  assert.match(modern, /activeExperiment === "cern" && <CernAcceleratorLab/);
+  assert.match(modern, /id="modern-deney"/);
+  assert.match(modern, /window\.scrollTo\(\{ top: 0, behavior: "auto" \}\)/);
+
+  for (const hub of [mechanics, electricity, optics, modern]) {
+    assert.match(hub, /Deneylere dön/);
+    assert.match(hub, /focused-experiment-view/);
+  }
+  assert.match(css, /\.site-header\.experiment-focus-header\s*\{/);
+  assert.match(css, /\.mechanics-back-button\.experiment-selection-back\s*\{/);
+  assert.match(css, /\.focused-experiment-view\s*\{/);
+});
+
 test("balistik sarkaç düzeneği fırlatıcı, açıölçer ve yakalayıcıyı gerçekçi sahnede gösterir", async () => {
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
   assert.match(css, /\.ballistic-apparatus\s*\{/);
