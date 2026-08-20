@@ -1509,8 +1509,8 @@ test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => 
   assert.doesNotMatch(page, /className="air-track-bench"/);
   assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.match(page, /EQUIPMENT_PHOTOS/);
-  assert.match(page, /id: "timer",[\s\S]*?x: 93\.5,[\s\S]*?y: 53,/);
-  assert.match(page, /TIMER_CABLE_X = 88\.8/);
+  assert.match(page, /id: "timer",[\s\S]*?x: 83\.5,[\s\S]*?y: 55,/);
+  assert.match(page, /TIMER_CABLE_X = 79\.3/);
   assert.match(page, /EQUIPMENT_GROUPS/);
   assert.match(page, /motion-equipment-pump\.webp/);
   assert.match(page, /motion-equipment-timer\.webp/);
@@ -1537,6 +1537,8 @@ test("hava rayı oranı bozulmadan çizilir ve tüm bağlantılar raya oturur", 
   assert.match(css, /\.gate-base::after\s*\{/);
   assert.match(css, /\.gate-clamp\s*\{/);
   assert.match(css, /\.pulley-clamp\s*\{/);
+  assert.match(css, /\.equipment-pulley\s*\{[^}]*min-width:\s*112px;/s);
+  assert.match(css, /\.pulley-wheel\s*\{[^}]*width:\s*78px;[^}]*repeating-conic-gradient/s);
   assert.match(css, /\.stage-hose::before/);
   assert.match(css, /\.stage-sensor-wire\s*\{/);
   assert.match(css, /\.equipment-gate\.selected\s*\{/);
@@ -1555,7 +1557,7 @@ test("hareket ölçümleri iki eşzamanlı grafik, sade tablo, kronometre ve rap
   const page = await readFile(new URL("app/MotionLab.tsx", projectRoot), "utf8");
   assert.match(page, /Düzgün Doğrusal Hareket/);
   assert.match(page, /Sabit İvmeli Hareket/);
-  assert.match(page, /Kuvvet-İvme İlişkisi/);
+  assert.match(page, /Kütle-İvme İlişkisi/);
   assert.match(page, /Kızağın bayrağının geçiş süreleri/);
   assert.match(page, /Ölçüm sayısı/);
   assert.doesNotMatch(page, /t²ort|tort/);
@@ -1566,6 +1568,13 @@ test("hareket ölçümleri iki eşzamanlı grafik, sade tablo, kronometre ve rap
   assert.match(page, /kind="mass"/);
   assert.match(page, /graph-pulley-lock/);
   assert.match(page, /calculateAcceleration/);
+  assert.doesNotMatch(page, /distance === 50/);
+  assert.match(page, /acceleratedReady \? "force" : "uniform"/);
+  assert.match(page, /accelerated: appendTrial\(current\.accelerated, distance\)/);
+  assert.match(page, /force: appendTrial\(current\.force, hangingMass\)/);
+  assert.match(page, /runProgress/);
+  assert.match(page, /animatedMassPoint/);
+  assert.match(page, /y: calculateAcceleration\(row\.key\)/);
   assert.doesNotMatch(page, /const variation|hata kaynağı/);
   assert.match(page, /stage-run-button/);
   assert.match(page, /Kızağı fırlat ve ölç/);

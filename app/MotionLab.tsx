@@ -132,7 +132,7 @@ const MODE_INFO: Record<
     required: ["rail", "pump", "glider", "gate", "timer", "pulley", "string", "hanger", "mass"],
   },
   force: {
-    label: "Kuvvet-İvme İlişkisi",
+    label: "Kütle-İvme İlişkisi",
     short: "F-a",
     aim: "Asılı kütleyi değiştirerek kuvvet arttığında ivmenin değişimini gözle.",
     required: ["rail", "pump", "glider", "gate", "timer", "pulley", "string", "hanger", "mass"],
@@ -205,8 +205,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "timer",
     label: "Kronometre",
     instruction: "Kronometreyi iki optik kapının kablo çıkışlarının yanına koy.",
-    x: 93.5,
-    y: 53,
+    x: 83.5,
+    y: 55,
     dropRadius: 18,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -215,8 +215,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "pulley",
     label: "Makara",
     instruction: "Makarayı hava rayının sağ ucuna sabitle.",
-    x: 91,
-    y: 40.5,
+    x: 89.8,
+    y: 39.5,
     dropRadius: 12,
     modes: ["accelerated", "force"],
   },
@@ -235,7 +235,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "hanger",
     label: "Kefe",
     instruction: "Kefeyi makaranın altındaki ipin ucuna as.",
-    x: 91.5,
+    x: 89.8,
     y: 62,
     dropRadius: 13,
     modes: ["accelerated", "force"],
@@ -245,7 +245,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "mass",
     label: "Kütle",
     instruction: "Kütleyi asılı kefenin içine bırak.",
-    x: 91.5,
+    x: 89.8,
     y: 72,
     dropRadius: 12,
     modes: ["accelerated", "force"],
@@ -261,7 +261,7 @@ const FIRST_GATE_X = 36;
 const SECOND_GATE_MIN_X = 49.33;
 const SECOND_GATE_MAX_X = 76;
 const GATE_CM_PER_STAGE_PERCENT = 1.5;
-const TIMER_CABLE_X = 88.8;
+const TIMER_CABLE_X = 79.3;
 const RUN_ANIMATION_MS = 1800;
 const LOAD_DROP_PERCENT = 6.3;
 
@@ -288,6 +288,7 @@ export default function MotionLab() {
   const [toolDragKind, setToolDragKind] = useState<EquipmentKind | null>(null);
   const [hangingMass, setHangingMass] = useState(40);
   const [stopwatchMs, setStopwatchMs] = useState(0);
+  const [runProgress, setRunProgress] = useState(0);
   const [visualRunDurationMs, setVisualRunDurationMs] = useState(RUN_ANIMATION_MS);
   const [runCompleted, setRunCompleted] = useState(false);
   const [records, setRecords] = useState<Record<MotionMode, RecordRow[]>>({
@@ -320,7 +321,7 @@ export default function MotionLab() {
   const hangerItem = items.find((item) => item.kind === "hanger");
   const runEndX = (endGateItem?.x ?? 69.33) + 6;
   const stringStartX = (gliderItem?.x ?? 23) + 3;
-  const stringPulleyX = (pulleyItem?.x ?? 91) - 1;
+  const stringPulleyX = pulleyItem?.x ?? 89.8;
   const stringRunStartX = Math.min(runEndX + 2, stringPulleyX - 8);
   const completedLoadDrop = Math.max(0, (hangerItem?.y ?? 62) - 62);
   const hasItem = (kind: EquipmentKind) => items.some((item) => item.kind === kind);
@@ -337,11 +338,7 @@ export default function MotionLab() {
     hasItem("hanger") &&
     hasItem("mass");
   const uniformReady = baseReady && hasItem("launcher") && !acceleratedReady;
-  const mode: MotionMode = acceleratedReady
-    ? distance === 50
-      ? "force"
-      : "accelerated"
-    : "uniform";
+  const mode: MotionMode = acceleratedReady ? "force" : "uniform";
   const connectedStringStyle = {
     left: `${stringStartX}%`,
     width: `${Math.max(8, stringPulleyX - stringStartX)}%`,
@@ -357,14 +354,16 @@ export default function MotionLab() {
   } as CSSProperties;
   const ready = uniformReady || acceleratedReady;
   const detectedSetup = acceleratedReady
-    ? mode === "force"
-      ? "Kuvvet-ivme düzeneği"
-      : "Sabit ivmeli hareket düzeneği"
+    ? "Makara ile ivmeli hareket düzeneği"
     : uniformReady
       ? "Düzgün doğrusal hareket düzeneği"
       : "Düzenek henüz tamamlanmadı";
   const setupPlacedCount = logicalSlots.filter(isSlotComplete).length;
   const modeRows = records[mode];
+  const measurementCount = [...records.uniform, ...records.force].reduce(
+    (total, row) => total + row.trials.length,
+    0,
+  );
   const gateDelaySeconds = (gateX: number) => {
     const travelWidth = Math.max(0.01, runEndX - (gliderItem?.x ?? 18));
     const spatialProgress = Math.max(
@@ -586,6 +585,7 @@ export default function MotionLab() {
     setIsRunning(false);
     setRunCompleted(false);
     setStopwatchMs(0);
+    setRunProgress(0);
     setNotice("Sahne temizlendi. 1. adım: Hava rayını tezgâhtaki uzun hedefe sürükle.");
   };
 
@@ -609,6 +609,7 @@ export default function MotionLab() {
     );
     setRunCompleted(false);
     setStopwatchMs(0);
+    setRunProgress(0);
     setNotice("Kızak ve asılı yük başlangıç konumuna getirildi. Yeni ölçüme hazırsın.");
   };
 
@@ -656,6 +657,7 @@ export default function MotionLab() {
     setVisualRunDurationMs(nextVisualDurationMs);
     setIsRunning(true);
     setStopwatchMs(0);
+    setRunProgress(0);
     setNotice("Kızak hareket ediyor; optik kapılar kronometreyi otomatik kontrol ediyor.");
     if (stopwatchFrameRef.current !== null) {
       cancelAnimationFrame(stopwatchFrameRef.current);
@@ -663,6 +665,7 @@ export default function MotionLab() {
     const animationStartedAt = performance.now();
     const updateStopwatch = (now: number) => {
       const progress = Math.min(1, (now - animationStartedAt) / nextVisualDurationMs);
+      setRunProgress(progress);
       const measuredProgress =
         progress <= firstGateTimeProgress
           ? 0
@@ -693,14 +696,31 @@ export default function MotionLab() {
         }),
       );
       setRecords((current) => {
-        const rows = current[mode];
-        const existing = rows.find((row) => row.key === key);
-        const nextRows = existing
-          ? rows.map((row) =>
-              row.key === key ? { ...row, trials: [...row.trials, milliseconds] } : row,
-            )
-          : [...rows, { key, trials: [milliseconds] }].sort((a, b) => a.key - b.key);
-        return { ...current, [mode]: nextRows };
+        const appendTrial = (rows: RecordRow[], rowKey: number) => {
+          const existing = rows.find((row) => row.key === rowKey);
+          return existing
+            ? rows.map((row) =>
+                row.key === rowKey
+                  ? { ...row, trials: [...row.trials, milliseconds] }
+                  : row,
+              )
+            : [...rows, { key: rowKey, trials: [milliseconds] }].sort(
+                (a, b) => a.key - b.key,
+              );
+        };
+
+        if (acceleratedReady) {
+          return {
+            ...current,
+            accelerated: appendTrial(current.accelerated, distance),
+            force: appendTrial(current.force, hangingMass),
+          };
+        }
+
+        return {
+          ...current,
+          uniform: appendTrial(current.uniform, distance),
+        };
       });
       setIsRunning(false);
       setRunCompleted(true);
@@ -782,9 +802,7 @@ export default function MotionLab() {
             <b>{detectedSetup}</b>
             <p>
               {acceleratedReady
-                ? distance === 50
-                  ? "Kapı aralığı 50 cm olduğu için değişen kütleye bağlı kuvvet-ivme tablosu hazırlanır."
-                  : `${distance} cm kapı aralığında sabit ivmeli hareketin geçiş süresi kaydedilir.`
+                ? `${distance} cm kapı aralığında süre ölçülür; aynı ölçüm konum-zaman ve kütle-ivme grafiklerine anında işlenir.`
                 : uniformReady
                   ? "Kızak fırlatıcıyla sabit hızlı hareket eder; x-t tablosu doldurulur."
                   : "Önce hava rayı, pompa, kızak, iki optik kapı ve kronometreyi yerleştir; ardından hareket sistemini tamamla."}
@@ -1022,7 +1040,11 @@ export default function MotionLab() {
               className="clear-records-button"
               type="button"
               onClick={() => {
-                setRecords((current) => ({ ...current, [mode]: [] }));
+                setRecords((current) =>
+                  acceleratedReady
+                    ? { ...current, accelerated: [], force: [] }
+                    : { ...current, [mode]: [] },
+                );
                 setNotice("Aktif deneyin ölçüm tablosu temizlendi.");
               }}
             >
@@ -1037,18 +1059,25 @@ export default function MotionLab() {
                 <span>DENEY VERİLERİ</span>
                 <h3>Konum-zaman ve kütle-ivme</h3>
               </div>
-              <b>
-                {Object.values(records).reduce(
-                  (total, rows) =>
-                    total + rows.reduce((rowTotal, row) => rowTotal + row.trials.length, 0),
-                  0,
-                )} ölçüm
-              </b>
+              <b>{measurementCount} ölçüm</b>
             </div>
             <MotionTable mode={mode} rows={modeRows} />
             <div className="dual-motion-graphs">
-              <MotionGraph kind="position" records={records} pulleyConnected={hasItem("pulley")} />
-              <MotionGraph kind="mass" records={records} pulleyConnected={hasItem("pulley")} />
+              <MotionGraph kind="position" records={records} pulleyConnected={acceleratedReady} />
+              <MotionGraph
+                kind="mass"
+                records={records}
+                pulleyConnected={acceleratedReady}
+                liveMassPoint={
+                  acceleratedReady && isRunning
+                    ? {
+                        mass: hangingMass,
+                        acceleration: calculateAcceleration(hangingMass),
+                        progress: runProgress,
+                      }
+                    : null
+                }
+              />
             </div>
           </div>
         </div>
@@ -1292,15 +1321,22 @@ function MotionTable({ mode, rows }: { mode: MotionMode; rows: RecordRow[] }) {
 }
 
 type MotionGraphKind = "position" | "mass";
+type LiveMassPoint = {
+  mass: number;
+  acceleration: number;
+  progress: number;
+};
 
 function MotionGraph({
   kind,
   records,
   pulleyConnected,
+  liveMassPoint = null,
 }: {
   kind: MotionGraphKind;
   records: Record<MotionMode, RecordRow[]>;
   pulleyConnected: boolean;
+  liveMassPoint?: LiveMassPoint | null;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const series = useMemo(
@@ -1333,19 +1369,32 @@ function MotionGraph({
           color: "#9b6b92",
           points: records.force
             .filter((row) => row.trials.length)
-            .map((row) => {
-              const avgSeconds = average(row.trials) / 1000;
-              return {
-                x: row.key,
-                y: avgSeconds ? 1 / (avgSeconds * avgSeconds) : 0,
-              };
-            }),
+            .map((row) => ({
+              x: row.key,
+              y: calculateAcceleration(row.key),
+            })),
         },
       ];
     },
     [kind, records],
   );
-  const points = series.flatMap((entry) => entry.points);
+  const points = useMemo(() => series.flatMap((entry) => entry.points), [series]);
+  const animatedMassPoint = useMemo(
+    () =>
+      kind === "mass" && liveMassPoint
+        ? {
+            x: liveMassPoint.mass,
+            y:
+              liveMassPoint.acceleration *
+              Math.max(0, Math.min(1, liveMassPoint.progress)),
+          }
+        : null,
+    [kind, liveMassPoint],
+  );
+  const plottedPoints = useMemo(
+    () => (animatedMassPoint ? [...points, animatedMassPoint] : points),
+    [animatedMassPoint, points],
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1393,15 +1442,15 @@ function MotionGraph({
     context.fillText(yLabel, 0, 0);
     context.restore();
 
-    if (!points.length) {
+    if (!plottedPoints.length) {
       context.fillStyle = "#809596";
       context.font = "600 12px Arial";
       context.fillText("Ölçüm yaptıkça grafik burada oluşacak.", margin.left + 24, 112);
       return;
     }
 
-    const maxX = Math.max(...points.map((point) => point.x), 0.1) * 1.15;
-    const maxY = Math.max(...points.map((point) => point.y), 0.1) * 1.15;
+    const maxX = Math.max(...plottedPoints.map((point) => point.x), 0.1) * 1.15;
+    const maxY = Math.max(...plottedPoints.map((point) => point.y), 0.1) * 1.15;
     const projected = points.map((point) => ({
       x: margin.left + (point.x / maxX) * graphWidth,
       y: height - margin.bottom - (point.y / maxY) * graphHeight,
@@ -1434,12 +1483,42 @@ function MotionGraph({
         context.stroke();
       });
     });
-  }, [kind, points, series]);
+
+    if (animatedMassPoint) {
+      const liveX = margin.left + (animatedMassPoint.x / maxX) * graphWidth;
+      const liveY = height - margin.bottom - (animatedMassPoint.y / maxY) * graphHeight;
+      context.save();
+      context.setLineDash([5, 5]);
+      context.strokeStyle = "rgba(155, 107, 146, 0.5)";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(liveX, height - margin.bottom);
+      context.lineTo(liveX, liveY);
+      context.lineTo(margin.left, liveY);
+      context.stroke();
+      context.setLineDash([]);
+      context.beginPath();
+      context.arc(liveX, liveY, 7, 0, Math.PI * 2);
+      context.fillStyle = "#ef9f28";
+      context.fill();
+      context.strokeStyle = "white";
+      context.lineWidth = 3;
+      context.stroke();
+      context.fillStyle = "#704515";
+      context.font = "800 11px Arial";
+      context.fillText(
+        `${animatedMassPoint.y.toFixed(2)} m/s²`,
+        Math.min(liveX + 10, width - 88),
+        Math.max(liveY - 10, 18),
+      );
+      context.restore();
+    }
+  }, [animatedMassPoint, kind, plottedPoints, points, series]);
 
   return (
     <div className={`motion-graph graph-${kind}`}>
       <div>
-        <span>CANLI GRAFİK</span>
+        <span>{kind === "mass" && liveMassPoint ? "ANLIK ÖLÇÜM" : "CANLI GRAFİK"}</span>
         <b>{kind === "mass" ? "Kütle – ivme" : "Konum – zaman"}</b>
       </div>
       <canvas

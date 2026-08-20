@@ -6977,6 +6977,11 @@ footer > a {
   min-height: 104px;
 }
 
+.slot-pulley {
+  min-width: 112px;
+  min-height: 116px;
+}
+
 @keyframes setup-target-pulse {
   50% {
     box-shadow: 0 0 0 13px rgba(239, 159, 40, 0.04);
@@ -7173,8 +7178,8 @@ footer > a {
 
 .equipment-timer {
   z-index: 6;
-  min-width: 128px;
-  min-height: 94px;
+  min-width: 112px;
+  min-height: 84px;
 }
 
 .equipment-launcher {
@@ -7184,8 +7189,9 @@ footer > a {
 
 .equipment-pulley {
   z-index: 7;
-  min-width: 86px;
-  min-height: 98px;
+  min-width: 112px;
+  min-height: 116px;
+  filter: drop-shadow(0 8px 8px rgba(34, 54, 58, 0.24));
 }
 
 .equipment-string {
@@ -7515,8 +7521,8 @@ footer > a {
 }
 
 .visual-timer {
-  width: 128px;
-  height: 80px;
+  width: 112px;
+  height: 70px;
 }
 
 .timer-case {
@@ -7599,50 +7605,57 @@ footer > a {
 }
 
 .visual-pulley {
-  width: 90px;
-  height: 96px;
+  width: 112px;
+  height: 112px;
 }
 
 .pulley-bracket {
-  right: 7px;
-  bottom: 4px;
-  width: 20px;
-  height: 72px;
-  border: 5px solid #4b6267;
+  right: 2px;
+  bottom: 5px;
+  width: 26px;
+  height: 86px;
+  border: 6px solid #425b61;
   border-left: 0;
-  border-radius: 0 5px 5px 0;
+  border-radius: 0 7px 7px 0;
+  background: linear-gradient(90deg, transparent, rgba(236, 242, 241, 0.45));
 }
 
 .pulley-wheel {
-  top: 5px;
-  left: 9px;
-  width: 64px;
-  height: 64px;
-  border: 7px ridge #687c7f;
+  top: 7px;
+  left: 17px;
+  width: 78px;
+  height: 78px;
+  border: 8px double #60767a;
   border-radius: 50%;
   background:
-    conic-gradient(from 8deg, #dce4e3, #718689, #eef2f1, #6a7f82, #dce4e3),
-    radial-gradient(circle, #dfe6e5 0 22%, #789194 23% 42%, #cbd5d4 43%);
-  box-shadow: 0 5px 8px rgba(42, 59, 61, 0.2);
+    radial-gradient(circle, #324d55 0 9%, #dce5e4 10% 16%, transparent 17%),
+    repeating-conic-gradient(from 0deg, #71878a 0 5deg, transparent 5deg 43deg),
+    radial-gradient(circle, #edf2f1 0 42%, #899b9e 43% 56%, #d8e1e0 57% 68%, #52696e 69%);
+  box-shadow:
+    inset 0 0 0 3px rgba(255, 255, 255, 0.42),
+    0 7px 10px rgba(42, 59, 61, 0.25);
 }
 
 .pulley-hub {
-  top: 31px;
-  left: 35px;
-  width: 12px;
-  height: 12px;
+  top: 39px;
+  left: 49px;
+  width: 14px;
+  height: 14px;
+  border: 3px solid #dce5e3;
   border-radius: 50%;
   background: #294650;
+  box-shadow: 0 0 0 2px #536b70;
 }
 
 .pulley-clamp {
-  right: 3px;
+  right: 0;
   bottom: 0;
-  width: 38px;
-  height: 16px;
+  width: 48px;
+  height: 19px;
   border: 3px solid #3b5359;
-  border-radius: 3px;
-  background: linear-gradient(#cbd5d4, #667b7e);
+  border-radius: 4px;
+  background: linear-gradient(#e1e8e7, #7b8e91 70%, #4b6267);
+  box-shadow: 0 4px 5px rgba(35, 53, 57, 0.2);
 }
 
 .visual-string {
@@ -7762,10 +7775,10 @@ footer > a {
   top: 41.8%;
   z-index: 6;
   height: var(--string-height, 31%);
-  border-top: 3px solid #9c6026;
-  border-right: 3px solid #9c6026;
+  border-top: 4px solid #a86525;
+  border-right: 4px solid #a86525;
   border-radius: 0 18px 0 0;
-  filter: drop-shadow(0 2px 1px rgba(72, 44, 19, 0.18));
+  filter: drop-shadow(0 2px 1px rgba(72, 44, 19, 0.24));
   pointer-events: none;
 }
 
@@ -7775,7 +7788,7 @@ footer > a {
   bottom: -3px;
   width: 11px;
   height: 11px;
-  border: 3px solid #9c6026;
+  border: 4px solid #a86525;
   border-top: 0;
   border-left: 0;
   border-radius: 0 0 8px;
@@ -7785,21 +7798,21 @@ footer > a {
 .stage-string-path > i {
   position: absolute;
   display: block;
-  width: 9px;
-  height: 9px;
-  border: 2px solid #70451e;
+  width: 12px;
+  height: 12px;
+  border: 3px solid #70451e;
   border-radius: 50%;
   background: #d59a55;
 }
 
 .string-glider-knot {
-  top: -6px;
-  left: -5px;
+  top: -8px;
+  left: -7px;
 }
 
 .string-pulley-knot {
-  top: -6px;
-  right: -6px;
+  top: -8px;
+  right: -8px;
 }
 
 .stage-string-path.pulling {
