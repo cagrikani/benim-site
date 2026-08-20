@@ -1475,7 +1475,7 @@ test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => 
   assert.match(page, /tezgâhtaki uzun hedefe sürükle/);
   assert.match(page, /Yanlış konum/);
   assert.match(page, /doğru yuvasına kilitlendi/);
-  assert.match(page, /TÜM MALZEMELER AÇIK/);
+  assert.match(page, /1\. DENEYİN MALZEMELERİ/);
   assert.match(page, /SİSTEMİN TANIDIĞI DÜZENEK/);
   assert.match(page, /acceleratedReady/);
   assert.doesNotMatch(page, /motion-mode-tabs/);
@@ -1501,7 +1501,7 @@ test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => 
   assert.match(page, /runEndX/);
   assert.match(page, /reading-gate/);
   assert.match(page, /stage-string-path/);
-  assert.match(page, /Kızak → makara → kefe/);
+  assert.match(page, /İp kızaktan makaraya uzanır/);
   assert.match(page, /item\.kind !== "string"/);
   assert.match(page, /stopwatchMs/);
   assert.match(page, /timerValue/);
@@ -1510,31 +1510,32 @@ test("hava rayı deneyi sade hedeflere sürüklenerek kurulabilir", async () => 
   assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.match(page, /EQUIPMENT_PHOTOS/);
   assert.match(page, /EQUIPMENT_GROUPS/);
-  assert.match(page, /motion-equipment-air-track\.webp/);
   assert.match(page, /motion-equipment-pump\.webp/);
-  assert.match(page, /motion-equipment-gate\.webp/);
   assert.match(page, /motion-equipment-timer\.webp/);
-  assert.match(page, /motion-equipment-launcher\.webp/);
-  assert.match(page, /motion-equipment-pulley\.webp/);
-  assert.match(page, /motion-equipment-hanger\.webp/);
-  assert.match(page, /motion-equipment-mass\.webp/);
-  assert.match(page, /pulley-sequence-warning/);
-  assert.match(page, /stage-pulley-alert/);
+  assert.doesNotMatch(page, /motion-equipment-air-track\.webp/);
+  assert.doesNotMatch(page, /motion-equipment-gate\.webp/);
+  assert.match(page, /rail-top-ridge/);
+  assert.match(page, /gate-clamp/);
+  assert.match(page, /stage-sensor-wire/);
+  assert.match(page, /pulley-extension-panel/);
   assert.match(page, /1 · MAKARASIZ DENEY/);
   assert.match(page, /2 · AYRI DENEY/);
-  assert.match(page, /Makara sistemi ayrı bir deney düzeneğidir/);
-  assert.match(page, /Sabit hızlı hareket deneyi makarasız yapılır/);
-  assert.match(page, /Makarasız sabit hızlı hareket düzeneğin hazır/);
+  assert.match(page, /Bu parçalar sabit hızlı hareket için gerekli değildir/);
+  assert.match(page, /bağlantılar\s+rayın sağ ucunda otomatik olarak hizalanır/);
   assert.doesNotMatch(page, /gate-end-/);
   assert.doesNotMatch(page, /setDistance/);
 });
 
-test("hava rayı tam genişlikte çizilir ve optik kapı ayakları raya oturur", async () => {
+test("hava rayı oranı bozulmadan çizilir ve tüm bağlantılar raya oturur", async () => {
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
-  assert.match(css, /\.equipment-rail\s*\{[^}]*display:\s*block;[^}]*width:\s*98\.5%;/s);
-  assert.match(css, /\.equipment-rail \.equipment-visual\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0 0 18px;/s);
+  assert.match(css, /\.equipment-rail\s*\{[^}]*display:\s*block;[^}]*width:\s*80%;/s);
+  assert.match(css, /\.equipment-rail \.equipment-visual\s*\{[^}]*position:\s*absolute;[^}]*inset:\s*0 0 12px;/s);
   assert.match(css, /\.equipment-rail\.selected\s*\{[^}]*outline:\s*0;/s);
   assert.match(css, /\.gate-base::after\s*\{/);
+  assert.match(css, /\.gate-clamp\s*\{/);
+  assert.match(css, /\.pulley-clamp\s*\{/);
+  assert.match(css, /\.stage-hose::before/);
+  assert.match(css, /\.stage-sensor-wire\s*\{/);
   assert.match(css, /\.equipment-gate\.selected\s*\{/);
   assert.match(css, /\.air-track-bench\s*\{/);
   assert.match(css, /\.motion-stage-photo\s*\{/);

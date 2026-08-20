@@ -77,15 +77,19 @@ const EQUIPMENT: Array<{
 ];
 
 const EQUIPMENT_PHOTOS: Partial<Record<EquipmentKind, string>> = {
-  rail: "./motion-equipment-air-track.webp",
   pump: "./motion-equipment-pump.webp",
-  gate: "./motion-equipment-gate.webp",
   timer: "./motion-equipment-timer.webp",
-  launcher: "./motion-equipment-launcher.webp",
-  pulley: "./motion-equipment-pulley.webp",
-  hanger: "./motion-equipment-hanger.webp",
-  mass: "./motion-equipment-mass.webp",
 };
+
+const UNIFORM_EQUIPMENT: EquipmentKind[] = [
+  "rail",
+  "pump",
+  "glider",
+  "gate",
+  "timer",
+  "launcher",
+];
+const PULLEY_EQUIPMENT: EquipmentKind[] = ["pulley", "string", "hanger", "mass"];
 
 const EQUIPMENT_GROUPS: Array<{
   id: "uniform" | "pulley";
@@ -141,7 +145,7 @@ const SETUP_SLOTS: SetupSlot[] = [
     label: "Hava rayı",
     instruction: "Hava rayını tezgâhın altındaki uzun yuvaya yerleştir.",
     x: 50,
-    y: 54,
+    y: 47,
     dropRadius: 30,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -150,8 +154,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "pump",
     label: "Hava pompası",
     instruction: "Pompayı rayın hava girişinin yanındaki yuvaya yerleştir.",
-    x: 9,
-    y: 50,
+    x: 6,
+    y: 49,
     dropRadius: 16,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -160,8 +164,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "launcher",
     label: "Fırlatıcı",
     instruction: "Fırlatıcıyı rayın sol başlangıç ucuna tak.",
-    x: 8,
-    y: 47,
+    x: 14,
+    y: 41.5,
     dropRadius: 14,
     modes: ["uniform"],
   },
@@ -170,8 +174,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "glider",
     label: "Kızak",
     instruction: "Kızağı hava rayının sol bölümüne oturt.",
-    x: 17,
-    y: 49,
+    x: 23,
+    y: 42,
     dropRadius: 15,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -180,8 +184,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "gate",
     label: "1. optik kapı",
     instruction: "İlk optik kapıyı raydaki 0 cm başlangıç işaretine tak.",
-    x: 28,
-    y: 44,
+    x: 36,
+    y: 39,
     dropRadius: 14,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -190,8 +194,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "gate",
     label: "2. optik kapı",
     instruction: "İkinci optik kapıyı raya yerleştir; sonra ray boyunca sürükleyerek mesafeyi ayarla.",
-    x: 68,
-    y: 44,
+    x: 69.33,
+    y: 39,
     dropRadius: 24,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -200,8 +204,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "timer",
     label: "Kronometre",
     instruction: "Kronometreyi iki optik kapının kablo çıkışlarının yanına koy.",
-    x: 72,
-    y: 50,
+    x: 83,
+    y: 37,
     dropRadius: 18,
     modes: ["uniform", "accelerated", "force"],
   },
@@ -210,8 +214,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "pulley",
     label: "Makara",
     instruction: "Makarayı hava rayının sağ ucuna sabitle.",
-    x: 93,
-    y: 45,
+    x: 91,
+    y: 40.5,
     dropRadius: 12,
     modes: ["accelerated", "force"],
   },
@@ -220,8 +224,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "string",
     label: "İp",
     instruction: "İpi kızaktan makaraya uzanan bağlantı hattına yerleştir.",
-    x: 54,
-    y: 54,
+    x: 57,
+    y: 42.5,
     dropRadius: 32,
     modes: ["accelerated", "force"],
   },
@@ -230,8 +234,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "hanger",
     label: "Kefe",
     instruction: "Kefeyi makaranın altındaki ipin ucuna as.",
-    x: 93,
-    y: 68,
+    x: 91.5,
+    y: 62,
     dropRadius: 13,
     modes: ["accelerated", "force"],
   },
@@ -240,8 +244,8 @@ const SETUP_SLOTS: SetupSlot[] = [
     kind: "mass",
     label: "Kütle",
     instruction: "Kütleyi asılı kefenin içine bırak.",
-    x: 93,
-    y: 78,
+    x: 91.5,
+    y: 72,
     dropRadius: 12,
     modes: ["accelerated", "force"],
   },
@@ -252,10 +256,11 @@ const MASSES = [20, 30, 40, 50, 60];
 const GLIDER_MASS = 0.2;
 const HANGER_MASS = 0.005;
 const GRAVITY = 9.81;
-const FIRST_GATE_X = 28;
-const SECOND_GATE_MIN_X = 40;
-const SECOND_GATE_MAX_X = 84;
-const GATE_CM_PER_STAGE_PERCENT = 1.25;
+const FIRST_GATE_X = 36;
+const SECOND_GATE_MIN_X = 49.33;
+const SECOND_GATE_MAX_X = 76;
+const GATE_CM_PER_STAGE_PERCENT = 1.5;
+const TIMER_CABLE_X = 77;
 const RUN_ANIMATION_MS = 1800;
 const LOAD_DROP_PERCENT = 6.3;
 
@@ -295,9 +300,11 @@ export default function MotionLab() {
   );
 
   const activeSlots = SETUP_SLOTS;
-  const logicalSlots = activeSlots;
   const completedSlotIds = new Set(items.map((item) => item.slotId));
   const isSlotComplete = (slot: SetupSlot) => completedSlotIds.has(slot.id);
+  const pulleySetupStarted = items.some((item) => PULLEY_EQUIPMENT.includes(item.kind));
+  const uniformSlots = activeSlots.filter((slot) => UNIFORM_EQUIPMENT.includes(slot.kind));
+  const logicalSlots = pulleySetupStarted ? activeSlots : uniformSlots;
   const nextSlot = logicalSlots.find((slot) => !isSlotComplete(slot));
   const currentStepNumber = nextSlot
     ? logicalSlots.findIndex((slot) => slot.id === nextSlot.id) + 1
@@ -310,11 +317,11 @@ export default function MotionLab() {
   const gliderItem = items.find((item) => item.kind === "glider");
   const pulleyItem = items.find((item) => item.kind === "pulley");
   const hangerItem = items.find((item) => item.kind === "hanger");
-  const runEndX = (endGateItem?.x ?? 68) + 6;
-  const stringStartX = (gliderItem?.x ?? 17) + 3;
-  const stringPulleyX = (pulleyItem?.x ?? 93) - 1;
+  const runEndX = (endGateItem?.x ?? 69.33) + 6;
+  const stringStartX = (gliderItem?.x ?? 23) + 3;
+  const stringPulleyX = (pulleyItem?.x ?? 91) - 1;
   const stringRunStartX = Math.min(runEndX + 2, stringPulleyX - 8);
-  const completedLoadDrop = Math.max(0, (hangerItem?.y ?? 68) - 68);
+  const completedLoadDrop = Math.max(0, (hangerItem?.y ?? 62) - 62);
   const hasItem = (kind: EquipmentKind) => items.some((item) => item.kind === kind);
   const baseReady =
     hasItem("rail") &&
@@ -339,8 +346,8 @@ export default function MotionLab() {
     width: `${Math.max(8, stringPulleyX - stringStartX)}%`,
     "--string-run-left": `${stringRunStartX}%`,
     "--string-run-width": `${Math.max(8, stringPulleyX - stringRunStartX)}%`,
-    "--string-height": `calc(31% + ${completedLoadDrop}%)`,
-    "--string-run-height": `calc(31% + ${LOAD_DROP_PERCENT}%)`,
+    "--string-height": `calc(10% + ${completedLoadDrop}%)`,
+    "--string-run-height": `calc(10% + ${LOAD_DROP_PERCENT}%)`,
     "--run-duration": `${visualRunDurationMs}ms`,
     "--run-easing":
       mode === "uniform"
@@ -403,7 +410,8 @@ export default function MotionLab() {
     };
     setItems((current) => [...current, next]);
     setSelectedId(next.id);
-    const followingSlot = logicalSlots.find(
+    const workflowSlots = PULLEY_EQUIPMENT.includes(kind) ? activeSlots : logicalSlots;
+    const followingSlot = workflowSlots.find(
       (candidate) =>
         candidate.id !== slot.id &&
         !isSlotComplete(candidate),
@@ -501,7 +509,7 @@ export default function MotionLab() {
         ? Math.max(SECOND_GATE_MIN_X, Math.min(SECOND_GATE_MAX_X, nextX))
         : Math.max(3, Math.min(94, nextX));
     drag.currentY =
-      drag.originalSlotId === "gate-2" ? 49 : Math.max(4, Math.min(91, nextY));
+      drag.originalSlotId === "gate-2" ? 39 : Math.max(4, Math.min(91, nextY));
     setItems((current) =>
       current.map((item) =>
         item.id === drag.id
@@ -702,6 +710,58 @@ export default function MotionLab() {
     stopwatchFrameRef.current = requestAnimationFrame(updateStopwatch);
   };
 
+  const renderEquipmentGroup = (group: (typeof EQUIPMENT_GROUPS)[number]) => (
+    <section
+      className={`equipment-group equipment-group-${group.id}`}
+      key={group.id}
+    >
+      <header>
+        <span>{group.eyebrow}</span>
+        <b>{group.title}</b>
+        <small>{group.note}</small>
+      </header>
+      <div className="equipment-list">
+        {EQUIPMENT.filter((item) => group.kinds.includes(item.kind)).map((item) => {
+          const neededSlots = activeSlots.filter((slot) => slot.kind === item.kind);
+          const placedCount = items.filter((placed) => placed.kind === item.kind).length;
+          const isNeeded = neededSlots.length > 0;
+          const neededCount = item.kind === "gate" ? 2 : 1;
+          const isComplete = isNeeded && placedCount >= neededCount;
+          const isNext = nextSlot?.kind === item.kind;
+          return (
+            <button
+              className={`${isNext ? "next-equipment" : ""} ${isComplete ? "equipment-complete" : ""}`}
+              type="button"
+              draggable={isNeeded && !isComplete}
+              disabled={!isNeeded || isComplete}
+              key={item.kind}
+              onDragStart={(event) => {
+                event.dataTransfer.setData("application/x-spektrum-equipment", item.kind);
+                event.dataTransfer.effectAllowed = "copy";
+                setToolDragKind(item.kind);
+              }}
+              onDragEnd={() => setToolDragKind(null)}
+              onClick={() => addByClick(item.kind)}
+            >
+              <EquipmentVisual kind={item.kind} mini />
+              <div>
+                <b>{item.label}</b>
+                <small>
+                  {!isNeeded
+                    ? "Bu düzende kullanılmaz"
+                    : isComplete
+                      ? "Doğru yerleştirildi"
+                      : `${placedCount}/${neededCount} · ${item.description}`}
+                </small>
+              </div>
+              <i>{isComplete ? "✓" : isNext ? currentStepNumber : "+"}</i>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+
   return (
     <section className="motion-lab-section" id="hareket-laboratuvari">
       <div className="motion-lab-inner">
@@ -750,87 +810,15 @@ export default function MotionLab() {
           </div>
         </div>
 
-        <div className={`pulley-sequence-warning ${hasItem("pulley") ? "pulley-added" : ""}`}>
-          <span>{hasItem("pulley") ? "✓" : "!"}</span>
-          <div>
-            <b>Makara sistemi ayrı bir deney düzeneğidir.</b>
-            <p>
-              Sabit hızlı hareket deneyi makarasız yapılır. İvmeli hareketi araştırmak
-              istediğinde ikinci malzeme grubundaki makara, ip, kefe ve kütleyi ekle.
-            </p>
-          </div>
-        </div>
-
         <div className="motion-builder">
           <aside className="equipment-panel">
             <div className="equipment-head">
-              <span>TÜM MALZEMELER AÇIK</span>
-              <h3>İki deney için araç kutusu</h3>
-              <p>Önce üst gruptaki makarasız deneyi kur; ikinci deneyin makara parçaları altta ayrı gösterilir.</p>
+              <span>1. DENEYİN MALZEMELERİ</span>
+              <h3>Makarasız sabit hızlı hareket</h3>
+              <p>Bu altı araç ana düzeneği kurmak için yeterlidir. Parçalar sahnede birbirinden ayrı bağlantılara oturur.</p>
             </div>
             <div className="equipment-groups">
-              {EQUIPMENT_GROUPS.map((group) => (
-                <section
-                  className={`equipment-group equipment-group-${group.id}`}
-                  key={group.id}
-                >
-                  <header>
-                    <span>{group.eyebrow}</span>
-                    <b>{group.title}</b>
-                    <small>{group.note}</small>
-                  </header>
-                  <div className="equipment-list">
-                    {EQUIPMENT.filter((item) => group.kinds.includes(item.kind)).map(
-                      (item) => {
-                        const neededSlots = activeSlots.filter(
-                          (slot) => slot.kind === item.kind,
-                        );
-                        const placedCount = items.filter(
-                          (placed) => placed.kind === item.kind,
-                        ).length;
-                        const isNeeded = neededSlots.length > 0;
-                        const neededCount = item.kind === "gate" ? 2 : 1;
-                        const isComplete = isNeeded && placedCount >= neededCount;
-                        const isNext = nextSlot?.kind === item.kind;
-                        return (
-                          <button
-                            className={`${isNext ? "next-equipment" : ""} ${isComplete ? "equipment-complete" : ""}`}
-                            type="button"
-                            draggable={isNeeded && !isComplete}
-                            disabled={!isNeeded || isComplete}
-                            key={item.kind}
-                            onDragStart={(event) => {
-                              event.dataTransfer.setData(
-                                "application/x-spektrum-equipment",
-                                item.kind,
-                              );
-                              event.dataTransfer.effectAllowed = "copy";
-                              setToolDragKind(item.kind);
-                            }}
-                            onDragEnd={() => setToolDragKind(null)}
-                            onClick={() => addByClick(item.kind)}
-                          >
-                            <EquipmentVisual kind={item.kind} mini />
-                            <div>
-                              <b>{item.label}</b>
-                              <small>
-                                {!isNeeded
-                                  ? "Bu düzende kullanılmaz"
-                                  : isComplete
-                                    ? "Doğru yerleştirildi"
-                                    : `${placedCount}/${neededCount} · ${item.description}`}
-                              </small>
-                            </div>
-                            <i>
-                              {isComplete ? "✓" : isNext ? currentStepNumber : "+"}
-                            </i>
-                          </button>
-                        );
-                      },
-                    )}
-                  </div>
-                </section>
-              ))}
+              {renderEquipmentGroup(EQUIPMENT_GROUPS[0])}
             </div>
           </aside>
 
@@ -891,15 +879,6 @@ export default function MotionLab() {
                   <small>Parçalar raydaki gerçek bağlantı noktalarına oturur.</small>
                 </div>
               </div>
-              {uniformReady && !hasItem("pulley") && (
-                <div className="stage-pulley-alert" role="alert">
-                  <span>!</span>
-                  <div>
-                    <b>Makarasız sabit hızlı hareket düzeneğin hazır.</b>
-                    <small>Ayrı ivmeli hareket deneyi için aşağıdaki makara grubunu kullanabilirsin.</small>
-                  </div>
-                </div>
-              )}
               {activeSlots
                 .filter((slot) => {
                   if (completedSlotIds.has(slot.id)) return false;
@@ -923,9 +902,17 @@ export default function MotionLab() {
               {items.some((item) => item.kind === "pump") && items.some((item) => item.kind === "rail") && (
                 <div className="stage-hose" aria-hidden="true" />
               )}
-              {gateCount === 2 && items.some((item) => item.kind === "timer") && (
-                <div className="stage-cables" aria-hidden="true" />
-              )}
+              {hasItem("timer") && items.filter((item) => item.kind === "gate").map((gate, index) => (
+                <div
+                  className={`stage-sensor-wire stage-sensor-wire-${index + 1}`}
+                  style={{
+                    left: `${gate.x}%`,
+                    width: `${Math.max(3, TIMER_CABLE_X - gate.x)}%`,
+                  }}
+                  aria-hidden="true"
+                  key={`wire-${gate.id}`}
+                />
+              ))}
               {hasItem("string") && gliderItem && pulleyItem && (
                 <div
                   className={`stage-string-path ${isRunning ? "pulling" : ""}`}
@@ -934,7 +921,6 @@ export default function MotionLab() {
                 >
                   <i className="string-glider-knot" />
                   <i className="string-pulley-knot" />
-                  <span>Kızak → makara → kefe</span>
                 </div>
               )}
               {items.filter((item) => item.kind !== "string").map((item) => (
@@ -976,6 +962,19 @@ export default function MotionLab() {
               </p>
             </div>
           </div>
+
+          <section className={`pulley-extension-panel ${pulleySetupStarted ? "is-active" : ""}`}>
+            <div className="pulley-extension-copy">
+              <span>{pulleySetupStarted ? "2. DENEY KURULUYOR" : "2. AYRI DENEY"}</span>
+              <h3>Makara ile ivmeli hareket</h3>
+              <p>
+                Bu parçalar sabit hızlı hareket için gerekli değildir. İkinci deneye
+                geçmek istediğinde makara, ip, kefe ve kütleyi buradan ekle; bağlantılar
+                rayın sağ ucunda otomatik olarak hizalanır.
+              </p>
+            </div>
+            {renderEquipmentGroup(EQUIPMENT_GROUPS[1])}
+          </section>
         </div>
 
         <div className="measurement-workspace">
@@ -1195,14 +1194,69 @@ function EquipmentVisual({
             <i className="photo-timer-reading">{timerValue.toFixed(3)}</i>
           )}
         </>
-      ) : kind === "glider" ? (
-        <>
-          <i className="glider-saddle" />
-          <i className="glider-body" />
-          <i className="glider-flag" />
-        </>
       ) : (
-        <i className="string-line" />
+        <>
+          {kind === "rail" && (
+            <>
+              <i className="rail-beam" />
+              <i className="rail-top-ridge" />
+              <i className="rail-holes" />
+              <i className="rail-ruler" />
+              <i className="rail-leg rail-leg-left" />
+              <i className="rail-leg rail-leg-right" />
+              <i className="rail-inlet" />
+              <i className="rail-endcap rail-endcap-left" />
+              <i className="rail-endcap rail-endcap-right" />
+            </>
+          )}
+          {kind === "glider" && (
+            <>
+              <i className="glider-saddle" />
+              <i className="glider-body" />
+              <i className="glider-flag" />
+            </>
+          )}
+          {kind === "gate" && (
+            <>
+              <i className="gate-base" />
+              <i className="gate-post gate-post-left" />
+              <i className="gate-post gate-post-right" />
+              <i className="gate-beam" />
+              <i className="gate-light" />
+              <i className="gate-clamp" />
+            </>
+          )}
+          {kind === "launcher" && (
+            <>
+              <i className="launcher-base" />
+              <i className="launcher-spring" />
+              <i className="launcher-stop" />
+            </>
+          )}
+          {kind === "pulley" && (
+            <>
+              <i className="pulley-bracket" />
+              <i className="pulley-wheel" />
+              <i className="pulley-hub" />
+              <i className="pulley-clamp" />
+            </>
+          )}
+          {kind === "string" && <i className="string-line" />}
+          {kind === "hanger" && (
+            <>
+              <i className="hanger-cord" />
+              <i className="hanger-hook" />
+              <i className="hanger-cup" />
+            </>
+          )}
+          {kind === "mass" && (
+            <>
+              <i className="mass-handle" />
+              <i className="mass-body" />
+              <i className="mass-mark">g</i>
+            </>
+          )}
+        </>
       )}
     </span>
   );
