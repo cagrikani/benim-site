@@ -116,6 +116,208 @@ function EquipmentIcon({ kind }: { kind: SetupKind }) {
   );
 }
 
+function BallisticMotionOverlay({
+  launcherAngle,
+  phase,
+  progress,
+  displayAngle,
+  maxAngle,
+}: {
+  launcherAngle: number;
+  phase: Phase;
+  progress: number;
+  displayAngle: number;
+  maxAngle: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const draw = () => {
+      const bounds = canvas.getBoundingClientRect();
+      const width = Math.max(1, bounds.width);
+      const height = Math.max(1, bounds.height);
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      context.clearRect(0, 0, width, height);
+      context.lineCap = "round";
+      context.lineJoin = "round";
+
+      const compact = width < 700;
+      const muzzle = { x: width * (compact ? 0.31 : 0.405), y: height * 0.48 };
+      const target = { x: width * (compact ? 0.545 : 0.685), y: height * 0.48 };
+      const pivot = { x: target.x, y: height * (compact ? 0.16 : 0.12) };
+      const aligned = Math.abs(launcherAngle) < 0.01;
+      const guideColor = aligned ? "#087f72" : "#cf5b3c";
+
+      const label = (text: string, x: number, y: number, color = "#173f59") => {
+        context.save();
+        context.font = `800 ${compact ? 9 : 11}px Arial`;
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.lineWidth = 4;
+        context.strokeStyle = "rgba(249,252,251,.94)";
+        context.strokeText(text, x, y);
+        context.fillStyle = color;
+        context.fillText(text, x, y);
+        context.restore();
+      };
+
+      const arrow = (
+        fromX: number,
+        fromY: number,
+        toX: number,
+        toY: number,
+        color: string,
+      ) => {
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+        context.save();
+        context.strokeStyle = color;
+        context.fillStyle = color;
+        context.lineWidth = 1.35;
+        context.beginPath();
+        context.moveTo(fromX, fromY);
+        context.lineTo(toX, toY);
+        context.stroke();
+        context.beginPath();
+        context.moveTo(toX, toY);
+        context.lineTo(toX - 9 * Math.cos(angle - Math.PI / 6), toY - 9 * Math.sin(angle - Math.PI / 6));
+        context.lineTo(toX - 9 * Math.cos(angle + Math.PI / 6), toY - 9 * Math.sin(angle + Math.PI / 6));
+        context.closePath();
+        context.fill();
+        context.restore();
+      };
+
+      if (phase === "Kurulum") {
+        const radians = (-launcherAngle * Math.PI) / 180;
+        const guideEndY = muzzle.y + Math.tan(radians) * (target.x - muzzle.x);
+        context.save();
+        context.setLineDash([7, 7]);
+        context.strokeStyle = guideColor;
+        context.lineWidth = 1.25;
+        context.beginPath();
+        context.moveTo(muzzle.x, muzzle.y);
+        context.lineTo(target.x, guideEndY);
+        context.stroke();
+        context.setLineDash([]);
+        context.strokeStyle = "rgba(23,63,89,.52)";
+        context.beginPath();
+        context.arc(target.x, target.y, compact ? 10 : 13, 0, Math.PI * 2);
+        context.moveTo(target.x - 17, target.y);
+        context.lineTo(target.x + 17, target.y);
+        context.moveTo(target.x, target.y - 17);
+        context.lineTo(target.x, target.y + 17);
+        context.stroke();
+        context.restore();
+        label(
+          `namlu doğrultusu  α = ${launcherAngle.toLocaleString("tr-TR", {
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1,
+          })}°`,
+          (muzzle.x + target.x) / 2,
+          Math.min(muzzle.y, guideEndY) - 21,
+          guideColor,
+        );
+        label("yakalayıcı merkezi", target.x, target.y + 27);
+        return;
+      }
+
+      context.save();
+      context.strokeStyle = "rgba(8,127,114,.42)";
+      context.setLineDash([5, 6]);
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(muzzle.x, muzzle.y);
+      context.lineTo(target.x, target.y);
+      context.stroke();
+      context.restore();
+
+      if (progress < 0.34) {
+        const travel = Math.min(progress / 0.24, 1);
+        const movingX = muzzle.x + (target.x - muzzle.x) * travel;
+        arrow(Math.max(muzzle.x, movingX - width * 0.105), target.y - 18, movingX, target.y - 18, "#d78416");
+        label("bilyenin momentumu", (muzzle.x + movingX) / 2, target.y - 34, "#a45d09");
+      }
+
+      if (progress >= 0.24) {
+        context.save();
+        context.strokeStyle = "#d78416";
+        context.lineWidth = 1.4;
+        context.beginPath();
+        context.arc(target.x, target.y, 16, 0, Math.PI * 2);
+        context.stroke();
+        context.restore();
+        label("bilye yakalayıcıda kaldı", target.x, target.y + 31, "#9a5a14");
+      }
+
+      if (progress >= 0.34) {
+        const shownAngle = phase === "Ölçüm tamam" ? maxAngle : displayAngle;
+        const angleRadians = (shownAngle * Math.PI) / 180;
+        const radius = target.y - pivot.y;
+        const catcher = {
+          x: pivot.x + radius * Math.sin(angleRadians),
+          y: pivot.y + radius * Math.cos(angleRadians),
+        };
+
+        context.save();
+        context.strokeStyle = "rgba(8,127,114,.7)";
+        context.lineWidth = 1.2;
+        context.beginPath();
+        context.arc(pivot.x, pivot.y, radius, Math.PI / 2 - angleRadians, Math.PI / 2);
+        context.stroke();
+        context.strokeStyle = "rgba(23,63,89,.55)";
+        context.setLineDash([4, 5]);
+        context.beginPath();
+        context.moveTo(pivot.x, pivot.y);
+        context.lineTo(pivot.x, target.y);
+        context.stroke();
+        context.setLineDash([]);
+        context.beginPath();
+        context.moveTo(catcher.x + 23, catcher.y);
+        context.lineTo(catcher.x + 23, target.y);
+        context.moveTo(catcher.x + 18, catcher.y);
+        context.lineTo(catcher.x + 28, catcher.y);
+        context.moveTo(catcher.x + 18, target.y);
+        context.lineTo(catcher.x + 28, target.y);
+        context.stroke();
+        context.restore();
+
+        const vectorLength = compact ? 52 : 72;
+        arrow(
+          catcher.x,
+          catcher.y - 16,
+          catcher.x + vectorLength * Math.cos(angleRadians),
+          catcher.y - 16 - vectorLength * Math.sin(angleRadians),
+          "#087f72",
+        );
+        label("birleşik hareket", catcher.x + vectorLength * 0.45, catcher.y - 42, "#087f72");
+        label(`φ = ${format(maxAngle, 1)}°`, pivot.x + 42, pivot.y + 35, "#173f59");
+        label("Δh", catcher.x + 38, (catcher.y + target.y) / 2, "#173f59");
+      }
+    };
+
+    draw();
+    const observer = new ResizeObserver(draw);
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [launcherAngle, phase, progress, displayAngle, maxAngle]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="ballistic-motion-overlay"
+      role="img"
+      aria-label="Bilyenin atış doğrultusu, çarpışma noktası ve sarkacın yükselme hareketi"
+    />
+  );
+}
+
 function MiniGraph({
   title,
   records,
@@ -223,6 +425,7 @@ export default function BallisticPendulumLab() {
   const pendingTrialRef = useRef<Trial | null>(null);
   const [installed, setInstalled] = useState<SetupKind[]>([]);
   const [selectedBall, setSelectedBall] = useState<BallKind>("small-steel");
+  const [launcherAngle, setLauncherAngle] = useState(0);
   const [loadedBall, setLoadedBall] = useState<BallKind | null>(null);
   const [centered, setCentered] = useState(false);
   const [level, setLevel] = useState(1);
@@ -306,6 +509,8 @@ export default function BallisticPendulumLab() {
     setSensorDisplay("0,00");
     setDisplayAngle(0);
     setMaxAngle(0);
+    setPhase("Kurulum");
+    setProgress(0);
     setShowAnalysis(false);
     setRunState("ready");
     setMessage("Bilyeyi namlu eksenine ortalamak için “Bilyeyi merkezle”ye bas.");
@@ -323,6 +528,10 @@ export default function BallisticPendulumLab() {
   const cockLauncher = () => {
     if (!centered || runState === "running") {
       setMessage("Fırlatıcıyı kurmadan önce bilyeyi merkezle.");
+      return;
+    }
+    if (Math.abs(launcherAngle) > 0.01) {
+      setMessage("Namlu doğrultusunu yakalayıcı merkeziyle aynı hizada, 0° yap.");
       return;
     }
     setCocked(true);
@@ -379,6 +588,10 @@ export default function BallisticPendulumLab() {
     }
     if (!centered) {
       setMessage("Bilye merkezde değil. Manyetik tutucuda namlu eksenine hizala.");
+      return;
+    }
+    if (Math.abs(launcherAngle) > 0.01) {
+      setMessage("Atış doğrultusu yakalayıcıdan geçmiyor. Namlu açısını 0° yap.");
       return;
     }
     if (!cocked) {
@@ -458,6 +671,7 @@ export default function BallisticPendulumLab() {
     pendingTrialRef.current = null;
     setInstalled([]);
     setLoadedBall(null);
+    setLauncherAngle(0);
     setCentered(false);
     setCocked(false);
     setIndicatorZeroed(false);
@@ -472,11 +686,14 @@ export default function BallisticPendulumLab() {
   };
 
   const resetForNextShot = () => {
+    pendingTrialRef.current = null;
     setLoadedBall(null);
+    setLauncherAngle(0);
     setCentered(false);
     setCocked(false);
     setIndicatorZeroed(false);
     setRunState("ready");
+    setPhase("Kurulum");
     setProgress(0);
     setDisplayAngle(0);
     setMaxAngle(0);
@@ -486,8 +703,7 @@ export default function BallisticPendulumLab() {
   };
 
   const projectileVisible = runState === "running" && progress < 0.34;
-  const projectileX =
-    progress < 0.24 ? 21 + (progress / 0.24) * 35 : 56;
+  const projectileTravel = progress < 0.24 ? progress / 0.24 : 1;
   const pendulumStyle = {
     "--pendulum-angle": `${-displayAngle}deg`,
     "--pendulum-length": `${Math.round(185 + (length - 0.25) * 360)}px`,
@@ -495,8 +711,12 @@ export default function BallisticPendulumLab() {
   const indicatorStyle = {
     "--indicator-angle": `${-maxAngle}deg`,
   } as CSSProperties;
+  const launcherStyle = {
+    "--launcher-angle": `${-launcherAngle}deg`,
+  } as CSSProperties;
+  const launcherAligned = Math.abs(launcherAngle) < 0.01;
   const apparatusReadyForShot =
-    setupComplete && loadedBall && centered && cocked && indicatorZeroed;
+    setupComplete && loadedBall && centered && cocked && indicatorZeroed && launcherAligned;
 
   return (
     <section className="ballistic-lab-section" id="balistik-sarkac">
@@ -614,7 +834,10 @@ export default function BallisticPendulumLab() {
           )}
 
           {installed.includes("launcher") && (
-            <div className={`ballistic-launcher ${cocked ? "cocked" : ""}`}>
+            <div
+              className={`ballistic-launcher ${cocked ? "cocked" : ""}`}
+              style={launcherStyle}
+            >
               <i className="launcher-body" />
               <i className="launcher-barrel" />
               <i className="launcher-muzzle" />
@@ -630,20 +853,35 @@ export default function BallisticPendulumLab() {
             </div>
           )}
 
+          {installed.includes("frame") && installed.includes("launcher") && (
+            <span className="ballistic-launcher-mount" aria-hidden="true">
+              <i />
+              <i />
+            </span>
+          )}
+
           {installed.includes("speed-sensor") && (
-            <div className={`ballistic-speed-sensor ${runState === "running" ? "active" : ""}`}>
-              <i className="sensor-post" />
-              <i className="sensor-gate" />
-              <span>{sensorDisplay}</span>
-              <small>m/s</small>
-            </div>
+            <>
+              <div className={`ballistic-speed-sensor ${runState === "running" ? "active" : ""}`}>
+                <i className="sensor-post" />
+                <i className="sensor-gate" />
+                <span>{sensorDisplay}</span>
+                <small>m/s</small>
+              </div>
+              <span className="ballistic-sensor-cable" aria-hidden="true">
+                <i />
+                <i />
+              </span>
+            </>
           )}
 
           {projectileVisible && loadedBall && (
-            <i
-              className={`ballistic-projectile ball-${loadedBall}`}
-              style={{ left: `${projectileX}%` }}
-            />
+            <span className="ballistic-projectile-path" aria-hidden="true">
+              <i
+                className={`ballistic-projectile ball-${loadedBall}`}
+                style={{ left: `${projectileTravel * 100}%` }}
+              />
+            </span>
           )}
 
           {installed.includes("protractor") && (
@@ -711,6 +949,16 @@ export default function BallisticPendulumLab() {
             </div>
           )}
 
+          {installed.includes("launcher") && installed.includes("pendulum") && (
+            <BallisticMotionOverlay
+              launcherAngle={launcherAngle}
+              phase={phase}
+              progress={progress}
+              displayAngle={displayAngle}
+              maxAngle={maxAngle}
+            />
+          )}
+
           {!setupComplete && (
             <div className="ballistic-drop-guide">
               <EquipmentIcon kind={nextSetup ?? "frame"} />
@@ -765,6 +1013,33 @@ export default function BallisticPendulumLab() {
               </button>
             ))}
           </div>
+          <label className="ballistic-aim-control">
+            <span>
+              Namlu doğrultusu <b>α = {format(launcherAngle, 1)}°</b>
+            </span>
+            <input
+              type="range"
+              min="-4"
+              max="4"
+              step="0.5"
+              value={launcherAngle}
+              onChange={(event) => {
+                const nextAngle = Number(event.target.value);
+                setLauncherAngle(nextAngle);
+                setCocked(false);
+                setMessage(
+                  Math.abs(nextAngle) < 0.01
+                    ? "Namlu, hız sensörü ve yakalayıcı merkezi aynı doğrultuda."
+                    : "Kesikli doğrultuyu yakalayıcı merkezine getir; geçerli atış açısı 0°.",
+                );
+              }}
+              disabled={!setupComplete || runState === "running"}
+              aria-label="Namlu açısı"
+            />
+            <small className={launcherAligned ? "aligned" : "misaligned"}>
+              {launcherAligned ? "✓ Yatay eksen hizalı" : "Yakalayıcı merkeziyle hizala"}
+            </small>
+          </label>
           <button
             className="ballistic-primary-action"
             type="button"
@@ -912,14 +1187,14 @@ export default function BallisticPendulumLab() {
         <section className="ballistic-analysis-prompt">
           <div>
             <small>ÖLÇÜM TAMAMLANDI</small>
-            <h3>Sonucu fiziksel aşamalarla incele</h3>
+            <h3>Sonucu üç sade aşamada incele</h3>
             <p>
-              Çarpışma ile yükselmenin aynı korunum yasasıyla açıklanıp
-              açıklanamayacağını işlem basamaklarında gör.
+              Ölçülen açının bilyenin ilk hızına nasıl ulaştırdığını, düzenekteki
+              hareket sırasıyla gör.
             </p>
           </div>
           <button type="button" onClick={() => setShowAnalysis((current) => !current)}>
-            {showAnalysis ? "İşlemsel analizi kapat" : "İşlemsel analizi göster"} →
+            {showAnalysis ? "Sade analizi kapat" : "Sade analizi göster"} →
           </button>
         </section>
       )}
@@ -928,8 +1203,8 @@ export default function BallisticPendulumLab() {
         <section className="ballistic-analysis">
           <div className="ballistic-analysis-heading">
             <div>
-              <small>SON DENEME · TAM ANALİZ</small>
-              <h3>Hızın sarkaç verisinden elde edilmesi</h3>
+              <small>SON DENEME · HAREKETİN İZİ</small>
+              <h3>Açıdan ilk hıza</h3>
             </div>
             <span>
               {latest.ballName} · {latest.level}. kademe
@@ -937,32 +1212,22 @@ export default function BallisticPendulumLab() {
           </div>
           <div className="ballistic-analysis-grid">
             <article>
-              <b>1 · En büyük yükselme</b>
-              <p>Δh = l(1 − cosφ)</p>
-              <code>
-                Δh = {format(latest.length, 2)}(1 − cos{format(latest.angle, 2)}°)
-                = {format(latest.rise, 4)} m
-              </code>
-              <small>Gösterge çubuğunun tuttuğu açı, yükselme miktarına dönüştürüldü.</small>
+              <b>1 · Açı → yükselme</b>
+              <span className="ballistic-analysis-value">{format(latest.angle, 1)}°</span>
+              <p>Sarkaç {format(latest.rise * 100, 2)} cm yükseldi.</p>
+              <small>Açıölçerde kalan gösterge, yakalayıcının ulaştığı en yüksek konumu verir.</small>
             </article>
             <article>
-              <b>2 · Çarpışma sonrası hız</b>
-              <p>vₛ = √(2gΔh)</p>
-              <code>
-                vₛ = √(2 · 9,81 · {format(latest.rise, 4)}) ={" "}
-                {format(latest.pendulumSpeed, 3)} m/s
-              </code>
-              <small>Sarkaç yükselirken mekanik enerji modeli kullanıldı.</small>
+              <b>2 · Yükselme → birlikte hız</b>
+              <span className="ballistic-analysis-value">{format(latest.pendulumSpeed, 3)} m/s</span>
+              <p>Bilye ve yakalayıcı çarpışmadan sonra birlikte hareket etti.</p>
+              <small>Bu aşamada yükselme boyunca mekanik enerji korunur.</small>
             </article>
             <article>
-              <b>3 · Bilyenin ilk hızı</b>
-              <p>mvᵢ = (m + M)vₛ</p>
-              <code>
-                vᵢ = ({format(latest.mass, 3)} + {format(latest.pendulumMass, 3)}) /
-                {format(latest.mass, 3)} · {format(latest.pendulumSpeed, 3)} ={" "}
-                {format(latest.calculatedSpeed, 2)} m/s
-              </code>
-              <small>Çarpışma anında doğrusal momentum modeli kullanıldı.</small>
+              <b>3 · Momentum → ilk hız</b>
+              <span className="ballistic-analysis-value">{format(latest.calculatedSpeed, 2)} m/s</span>
+              <p>Bilyenin çarpışmadan hemen önceki hızı bulundu.</p>
+              <small>Çarpışma anında bilye–sarkaç sisteminin doğrusal momentumu korunur.</small>
             </article>
           </div>
           <div className="ballistic-analysis-conclusion">

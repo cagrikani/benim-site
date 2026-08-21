@@ -13216,13 +13216,48 @@ footer > a {
 }
 
 .ballistic-launcher {
+  --launcher-angle: 0deg;
   position: absolute;
   z-index: 8;
-  top: 53%;
+  top: 49.5%;
   left: 11%;
   width: 30%;
   height: 92px;
-  transform: translateY(-50%);
+  transform: translateY(-50%) rotate(var(--launcher-angle));
+  transform-origin: 16% 54%;
+  transition: transform 180ms ease;
+}
+
+.ballistic-launcher-mount {
+  position: absolute;
+  z-index: 7;
+  top: 54%;
+  bottom: 29%;
+  left: 17%;
+  width: 112px;
+  border-right: 13px solid #4d6267;
+  border-left: 13px solid #344a50;
+  background: linear-gradient(90deg, transparent 15%, rgba(219, 228, 226, 0.72) 16% 84%, transparent 85%);
+  filter: drop-shadow(0 5px 4px rgba(19, 39, 45, 0.2));
+}
+
+.ballistic-launcher-mount i {
+  position: absolute;
+  right: -22px;
+  left: -22px;
+  display: block;
+  height: 13px;
+  border: 1px solid #506368;
+  border-radius: 4px;
+  background: linear-gradient(#e7eceb, #63777b 50%, #b6c2c2);
+}
+
+.ballistic-launcher-mount i:first-child {
+  top: -5px;
+}
+
+.ballistic-launcher-mount i:last-child {
+  bottom: 0;
 }
 
 .ballistic-launcher i {
@@ -13351,10 +13386,43 @@ footer > a {
 .ballistic-speed-sensor {
   position: absolute;
   z-index: 9;
-  top: 45%;
+  top: 42.5%;
   left: 42%;
   width: 104px;
   height: 105px;
+}
+
+.ballistic-sensor-cable {
+  position: absolute;
+  z-index: 6;
+  top: calc(42.5% + 96px);
+  left: calc(42% + 47px);
+  width: 84px;
+  height: 64px;
+  border-bottom: 4px solid #263a40;
+  border-left: 4px solid #263a40;
+  border-radius: 0 0 0 26px;
+  box-shadow: -1px 2px 0 rgba(255, 255, 255, 0.7);
+}
+
+.ballistic-sensor-cable i {
+  position: absolute;
+  display: block;
+  width: 11px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #9dacaf, #273d43 70%);
+}
+
+.ballistic-sensor-cable i:first-child {
+  top: -5px;
+  left: -7px;
+}
+
+.ballistic-sensor-cable i:last-child {
+  right: -6px;
+  bottom: -9px;
+  transform: rotate(90deg);
 }
 
 .ballistic-speed-sensor i {
@@ -13408,13 +13476,31 @@ footer > a {
   font-size: 6px;
 }
 
-.ballistic-projectile {
+.ballistic-projectile-path {
   position: absolute;
   z-index: 15;
-  top: 51%;
+  top: 48%;
+  left: 40.5%;
+  width: 28%;
+  height: 1px;
+}
+
+.ballistic-projectile {
+  position: absolute;
+  top: 0;
   width: 22px;
   height: 22px;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
+}
+
+.ballistic-motion-overlay {
+  position: absolute;
+  z-index: 16;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
 .ballistic-protractor {
@@ -13854,6 +13940,30 @@ footer > a {
   font-size: 10px;
 }
 
+.ballistic-control-card > label.ballistic-aim-control {
+  border-color: #bed8d1;
+  background: linear-gradient(135deg, #f2faf7, #fff);
+}
+
+.ballistic-aim-control input {
+  accent-color: var(--teal);
+}
+
+.ballistic-aim-control > small {
+  display: block;
+  margin-top: 6px;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+.ballistic-aim-control > small.aligned {
+  color: var(--teal);
+}
+
+.ballistic-aim-control > small.misaligned {
+  color: #bf593d;
+}
+
 .ballistic-primary-action,
 .ballistic-trigger {
   border-color: var(--teal) !important;
@@ -14077,21 +14187,18 @@ footer > a {
 }
 
 .ballistic-analysis-grid p {
-  margin: 12px 0 8px;
-  color: var(--navy);
-  font: 900 17px Georgia, serif;
+  margin: 9px 0 0;
+  color: #53696e;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.5;
 }
 
-.ballistic-analysis-grid code {
+.ballistic-analysis-value {
   display: block;
-  min-height: 51px;
-  padding: 9px;
-  border-radius: 8px;
-  background: #172f3a;
-  color: #b9f0dd;
-  font-size: 9px;
-  line-height: 1.55;
-  white-space: normal;
+  margin-top: 12px;
+  color: var(--navy);
+  font: 900 25px Georgia, serif;
 }
 
 .ballistic-analysis-grid article > small {
@@ -14511,17 +14618,38 @@ footer > a {
   }
 
   .ballistic-launcher {
-    top: 53%;
+    top: 49%;
     left: 1%;
     width: 42%;
-    transform: translateY(-50%) scale(0.75);
+    transform: translateY(-50%) rotate(var(--launcher-angle)) scale(0.75);
     transform-origin: left;
+  }
+
+  .ballistic-launcher-mount {
+    top: 52%;
+    bottom: 30%;
+    left: 9%;
+    width: 72px;
+    border-right-width: 9px;
+    border-left-width: 9px;
   }
 
   .ballistic-speed-sensor {
     top: 43%;
     left: 34%;
     transform: scale(0.67);
+  }
+
+  .ballistic-sensor-cable {
+    top: calc(43% + 70px);
+    left: calc(34% + 31px);
+    width: 48px;
+    height: 60px;
+  }
+
+  .ballistic-projectile-path {
+    left: 31%;
+    width: 23.5%;
   }
 
   .ballistic-protractor {
