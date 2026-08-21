@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import {
   type CSSProperties,
@@ -150,9 +151,9 @@ function BallisticMotionOverlay({
       context.lineJoin = "round";
 
       const compact = width < 700;
-      const muzzle = { x: width * (compact ? 0.31 : 0.405), y: height * 0.48 };
-      const target = { x: width * (compact ? 0.545 : 0.685), y: height * 0.48 };
-      const pivot = { x: target.x, y: height * (compact ? 0.16 : 0.12) };
+      const muzzle = { x: width * (compact ? 0.31 : 0.405), y: height * 0.49 };
+      const target = { x: width * (compact ? 0.59 : 0.69), y: height * 0.49 };
+      const pivot = { x: target.x, y: height * (compact ? 0.18 : 0.225) };
       const aligned = Math.abs(launcherAngle) < 0.01;
       const guideColor = aligned ? "#087f72" : "#cf5b3c";
 
@@ -706,7 +707,7 @@ export default function BallisticPendulumLab() {
   const projectileTravel = progress < 0.24 ? progress / 0.24 : 1;
   const pendulumStyle = {
     "--pendulum-angle": `${-displayAngle}deg`,
-    "--pendulum-length": `${Math.round(185 + (length - 0.25) * 360)}px`,
+    "--pendulum-length": `${Math.round(135 + (length - 0.25) * 250)}px`,
   } as CSSProperties;
   const indicatorStyle = {
     "--indicator-angle": `${-maxAngle}deg`,
@@ -824,6 +825,15 @@ export default function BallisticPendulumLab() {
 
           {installed.includes("frame") && (
             <div className="ballistic-frame">
+              <img
+                className="ballistic-frame-photo"
+                src="./ballistic-frame-protractor-v2.webp"
+                alt=""
+                aria-hidden="true"
+              />
+              {!installed.includes("protractor") && (
+                <span className="ballistic-frame-protractor-cover" aria-hidden="true" />
+              )}
               <i className="frame-backboard" />
               <i className="frame-top" />
               <i className="frame-left" />
@@ -838,6 +848,12 @@ export default function BallisticPendulumLab() {
               className={`ballistic-launcher ${cocked ? "cocked" : ""}`}
               style={launcherStyle}
             >
+              <img
+                className="ballistic-launcher-photo"
+                src="./twod-launcher-barrel-v2.webp"
+                alt=""
+                aria-hidden="true"
+              />
               <i className="launcher-body" />
               <i className="launcher-barrel" />
               <i className="launcher-muzzle" />
@@ -863,6 +879,12 @@ export default function BallisticPendulumLab() {
           {installed.includes("speed-sensor") && (
             <>
               <div className={`ballistic-speed-sensor ${runState === "running" ? "active" : ""}`}>
+                <img
+                  className="ballistic-sensor-console-photo"
+                  src="./twod-speed-sensor-v2.webp"
+                  alt=""
+                  aria-hidden="true"
+                />
                 <i className="sensor-post" />
                 <i className="sensor-gate" />
                 <span>{sensorDisplay}</span>
@@ -906,6 +928,12 @@ export default function BallisticPendulumLab() {
                 <b />
               </div>
               <div className="ballistic-pendulum" style={pendulumStyle}>
+                <img
+                  className="ballistic-pendulum-photo"
+                  src="./ballistic-pendulum-assembly-v2.webp"
+                  alt=""
+                  aria-hidden="true"
+                />
                 <i className="pendulum-rod" />
                 <i className="pendulum-added-mass">
                   {addedMass > 0 ? `+${Math.round(addedMass * 1000)} g` : ""}
@@ -944,6 +972,12 @@ export default function BallisticPendulumLab() {
 
           {installed.includes("ruler") && (
             <div className="ballistic-ruler" style={pendulumStyle}>
+              <img
+                className="ballistic-ruler-photo"
+                src="./freefall-equipment-ruler.webp"
+                alt=""
+                aria-hidden="true"
+              />
               <i />
               <span>l = {Math.round(length * 100)} cm</span>
             </div>

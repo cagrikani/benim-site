@@ -1077,7 +1077,15 @@ test("deney seçilince kart listesi kapanır ve yalnızca seçilen deney açıl�
 });
 
 test("balistik sarkaç düzeneği fırlatıcı, açıölçer ve yakalayıcıyı gerçekçi sahnede gösterir", async () => {
+  const page = await readFile(new URL("app/BallisticPendulumLab.tsx", projectRoot), "utf8");
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
+  assert.match(page, /ballistic-frame-protractor-v2\.webp/);
+  assert.match(page, /twod-launcher-barrel-v2\.webp/);
+  assert.match(page, /twod-speed-sensor-v2\.webp/);
+  assert.match(page, /ballistic-pendulum-assembly-v2\.webp/);
+  assert.match(page, /freefall-equipment-ruler\.webp/);
+  await access(new URL("public/ballistic-frame-protractor-v2.webp", projectRoot));
+  await access(new URL("public/ballistic-pendulum-assembly-v2.webp", projectRoot));
   assert.match(css, /\.ballistic-apparatus\s*\{/);
   assert.match(css, /\.ballistic-workbench\s*\{/);
   assert.match(css, /\.ballistic-frame\s*\{/);
@@ -1093,6 +1101,11 @@ test("balistik sarkaç düzeneği fırlatıcı, açıölçer ve yakalayıcıyı 
   assert.match(css, /\.ballistic-indicator\s*\{/);
   assert.match(css, /\.ballistic-ball-rack\s*\{/);
   assert.match(css, /\.ballistic-ruler\s*\{/);
+  assert.match(css, /\.ballistic-frame-photo\s*\{/);
+  assert.match(css, /\.ballistic-launcher-photo\s*\{/);
+  assert.match(css, /\.ballistic-sensor-console-photo\s*\{/);
+  assert.match(css, /\.ballistic-pendulum-photo\s*\{/);
+  assert.match(css, /\.ballistic-ruler-photo\s*\{/);
   assert.match(css, /\.ballistic-data-table\s*\{/);
   assert.match(css, /\.ballistic-analysis-grid\s*\{/);
   assert.match(css, /\.ballistic-graphs\s*\{/);

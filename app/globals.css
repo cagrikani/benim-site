@@ -14735,6 +14735,368 @@ footer > a {
   }
 }
 
+/* Balistik sarkaç: fotogerçekçi deney parçaları */
+.ballistic-frame {
+  top: 0;
+  right: 6%;
+  bottom: auto;
+  left: 6%;
+  height: auto;
+  filter: drop-shadow(0 10px 10px rgba(21, 42, 49, 0.2));
+}
+
+.ballistic-frame-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  user-select: none;
+}
+
+.ballistic-frame-protractor-cover {
+  position: absolute;
+  z-index: 1;
+  top: 19%;
+  left: 53%;
+  width: 41%;
+  height: 53%;
+  border-radius: 6px;
+  background:
+    radial-gradient(circle at 14% 17%, #c9d0ce 0 3px, transparent 4px),
+    radial-gradient(circle at 91% 76%, #c9d0ce 0 3px, transparent 4px),
+    linear-gradient(145deg, #123d76, #082c5e);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.12);
+}
+
+.ballistic-frame > i,
+.ballistic-frame > .frame-brand {
+  display: none;
+}
+
+.ballistic-launcher {
+  top: 49.5%;
+  left: 10.5%;
+  width: 30.5%;
+  height: 92px;
+}
+
+.ballistic-launcher-photo {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 7px 6px rgba(12, 28, 34, 0.34));
+  user-select: none;
+}
+
+.ballistic-launcher .launcher-body,
+.ballistic-launcher .launcher-barrel,
+.ballistic-launcher .launcher-muzzle,
+.ballistic-launcher .launcher-cocking-rod,
+.ballistic-launcher .launcher-handle,
+.ballistic-launcher .launcher-trigger {
+  display: none;
+}
+
+.ballistic-launcher > span {
+  top: 0;
+  bottom: auto;
+  left: 12px;
+  border: 1px solid #b36f13;
+  background: #fff5df;
+  color: #8b560d;
+  box-shadow: 0 3px 7px rgba(40, 28, 12, 0.18);
+}
+
+.launcher-ball {
+  top: 50px;
+  right: -12px;
+  width: 19px;
+  height: 19px;
+  transform: translateY(-50%);
+}
+
+.launcher-ball:not(.centered) {
+  transform: translate(5px, -12px);
+}
+
+.ballistic-launcher-mount {
+  top: 55%;
+  bottom: 29%;
+  left: 16%;
+  width: 88px;
+  border-right-width: 10px;
+  border-left-width: 10px;
+  opacity: 0.94;
+}
+
+.ballistic-speed-sensor {
+  top: 42.5%;
+  left: 41.5%;
+  width: 220px;
+  height: 145px;
+}
+
+.ballistic-speed-sensor .sensor-gate {
+  top: 0;
+  left: 5px;
+  width: 64px;
+  height: 64px;
+  border-width: 8px;
+  border-bottom-width: 0;
+  background: linear-gradient(90deg, transparent 45%, rgba(239, 159, 40, 0.12) 46% 54%, transparent 55%);
+}
+
+.ballistic-speed-sensor .sensor-post {
+  bottom: 7px;
+  left: 31px;
+  width: 10px;
+  height: 88px;
+}
+
+.ballistic-sensor-console-photo {
+  position: absolute;
+  top: 60px;
+  left: 72px;
+  display: block;
+  width: 142px;
+  height: auto;
+  filter: drop-shadow(0 7px 7px rgba(14, 29, 35, 0.34));
+  user-select: none;
+}
+
+.ballistic-speed-sensor span {
+  top: 72px;
+  right: auto;
+  bottom: auto;
+  left: 103px;
+  z-index: 2;
+  width: 96px;
+  padding: 4px 3px;
+  border: 0;
+  border-radius: 2px;
+  background: #050808;
+  color: #82f1c3;
+  font-size: 13px;
+  box-shadow: inset 0 0 5px rgba(130, 241, 195, 0.16);
+}
+
+.ballistic-speed-sensor small {
+  top: 77px;
+  right: 25px;
+  bottom: auto;
+  z-index: 3;
+}
+
+.ballistic-sensor-cable {
+  top: calc(42.5% + 111px);
+  left: calc(41.5% + 202px);
+  width: 57px;
+  height: 50px;
+}
+
+.ballistic-protractor {
+  top: 16%;
+  left: 55%;
+  width: 320px;
+  height: 285px;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ballistic-pivot {
+  display: none;
+}
+
+.ballistic-pendulum {
+  top: 138px;
+  left: 69%;
+}
+
+.ballistic-pendulum-photo {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  display: block;
+  width: auto;
+  height: calc(var(--pendulum-length) + 42px);
+  max-width: none;
+  filter: drop-shadow(3px 6px 5px rgba(12, 28, 34, 0.32));
+  transform: translateX(-50%);
+  user-select: none;
+}
+
+.ballistic-pendulum .pendulum-rod {
+  display: none;
+}
+
+.ballistic-pendulum .pendulum-added-mass {
+  top: 46%;
+  left: 16px;
+  min-width: 44px;
+  min-height: 19px;
+  border: 1px solid rgba(119, 75, 14, 0.42);
+  background: rgba(255, 244, 219, 0.94);
+  color: #8b560d;
+  box-shadow: 0 3px 6px rgba(38, 28, 15, 0.15);
+}
+
+.pendulum-catcher {
+  bottom: -24px;
+  left: -37px;
+  width: 74px;
+  height: 54px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pendulum-catcher::after {
+  display: none;
+}
+
+.pendulum-catcher span.captured {
+  top: 14px;
+  left: 27px;
+  width: 20px;
+  height: 20px;
+  box-shadow: inset -4px -4px 6px rgba(0, 0, 0, 0.28), inset 3px 3px 5px rgba(255, 255, 255, 0.58), 0 0 0 2px rgba(239, 159, 40, 0.4);
+}
+
+.ballistic-return-spring {
+  top: 139px;
+  left: calc(69% + 18px);
+  width: 94px;
+  opacity: 0.8;
+}
+
+.ballistic-indicator {
+  top: 139px;
+  left: 69%;
+  height: 122px;
+}
+
+.ballistic-ruler {
+  top: 143px;
+  left: calc(69% + 120px);
+  width: 40px;
+}
+
+.ballistic-ruler-photo {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: block;
+  width: 24px;
+  height: var(--pendulum-length);
+  object-fit: fill;
+  filter: drop-shadow(2px 4px 4px rgba(25, 35, 37, 0.24));
+  user-select: none;
+}
+
+.ballistic-ruler > i {
+  display: none;
+}
+
+.ballistic-ruler span {
+  left: 28px;
+}
+
+.ballistic-projectile-path {
+  top: 49%;
+  left: 40.5%;
+  width: 28.5%;
+}
+
+@media (max-width: 1020px) {
+  .ballistic-frame {
+    right: 2%;
+    left: 2%;
+  }
+
+  .ballistic-pendulum,
+  .ballistic-indicator {
+    left: 69%;
+  }
+
+  .ballistic-return-spring {
+    left: calc(69% + 18px);
+  }
+
+  .ballistic-ruler {
+    left: calc(69% + 112px);
+  }
+}
+
+@media (max-width: 700px) {
+  .ballistic-frame {
+    top: 22px;
+    right: -8%;
+    left: -8%;
+    transform: none;
+  }
+
+  .ballistic-launcher {
+    top: 49%;
+    left: 0;
+    width: 43%;
+    transform: translateY(-50%) rotate(var(--launcher-angle)) scale(0.78);
+  }
+
+  .ballistic-launcher-mount {
+    top: 53%;
+    bottom: 30%;
+    left: 8%;
+    width: 65px;
+  }
+
+  .ballistic-speed-sensor {
+    top: 42%;
+    left: 35%;
+    transform: scale(0.58);
+    transform-origin: top left;
+  }
+
+  .ballistic-sensor-cable {
+    top: calc(42% + 69px);
+    left: calc(35% + 117px);
+    width: 39px;
+    height: 55px;
+  }
+
+  .ballistic-pendulum {
+    top: 79px;
+    left: 59%;
+    transform: rotate(var(--pendulum-angle)) scale(0.72);
+  }
+
+  .ballistic-indicator {
+    top: 81px;
+    left: 59%;
+    transform: rotate(var(--indicator-angle)) scale(0.72);
+  }
+
+  .ballistic-return-spring {
+    top: 80px;
+    left: calc(59% + 13px);
+    transform: scale(0.66);
+    transform-origin: left;
+  }
+
+  .ballistic-ruler {
+    top: 84px;
+    left: calc(59% + 85px);
+    transform: scale(0.7);
+    transform-origin: top;
+  }
+
+  .ballistic-projectile-path {
+    left: 31%;
+    width: 28%;
+  }
+}
+
 /* Fizik Atölyesi ana portalı */
 
 .portal-shell {
