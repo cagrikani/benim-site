@@ -13216,22 +13216,21 @@ footer > a {
 }
 
 .ballistic-launcher {
-  --launcher-angle: 0deg;
   position: absolute;
   z-index: 8;
-  top: 49.5%;
+  top: var(--launch-axis, 49%);
   left: 11%;
   width: 30%;
   height: 92px;
-  transform: translateY(-50%) rotate(var(--launcher-angle));
+  transform: translateY(-50%);
   transform-origin: 16% 54%;
-  transition: transform 180ms ease;
+  transition: top 180ms ease;
 }
 
 .ballistic-launcher-mount {
   position: absolute;
   z-index: 7;
-  top: 54%;
+  top: calc(var(--launch-axis, 49%) + 35px);
   bottom: 29%;
   left: 17%;
   width: 112px;
@@ -13239,6 +13238,7 @@ footer > a {
   border-left: 13px solid #344a50;
   background: linear-gradient(90deg, transparent 15%, rgba(219, 228, 226, 0.72) 16% 84%, transparent 85%);
   filter: drop-shadow(0 5px 4px rgba(19, 39, 45, 0.2));
+  transition: top 180ms ease;
 }
 
 .ballistic-launcher-mount i {
@@ -13386,16 +13386,17 @@ footer > a {
 .ballistic-speed-sensor {
   position: absolute;
   z-index: 9;
-  top: 42.5%;
+  top: calc(var(--launch-axis, 49%) - 33px);
   left: 42%;
   width: 104px;
   height: 105px;
+  transition: top 180ms ease;
 }
 
 .ballistic-sensor-cable {
   position: absolute;
   z-index: 6;
-  top: calc(42.5% + 96px);
+  top: calc(var(--launch-axis, 49%) + 63px);
   left: calc(42% + 47px);
   width: 84px;
   height: 64px;
@@ -13403,6 +13404,7 @@ footer > a {
   border-left: 4px solid #263a40;
   border-radius: 0 0 0 26px;
   box-shadow: -1px 2px 0 rgba(255, 255, 255, 0.7);
+  transition: top 180ms ease;
 }
 
 .ballistic-sensor-cable i {
@@ -13479,10 +13481,11 @@ footer > a {
 .ballistic-projectile-path {
   position: absolute;
   z-index: 15;
-  top: 48%;
+  top: var(--launch-axis, 49%);
   left: 40.5%;
   width: 28%;
   height: 1px;
+  transition: top 180ms ease;
 }
 
 .ballistic-projectile {
@@ -13940,28 +13943,18 @@ footer > a {
   font-size: 10px;
 }
 
-.ballistic-control-card > label.ballistic-aim-control {
-  border-color: #bed8d1;
-  background: linear-gradient(135deg, #f2faf7, #fff);
-}
-
-.ballistic-aim-control input {
-  accent-color: var(--teal);
-}
-
-.ballistic-aim-control > small {
+.ballistic-control-card > .ballistic-auto-alignment {
   display: block;
-  margin-top: 6px;
+  margin-top: -3px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--teal);
+  border-radius: 0 8px 8px 0;
+  background: #edf8f4;
+  color: #52706b;
   font-size: 8px;
-  font-weight: 900;
-}
-
-.ballistic-aim-control > small.aligned {
-  color: var(--teal);
-}
-
-.ballistic-aim-control > small.misaligned {
-  color: #bf593d;
+  font-weight: 750;
+  line-height: 1.45;
+  letter-spacing: 0;
 }
 
 .ballistic-primary-action,
@@ -14618,15 +14611,15 @@ footer > a {
   }
 
   .ballistic-launcher {
-    top: 49%;
+    top: var(--launch-axis-compact, 49%);
     left: 1%;
     width: 42%;
-    transform: translateY(-50%) rotate(var(--launcher-angle)) scale(0.75);
+    transform: translateY(-50%) scale(0.75);
     transform-origin: left;
   }
 
   .ballistic-launcher-mount {
-    top: 52%;
+    top: calc(var(--launch-axis-compact, 49%) + 28px);
     bottom: 30%;
     left: 9%;
     width: 72px;
@@ -14635,13 +14628,13 @@ footer > a {
   }
 
   .ballistic-speed-sensor {
-    top: 43%;
+    top: calc(var(--launch-axis-compact, 49%) - 31px);
     left: 34%;
     transform: scale(0.67);
   }
 
   .ballistic-sensor-cable {
-    top: calc(43% + 70px);
+    top: calc(var(--launch-axis-compact, 49%) + 39px);
     left: calc(34% + 31px);
     width: 48px;
     height: 60px;
@@ -14773,7 +14766,7 @@ footer > a {
 }
 
 .ballistic-launcher {
-  top: 49.5%;
+  top: var(--launch-axis, 49%);
   left: 10.5%;
   width: 30.5%;
   height: 92px;
@@ -14781,7 +14774,7 @@ footer > a {
 
 .ballistic-launcher-photo {
   position: absolute;
-  top: 14px;
+  top: 9px;
   left: 0;
   display: block;
   width: 100%;
@@ -14810,19 +14803,20 @@ footer > a {
 }
 
 .launcher-ball {
-  top: 50px;
-  right: -12px;
+  top: 46px;
+  right: -1px;
   width: 19px;
   height: 19px;
   transform: translateY(-50%);
 }
 
 .launcher-ball:not(.centered) {
-  transform: translate(5px, -12px);
+  transform: translateY(-50%);
+  box-shadow: 0 0 0 3px rgba(239, 159, 40, 0.72), inset -4px -4px 6px rgba(0, 0, 0, 0.28), inset 3px 3px 5px rgba(255, 255, 255, 0.58);
 }
 
 .ballistic-launcher-mount {
-  top: 55%;
+  top: calc(var(--launch-axis, 49%) + 34px);
   bottom: 29%;
   left: 16%;
   width: 88px;
@@ -14832,7 +14826,7 @@ footer > a {
 }
 
 .ballistic-speed-sensor {
-  top: 42.5%;
+  top: calc(var(--launch-axis, 49%) - 33px);
   left: 41.5%;
   width: 220px;
   height: 145px;
@@ -14890,7 +14884,7 @@ footer > a {
 }
 
 .ballistic-sensor-cable {
-  top: calc(42.5% + 111px);
+  top: calc(var(--launch-axis, 49%) + 78px);
   left: calc(41.5% + 202px);
   width: 57px;
   height: 50px;
@@ -15004,7 +14998,7 @@ footer > a {
 }
 
 .ballistic-projectile-path {
-  top: 49%;
+  top: var(--launch-axis, 49%);
   left: 40.5%;
   width: 28.5%;
 }
@@ -15038,28 +15032,28 @@ footer > a {
   }
 
   .ballistic-launcher {
-    top: 49%;
+    top: var(--launch-axis-compact, 49%);
     left: 0;
     width: 43%;
-    transform: translateY(-50%) rotate(var(--launcher-angle)) scale(0.78);
+    transform: translateY(-50%) scale(0.78);
   }
 
   .ballistic-launcher-mount {
-    top: 53%;
+    top: calc(var(--launch-axis-compact, 49%) + 28px);
     bottom: 30%;
     left: 8%;
     width: 65px;
   }
 
   .ballistic-speed-sensor {
-    top: 42%;
+    top: calc(var(--launch-axis-compact, 49%) - 31px);
     left: 35%;
     transform: scale(0.58);
     transform-origin: top left;
   }
 
   .ballistic-sensor-cable {
-    top: calc(42% + 69px);
+    top: calc(var(--launch-axis-compact, 49%) + 38px);
     left: calc(35% + 117px);
     width: 39px;
     height: 55px;
@@ -15092,6 +15086,7 @@ footer > a {
   }
 
   .ballistic-projectile-path {
+    top: var(--launch-axis-compact, 49%);
     left: 31%;
     width: 28%;
   }

@@ -1018,8 +1018,9 @@ test("balistik sarkaç modülü PDF düzeneğiyle kurulabilir ve iki yöntemle h
   assert.doesNotMatch(page, /difference|Yüzdesel fark/);
   assert.match(page, /Üç bilye × üç kademe/);
   assert.match(page, /Sade analizi göster/);
-  assert.match(page, /Namlu doğrultusu/);
-  assert.match(page, /geçerli atış açısı 0°/);
+  assert.doesNotMatch(page, /launcherAngle|Namlu doğrultusu|Namlu açısı/);
+  assert.match(page, /pendulumVisualLength/);
+  assert.match(page, /compactLaunchAxis/);
   assert.match(page, /BallisticMotionOverlay/);
   assert.match(page, /bilyenin momentumu/);
   assert.match(page, /bilye yakalayıcıda kaldı/);
@@ -1094,7 +1095,7 @@ test("balistik sarkaç düzeneği fırlatıcı, açıölçer ve yakalayıcıyı 
   assert.match(css, /\.ballistic-speed-sensor\s*\{/);
   assert.match(css, /\.ballistic-sensor-cable\s*\{/);
   assert.match(css, /\.ballistic-motion-overlay\s*\{/);
-  assert.match(css, /\.ballistic-aim-control/);
+  assert.match(css, /--launch-axis/);
   assert.match(css, /\.ballistic-protractor\s*\{/);
   assert.match(css, /\.ballistic-pendulum\s*\{/);
   assert.match(css, /\.pendulum-catcher\s*\{/);

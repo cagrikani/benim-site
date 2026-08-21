@@ -118,17 +118,19 @@ function EquipmentIcon({ kind }: { kind: SetupKind }) {
 }
 
 function BallisticMotionOverlay({
-  launcherAngle,
   phase,
   progress,
   displayAngle,
   maxAngle,
+  launchAxis,
+  compactLaunchAxis,
 }: {
-  launcherAngle: number;
   phase: Phase;
   progress: number;
   displayAngle: number;
   maxAngle: number;
+  launchAxis: number;
+  compactLaunchAxis: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -151,11 +153,10 @@ function BallisticMotionOverlay({
       context.lineJoin = "round";
 
       const compact = width < 700;
-      const muzzle = { x: width * (compact ? 0.31 : 0.405), y: height * 0.49 };
-      const target = { x: width * (compact ? 0.59 : 0.69), y: height * 0.49 };
-      const pivot = { x: target.x, y: height * (compact ? 0.18 : 0.225) };
-      const aligned = Math.abs(launcherAngle) < 0.01;
-      const guideColor = aligned ? "#087f72" : "#cf5b3c";
+      const axisY = Math.min(height - 95, compact ? compactLaunchAxis : launchAxis);
+      const muzzle = { x: width * (compact ? 0.31 : 0.405), y: axisY };
+      const target = { x: width * (compact ? 0.59 : 0.69), y: axisY };
+      const pivot = { x: target.x, y: compact ? 75 : 132 };
 
       const label = (text: string, x: number, y: number, color = "#173f59") => {
         context.save();
@@ -196,36 +197,6 @@ function BallisticMotionOverlay({
       };
 
       if (phase === "Kurulum") {
-        const radians = (-launcherAngle * Math.PI) / 180;
-        const guideEndY = muzzle.y + Math.tan(radians) * (target.x - muzzle.x);
-        context.save();
-        context.setLineDash([7, 7]);
-        context.strokeStyle = guideColor;
-        context.lineWidth = 1.25;
-        context.beginPath();
-        context.moveTo(muzzle.x, muzzle.y);
-        context.lineTo(target.x, guideEndY);
-        context.stroke();
-        context.setLineDash([]);
-        context.strokeStyle = "rgba(23,63,89,.52)";
-        context.beginPath();
-        context.arc(target.x, target.y, compact ? 10 : 13, 0, Math.PI * 2);
-        context.moveTo(target.x - 17, target.y);
-        context.lineTo(target.x + 17, target.y);
-        context.moveTo(target.x, target.y - 17);
-        context.lineTo(target.x, target.y + 17);
-        context.stroke();
-        context.restore();
-        label(
-          `namlu doğrultusu  α = ${launcherAngle.toLocaleString("tr-TR", {
-            minimumFractionDigits: 1,
-            maximumFractionDigits: 1,
-          })}°`,
-          (muzzle.x + target.x) / 2,
-          Math.min(muzzle.y, guideEndY) - 21,
-          guideColor,
-        );
-        label("yakalayıcı merkezi", target.x, target.y + 27);
         return;
       }
 
@@ -307,14 +278,14 @@ function BallisticMotionOverlay({
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [launcherAngle, phase, progress, displayAngle, maxAngle]);
+  }, [phase, progress, displayAngle, maxAngle, launchAxis, compactLaunchAxis]);
 
   return (
     <canvas
       ref={canvasRef}
       className="ballistic-motion-overlay"
       role="img"
-      aria-label="Bilyenin atış doğrultusu, çarpışma noktası ve sarkacın yükselme hareketi"
+      aria-label="Bilyenin yatay hareketi, çarpışma noktası ve sarkacın yükselme hareketi"
     />
   );
 }
@@ -426,7 +397,6 @@ export default function BallisticPendulumLab() {
   const pendingTrialRef = useRef<Trial | null>(null);
   const [installed, setInstalled] = useState<SetupKind[]>([]);
   const [selectedBall, setSelectedBall] = useState<BallKind>("small-steel");
-  const [launcherAngle, setLauncherAngle] = useState(0);
   const [loadedBall, setLoadedBall] = useState<BallKind | null>(null);
   const [centered, setCentered] = useState(false);
   const [level, setLevel] = useState(1);
@@ -514,7 +484,7 @@ export default function BallisticPendulumLab() {
     setProgress(0);
     setShowAnalysis(false);
     setRunState("ready");
-    setMessage("Bilyeyi namlu eksenine ortalamak için “Bilyeyi merkezle”ye bas.");
+    setMessage("Bilyeyi namlu ağzındaki yuvaya oturtmak için “Bilyeyi merkezle”ye bas.");
   };
 
   const centerBall = () => {
@@ -529,10 +499,6 @@ export default function BallisticPendulumLab() {
   const cockLauncher = () => {
     if (!centered || runState === "running") {
       setMessage("Fırlatıcıyı kurmadan önce bilyeyi merkezle.");
-      return;
-    }
-    if (Math.abs(launcherAngle) > 0.01) {
-      setMessage("Namlu doğrultusunu yakalayıcı merkeziyle aynı hizada, 0° yap.");
       return;
     }
     setCocked(true);
@@ -588,11 +554,7 @@ export default function BallisticPendulumLab() {
       return;
     }
     if (!centered) {
-      setMessage("Bilye merkezde değil. Manyetik tutucuda namlu eksenine hizala.");
-      return;
-    }
-    if (Math.abs(launcherAngle) > 0.01) {
-      setMessage("Atış doğrultusu yakalayıcıdan geçmiyor. Namlu açısını 0° yap.");
+      setMessage("Bilye namlu ağzındaki yuvada merkezde değil. Önce bilyeyi merkezle.");
       return;
     }
     if (!cocked) {
@@ -672,7 +634,6 @@ export default function BallisticPendulumLab() {
     pendingTrialRef.current = null;
     setInstalled([]);
     setLoadedBall(null);
-    setLauncherAngle(0);
     setCentered(false);
     setCocked(false);
     setIndicatorZeroed(false);
@@ -689,7 +650,6 @@ export default function BallisticPendulumLab() {
   const resetForNextShot = () => {
     pendingTrialRef.current = null;
     setLoadedBall(null);
-    setLauncherAngle(0);
     setCentered(false);
     setCocked(false);
     setIndicatorZeroed(false);
@@ -705,19 +665,22 @@ export default function BallisticPendulumLab() {
 
   const projectileVisible = runState === "running" && progress < 0.34;
   const projectileTravel = progress < 0.24 ? progress / 0.24 : 1;
+  const pendulumVisualLength = Math.round(135 + (length - 0.25) * 250);
+  const launchAxis = Math.round(157 + pendulumVisualLength * 0.885);
+  const compactLaunchAxis = Math.round(93 + pendulumVisualLength * 0.637);
+  const apparatusStyle = {
+    "--pendulum-length": `${pendulumVisualLength}px`,
+    "--launch-axis": `${launchAxis}px`,
+    "--launch-axis-compact": `${compactLaunchAxis}px`,
+  } as CSSProperties;
   const pendulumStyle = {
     "--pendulum-angle": `${-displayAngle}deg`,
-    "--pendulum-length": `${Math.round(135 + (length - 0.25) * 250)}px`,
   } as CSSProperties;
   const indicatorStyle = {
     "--indicator-angle": `${-maxAngle}deg`,
   } as CSSProperties;
-  const launcherStyle = {
-    "--launcher-angle": `${-launcherAngle}deg`,
-  } as CSSProperties;
-  const launcherAligned = Math.abs(launcherAngle) < 0.01;
   const apparatusReadyForShot =
-    setupComplete && loadedBall && centered && cocked && indicatorZeroed && launcherAligned;
+    setupComplete && loadedBall && centered && cocked && indicatorZeroed;
 
   return (
     <section className="ballistic-lab-section" id="balistik-sarkac">
@@ -812,7 +775,7 @@ export default function BallisticPendulumLab() {
           </div>
         </div>
 
-        <div className="ballistic-apparatus">
+        <div className="ballistic-apparatus" style={apparatusStyle}>
           <div className="ballistic-lab-wall">
             <span>Spektrum · Mekanik Laboratuvarı</span>
           </div>
@@ -844,10 +807,7 @@ export default function BallisticPendulumLab() {
           )}
 
           {installed.includes("launcher") && (
-            <div
-              className={`ballistic-launcher ${cocked ? "cocked" : ""}`}
-              style={launcherStyle}
-            >
+            <div className={`ballistic-launcher ${cocked ? "cocked" : ""}`}>
               <img
                 className="ballistic-launcher-photo"
                 src="./twod-launcher-barrel-v2.webp"
@@ -985,11 +945,12 @@ export default function BallisticPendulumLab() {
 
           {installed.includes("launcher") && installed.includes("pendulum") && (
             <BallisticMotionOverlay
-              launcherAngle={launcherAngle}
               phase={phase}
               progress={progress}
               displayAngle={displayAngle}
               maxAngle={maxAngle}
+              launchAxis={launchAxis}
+              compactLaunchAxis={compactLaunchAxis}
             />
           )}
 
@@ -1047,33 +1008,6 @@ export default function BallisticPendulumLab() {
               </button>
             ))}
           </div>
-          <label className="ballistic-aim-control">
-            <span>
-              Namlu doğrultusu <b>α = {format(launcherAngle, 1)}°</b>
-            </span>
-            <input
-              type="range"
-              min="-4"
-              max="4"
-              step="0.5"
-              value={launcherAngle}
-              onChange={(event) => {
-                const nextAngle = Number(event.target.value);
-                setLauncherAngle(nextAngle);
-                setCocked(false);
-                setMessage(
-                  Math.abs(nextAngle) < 0.01
-                    ? "Namlu, hız sensörü ve yakalayıcı merkezi aynı doğrultuda."
-                    : "Kesikli doğrultuyu yakalayıcı merkezine getir; geçerli atış açısı 0°.",
-                );
-              }}
-              disabled={!setupComplete || runState === "running"}
-              aria-label="Namlu açısı"
-            />
-            <small className={launcherAligned ? "aligned" : "misaligned"}>
-              {launcherAligned ? "✓ Yatay eksen hizalı" : "Yakalayıcı merkeziyle hizala"}
-            </small>
-          </label>
           <button
             className="ballistic-primary-action"
             type="button"
@@ -1103,6 +1037,9 @@ export default function BallisticPendulumLab() {
               disabled={runState === "running"}
             />
           </label>
+          <small className="ballistic-auto-alignment">
+            Fırlatıcı ve sensör, sarkaç boyuna göre yakalayıcı merkeziyle otomatik hizalanır.
+          </small>
           <label>
             <span>
               Yakalayıcı blok <b>{Math.round(pendulumMass * 1000)} g</b>
