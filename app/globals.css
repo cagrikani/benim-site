@@ -14781,6 +14781,66 @@ footer > a {
   height: auto;
   filter: drop-shadow(0 7px 6px rgba(12, 28, 34, 0.34));
   user-select: none;
+  pointer-events: none;
+}
+
+.ballistic-launcher.height-draggable {
+  cursor: ns-resize;
+  touch-action: none;
+  user-select: none;
+  outline: none;
+}
+
+.ballistic-height-grip {
+  position: absolute;
+  z-index: 20;
+  top: -20px;
+  right: 16%;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid rgba(239, 159, 40, 0.78);
+  border-radius: 999px;
+  background: rgba(13, 48, 67, 0.94);
+  box-shadow: 0 5px 11px rgba(15, 35, 42, 0.22);
+  color: white;
+  font-style: normal;
+  opacity: 0.86;
+  transition: opacity 150ms ease, transform 150ms ease, background 150ms ease;
+}
+
+.ballistic-height-grip b {
+  color: #ffc15b;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ballistic-height-grip small {
+  font-size: 8px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.ballistic-launcher.height-draggable:hover .ballistic-height-grip,
+.ballistic-launcher.height-draggable:focus-visible .ballistic-height-grip,
+.ballistic-launcher.dragging .ballistic-height-grip {
+  background: var(--teal);
+  opacity: 1;
+  transform: scale(1.04);
+}
+
+.ballistic-launcher.dragging .ballistic-launcher-photo {
+  filter: drop-shadow(0 0 9px rgba(8, 127, 114, 0.48)) drop-shadow(0 7px 6px rgba(12, 28, 34, 0.28));
+}
+
+.ballistic-apparatus.height-adjusting .ballistic-launcher,
+.ballistic-apparatus.height-adjusting .ballistic-launcher-mount,
+.ballistic-apparatus.height-adjusting .ballistic-speed-sensor,
+.ballistic-apparatus.height-adjusting .ballistic-sensor-cable,
+.ballistic-apparatus.height-adjusting .ballistic-projectile-path {
+  transition: none;
 }
 
 .ballistic-launcher .launcher-body,
@@ -14907,6 +14967,7 @@ footer > a {
 .ballistic-pendulum {
   top: 138px;
   left: 69%;
+  transition: height 180ms ease;
 }
 
 .ballistic-pendulum-photo {
@@ -14920,6 +14981,7 @@ footer > a {
   filter: drop-shadow(3px 6px 5px rgba(12, 28, 34, 0.32));
   transform: translateX(-50%);
   user-select: none;
+  transition: height 180ms ease;
 }
 
 .ballistic-pendulum .pendulum-rod {
@@ -14976,6 +15038,7 @@ footer > a {
   top: 143px;
   left: calc(69% + 120px);
   width: 40px;
+  transition: height 180ms ease;
 }
 
 .ballistic-ruler-photo {
@@ -14987,6 +15050,14 @@ footer > a {
   object-fit: fill;
   filter: drop-shadow(2px 4px 4px rgba(25, 35, 37, 0.24));
   user-select: none;
+  transition: height 180ms ease;
+}
+
+.ballistic-apparatus.height-adjusting .ballistic-pendulum,
+.ballistic-apparatus.height-adjusting .ballistic-pendulum-photo,
+.ballistic-apparatus.height-adjusting .ballistic-ruler,
+.ballistic-apparatus.height-adjusting .ballistic-ruler-photo {
+  transition: none;
 }
 
 .ballistic-ruler > i {

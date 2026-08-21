@@ -4,6 +4,8 @@
 import {
   type CSSProperties,
   type DragEvent as ReactDragEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
   useEffect,
   useMemo,
   useRef,
@@ -45,6 +47,8 @@ type Trial = {
 
 const G = 9.81;
 const BASE_PENDULUM_MASS = 0.3;
+const MIN_PENDULUM_LENGTH = 0.25;
+const MAX_PENDULUM_LENGTH = 0.42;
 const MIME = "application/x-ballistic-equipment";
 const SETUP_ORDER: SetupKind[] = [
   "frame",
@@ -392,6 +396,9 @@ function MiniGraph({
 
 export default function BallisticPendulumLab() {
   const animationRef = useRef<number | null>(null);
+  const apparatusRef = useRef<HTMLDivElement>(null);
+  const heightPointerRef = useRef<number | null>(null);
+  const heightDragStartRef = useRef<{ pointerY: number; length: number } | null>(null);
   const runStartedAtRef = useRef(0);
   const nextIdRef = useRef(1);
   const pendingTrialRef = useRef<Trial | null>(null);
@@ -415,6 +422,7 @@ export default function BallisticPendulumLab() {
   );
   const [records, setRecords] = useState<Trial[]>([]);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [draggingHeight, setDraggingHeight] = useState(false);
   const [report, setReport] = useState({
     evidence: "",
     conservation: "",
@@ -427,6 +435,10 @@ export default function BallisticPendulumLab() {
   const latest = records.at(-1) ?? null;
   const nextSetup = SETUP_ORDER[installed.length] ?? null;
   const pendulumMass = BASE_PENDULUM_MASS + addedMass;
+  const canAdjustHeight =
+    installed.includes("launcher") &&
+    installed.includes("pendulum") &&
+    runState === "ready";
   const uniqueCoreTrials = useMemo(
     () =>
       new Set(
@@ -456,6 +468,88 @@ export default function BallisticPendulumLab() {
       )?.shortName;
       setMessage(`${upcoming} parçasını sahneye yerleştir.`);
     }
+  };
+
+  const setAlignedLength = (nextLength: number) => {
+    const clamped = Math.min(
+      MAX_PENDULUM_LENGTH,
+      Math.max(MIN_PENDULUM_LENGTH, nextLength),
+    );
+    setLength(Math.round(clamped * 100) / 100);
+    setCocked(false);
+    setIndicatorZeroed(false);
+    setDisplayAngle(0);
+    setMaxAngle(0);
+    setPhase("Kurulum");
+  };
+
+  const alignLengthToPointer = (clientY: number) => {
+    const apparatus = apparatusRef.current;
+    const dragStart = heightDragStartRef.current;
+    if (!apparatus || !dragStart) return;
+    const bounds = apparatus.getBoundingClientRect();
+    const compact = bounds.width < 700;
+    const minVisualLength = 135;
+    const maxVisualLength = 135 + (MAX_PENDULUM_LENGTH - MIN_PENDULUM_LENGTH) * 250;
+    const minAxis = compact
+      ? 93 + minVisualLength * 0.637
+      : 157 + minVisualLength * 0.885;
+    const maxAxis = compact
+      ? 93 + maxVisualLength * 0.637
+      : 157 + maxVisualLength * 0.885;
+    const startVisualLength =
+      135 + (dragStart.length - MIN_PENDULUM_LENGTH) * 250;
+    const startAxis = compact
+      ? 93 + startVisualLength * 0.637
+      : 157 + startVisualLength * 0.885;
+    const pointerAxis = Math.min(
+      maxAxis,
+      Math.max(minAxis, startAxis + clientY - dragStart.pointerY),
+    );
+    const ratio = (pointerAxis - minAxis) / (maxAxis - minAxis);
+    setAlignedLength(
+      MIN_PENDULUM_LENGTH + ratio * (MAX_PENDULUM_LENGTH - MIN_PENDULUM_LENGTH),
+    );
+  };
+
+  const onLauncherPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!canAdjustHeight || event.button !== 0) return;
+    event.preventDefault();
+    heightPointerRef.current = event.pointerId;
+    heightDragStartRef.current = { pointerY: event.clientY, length };
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDraggingHeight(true);
+    setMessage("Namluyu yukarı–aşağı taşı; sarkaç boyu ve sensör aynı anda hizalanıyor.");
+  };
+
+  const onLauncherPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (heightPointerRef.current !== event.pointerId) return;
+    alignLengthToPointer(event.clientY);
+  };
+
+  const finishLauncherHeight = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (heightPointerRef.current !== event.pointerId) return;
+    heightPointerRef.current = null;
+    heightDragStartRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    setDraggingHeight(false);
+    setMessage("Namlu, sensör ve sarkaç yakalayıcısı aynı yatay eksende hizalandı.");
+  };
+
+  const onLauncherKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!canAdjustHeight || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
+    event.preventDefault();
+    const direction = event.key === "ArrowUp" ? -0.01 : 0.01;
+    const nextLength = Math.min(
+      MAX_PENDULUM_LENGTH,
+      Math.max(MIN_PENDULUM_LENGTH, length + direction),
+    );
+    setAlignedLength(nextLength);
+    setMessage(
+      `Namlu ve yakalayıcı birlikte ayarlandı. Sarkaç boyu ${Math.round(nextLength * 100)} cm.`,
+    );
   };
 
   const onEquipmentDragStart = (
@@ -775,7 +869,11 @@ export default function BallisticPendulumLab() {
           </div>
         </div>
 
-        <div className="ballistic-apparatus" style={apparatusStyle}>
+        <div
+          ref={apparatusRef}
+          className={`ballistic-apparatus ${draggingHeight ? "height-adjusting" : ""}`}
+          style={apparatusStyle}
+        >
           <div className="ballistic-lab-wall">
             <span>Spektrum · Mekanik Laboratuvarı</span>
           </div>
@@ -807,12 +905,30 @@ export default function BallisticPendulumLab() {
           )}
 
           {installed.includes("launcher") && (
-            <div className={`ballistic-launcher ${cocked ? "cocked" : ""}`}>
+            <div
+              className={`ballistic-launcher ${cocked ? "cocked" : ""} ${
+                canAdjustHeight ? "height-draggable" : ""
+              } ${draggingHeight ? "dragging" : ""}`}
+              role={canAdjustHeight ? "slider" : undefined}
+              aria-label={canAdjustHeight ? "Namlu yüksekliği ve sarkaç boyu" : undefined}
+              aria-valuemin={canAdjustHeight ? 25 : undefined}
+              aria-valuemax={canAdjustHeight ? 42 : undefined}
+              aria-valuenow={canAdjustHeight ? Math.round(length * 100) : undefined}
+              aria-valuetext={canAdjustHeight ? `${Math.round(length * 100)} santimetre` : undefined}
+              aria-orientation={canAdjustHeight ? "vertical" : undefined}
+              tabIndex={canAdjustHeight ? 0 : -1}
+              onPointerDown={onLauncherPointerDown}
+              onPointerMove={onLauncherPointerMove}
+              onPointerUp={finishLauncherHeight}
+              onPointerCancel={finishLauncherHeight}
+              onKeyDown={onLauncherKeyDown}
+            >
               <img
                 className="ballistic-launcher-photo"
                 src="./twod-launcher-barrel-v2.webp"
                 alt=""
                 aria-hidden="true"
+                draggable={false}
               />
               <i className="launcher-body" />
               <i className="launcher-barrel" />
@@ -821,6 +937,12 @@ export default function BallisticPendulumLab() {
               <i className="launcher-handle" />
               <i className="launcher-trigger" />
               <span>{level}</span>
+              {canAdjustHeight && (
+                <div className="ballistic-height-grip" aria-hidden="true">
+                  <b>↕</b>
+                  <small>{Math.round(length * 100)} cm</small>
+                </div>
+              )}
               {loadedBall && (runState === "ready" || progress < 0.05) && (
                 <i
                   className={`launcher-ball ball-${loadedBall} ${centered ? "centered" : ""}`}
@@ -1029,16 +1151,17 @@ export default function BallisticPendulumLab() {
             </span>
             <input
               type="range"
-              min="0.25"
-              max="0.42"
+              min={MIN_PENDULUM_LENGTH}
+              max={MAX_PENDULUM_LENGTH}
               step="0.01"
               value={length}
-              onChange={(event) => setLength(Number(event.target.value))}
+              onChange={(event) => setAlignedLength(Number(event.target.value))}
               disabled={runState === "running"}
             />
           </label>
           <small className="ballistic-auto-alignment">
-            Fırlatıcı ve sensör, sarkaç boyuna göre yakalayıcı merkeziyle otomatik hizalanır.
+            Namluyu sahnede yukarı–aşağı sürükle. Sarkaç boyu, sensör ve yakalayıcı
+            merkezi aynı anda hizalanır.
           </small>
           <label>
             <span>
