@@ -34269,3 +34269,344 @@ footer > a {
     transform: translateY(4px) scaleY(0.95);
   }
 }
+
+/* Sade yüzey çizimleri, doğru kablo bağlantıları ve anlaşılır analiz */
+.collision-trace-paper {
+  inset: 9% 6%;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.collision-coordinate-line.coordinate-x {
+  border-top: 1px solid rgba(56, 83, 87, 0.23);
+}
+
+.collision-coordinate-line.coordinate-y {
+  border-left: 1px solid rgba(56, 83, 87, 0.23);
+}
+
+.collision-coordinate-line.coordinate-x > i,
+.collision-coordinate-line.coordinate-y > i {
+  opacity: 0.45;
+  transform: scale(0.72) rotate(45deg);
+}
+
+.collision-coordinate-line > b,
+.collision-coordinate-origin {
+  background: rgba(242, 246, 244, 0.72);
+  color: rgba(50, 78, 82, 0.68);
+  font-size: 6px;
+}
+
+.collision-trace-mark {
+  width: 5px;
+  height: 5px;
+  border-width: 1px;
+  opacity: 0.68;
+}
+
+.collision-trace-mark.after {
+  box-shadow: none;
+  opacity: 0.78;
+}
+
+.collision-surface-vectors {
+  z-index: 5;
+  mix-blend-mode: multiply;
+}
+
+.collision-mode-panel {
+  grid-template-columns: 1.05fr repeat(3, minmax(0, 1fr));
+}
+
+.collision-air-hose,
+.collision-pedal-cable {
+  position: absolute;
+  z-index: 6;
+  display: block;
+  pointer-events: none;
+}
+
+.collision-air-hose {
+  top: 68.2%;
+  left: 12.6%;
+  width: 7%;
+  height: 16.2%;
+  border-top: 7px solid #2d4b51;
+  border-right: 7px solid #2d4b51;
+  border-radius: 0 24px 0 0;
+  filter: drop-shadow(0 3px 2px rgba(25, 44, 47, 0.28));
+}
+
+.collision-air-hose::after {
+  position: absolute;
+  top: -5px;
+  right: 1px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  content: "";
+}
+
+.collision-air-hose > i,
+.collision-pedal-cable > i {
+  position: absolute;
+  display: block;
+  border: 2px solid #314a50;
+  background: linear-gradient(90deg, #61777a, #e0e8e6 48%, #6e8284);
+  box-shadow: 0 2px 3px rgba(24, 42, 44, 0.22);
+}
+
+.collision-air-hose > i {
+  width: 22px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.collision-air-hose > i:first-child {
+  top: -10px;
+  left: -9px;
+}
+
+.collision-air-hose > i:last-child {
+  right: -14px;
+  bottom: -2px;
+  transform: rotate(90deg);
+}
+
+.collision-pedal-cable {
+  top: 91.5%;
+  left: 65.8%;
+  width: 15.2%;
+  border-top: 5px solid #293f45;
+  border-radius: 999px;
+  filter: drop-shadow(0 2px 2px rgba(20, 37, 40, 0.25));
+  transform: rotate(-5deg);
+  transform-origin: left center;
+}
+
+.collision-pedal-cable > i {
+  top: -7px;
+  width: 14px;
+  height: 10px;
+  border-radius: 4px;
+}
+
+.collision-pedal-cable > i:first-child {
+  left: -7px;
+}
+
+.collision-pedal-cable > i:last-child {
+  right: -7px;
+}
+
+.collision-vector-analysis {
+  padding: 18px;
+  border-color: #d5e3df;
+  background: #f4f8f7;
+  box-shadow: 0 16px 34px rgba(2, 23, 32, 0.18);
+}
+
+.collision-vector-analysis > header {
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.collision-vector-analysis > header span {
+  color: #6c6a89;
+}
+
+.collision-vector-analysis > header h3 {
+  font-size: 22px;
+}
+
+.collision-vector-analysis > header p {
+  max-width: 620px;
+  line-height: 1.45;
+}
+
+.collision-analysis-canvas {
+  border-color: #d7e4e1;
+  border-radius: 12px;
+}
+
+.collision-analysis-canvas canvas {
+  height: 230px;
+}
+
+.collision-analysis-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.collision-analysis-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid #d5e2df;
+  border-radius: 999px;
+  background: white;
+  color: #536d71;
+  font-size: 7px;
+  font-weight: 900;
+}
+
+.collision-analysis-legend > span::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7a5b73;
+  content: "";
+}
+
+.collision-analysis-legend > span.puck-one::before {
+  background: #d98619;
+}
+
+.collision-analysis-legend > span.puck-two::before {
+  background: #167f75;
+}
+
+.collision-analysis-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 9px;
+}
+
+.collision-analysis-summary > article {
+  display: grid;
+  min-width: 0;
+  gap: 7px;
+  padding: 13px;
+  border: 1px solid #d5e2df;
+  border-radius: 12px;
+  background: white;
+}
+
+.collision-analysis-summary > article > header {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #e3ece9;
+}
+
+.collision-analysis-summary > article > header i {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  background: #6d8890;
+  color: white;
+  font-size: 6px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.collision-analysis-summary > article.puck-one > header i {
+  background: #d98619;
+}
+
+.collision-analysis-summary > article.puck-two > header i {
+  background: #167f75;
+}
+
+.collision-analysis-summary > article.momentum-proof > header i {
+  background: #76566f;
+}
+
+.collision-analysis-summary > article.energy-proof > header i {
+  background: #305b69;
+}
+
+.collision-analysis-summary > article > header b {
+  color: var(--navy);
+  font-size: 10px;
+}
+
+.collision-analysis-summary > article > header small,
+.collision-analysis-summary > article > small {
+  color: #72878a;
+  font-size: 6px;
+}
+
+.collision-analysis-summary > article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.collision-analysis-summary > article > div span {
+  color: #6c8184;
+  font-size: 7px;
+}
+
+.collision-analysis-summary > article > div b {
+  color: #2e5259;
+  font-size: 8px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.collision-analysis-summary > article > strong {
+  padding: 8px 9px;
+  border-radius: 8px;
+  background: #e7f4ef;
+  color: #167f75;
+  font-size: 8px;
+}
+
+.collision-analysis-conclusion {
+  margin-top: 9px;
+  padding: 11px 13px;
+  background: #173e48;
+}
+
+.collision-analysis-conclusion span {
+  font-size: 9px;
+}
+
+@media (max-width: 1050px) {
+  .collision-mode-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .collision-mode-panel,
+  .collision-analysis-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .collision-air-hose {
+    top: 59%;
+    left: 12.4%;
+    width: 10.5%;
+    height: 25.5%;
+  }
+
+  .collision-pedal-cable {
+    top: 92%;
+    left: 60.5%;
+    width: 17.5%;
+  }
+
+  .collision-vector-analysis > header {
+    align-items: stretch;
+  }
+
+  .collision-analysis-canvas canvas {
+    height: 210px;
+  }
+}

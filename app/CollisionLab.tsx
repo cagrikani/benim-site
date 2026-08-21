@@ -101,7 +101,11 @@ const EQUIPMENT: Array<{
     name: "Ayarlanabilir ayaklı hava masası",
     shortName: "Hava masası",
   },
-  { kind: "trace-paper", name: "Nokta izlerini kaydeden kâğıt", shortName: "İz kâğıdı" },
+  {
+    kind: "trace-paper",
+    name: "Hava masası yüzeyinde nokta izlerini kaydeder",
+    shortName: "Yüzey iz kaydı",
+  },
   { kind: "compressor", name: "Hava masası kompresörü", shortName: "Kompresör" },
   {
     kind: "spark-timer",
@@ -195,16 +199,24 @@ function roundedAngle(x: number, y: number) {
   return exactZero(Math.round(directionDegrees(x, y)));
 }
 
-function ScatteringAngleOverlay({ result }: { result: CollisionResult }) {
+function plannedCollisionAngle(targetY: number) {
+  const verticalOffset = Math.max(
+    -PUCK_RADIUS * 2,
+    Math.min(PUCK_RADIUS * 2, 0.5 - targetY),
+  );
+  return exactZero(
+    (Math.asin(verticalOffset / (PUCK_RADIUS * 2)) * 180) / Math.PI,
+  );
+}
+
+function CollisionSurfaceVectors({
+  result,
+  targetY,
+}: {
+  result: CollisionResult | null;
+  targetY: number;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const angleOne = roundedAngle(
-    result.momentumOneAfterX,
-    result.momentumOneAfterY,
-  );
-  const angleTwo = roundedAngle(
-    result.momentumTwoAfterX,
-    result.momentumTwoAfterY,
-  );
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -220,10 +232,10 @@ function ScatteringAngleOverlay({ result }: { result: CollisionResult }) {
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
 
-    const origin = {
-      x: (result.collisionX / TABLE_WIDTH) * width,
-      y: (result.collisionY / TABLE_HEIGHT) * height,
-    };
+    const toCanvas = (point: Point) => ({
+      x: (point.x / TABLE_WIDTH) * width,
+      y: (point.y / TABLE_HEIGHT) * height,
+    });
 
     const writeLabel = (
       text: string,
@@ -231,76 +243,180 @@ function ScatteringAngleOverlay({ result }: { result: CollisionResult }) {
       y: number,
       color: string,
     ) => {
-      context.font = "900 11px Arial";
+      context.font = "800 9px Arial";
       context.textAlign = "center";
       context.textBaseline = "middle";
-      context.lineWidth = 5;
-      context.strokeStyle = "rgba(255,255,255,0.95)";
+      context.lineWidth = 3;
+      context.strokeStyle = "rgba(250,252,251,0.92)";
       context.strokeText(text, x, y);
       context.fillStyle = color;
       context.fillText(text, x, y);
     };
 
-    const drawAngle = (
-      angle: number,
+    const drawArrow = (
+      from: Point,
+      to: Point,
       color: string,
       label: string,
-      radius: number,
+      dashed = false,
     ) => {
-      const screenAngle = (-angle * Math.PI) / 180;
-      const guideLength = radius + 34;
+      const angle = Math.atan2(to.y - from.y, to.x - from.x);
       context.save();
-      context.setLineDash([4, 4]);
+      if (dashed) context.setLineDash([5, 5]);
       context.beginPath();
-      context.moveTo(origin.x, origin.y);
-      context.lineTo(
-        origin.x + Math.cos(screenAngle) * guideLength,
-        origin.y + Math.sin(screenAngle) * guideLength,
-      );
+      context.moveTo(from.x, from.y);
+      context.lineTo(to.x, to.y);
       context.strokeStyle = color;
-      context.globalAlpha = 0.72;
-      context.lineWidth = 1.5;
+      context.globalAlpha = dashed ? 0.52 : 0.76;
+      context.lineWidth = 1.35;
       context.stroke();
       context.restore();
+      context.beginPath();
+      context.moveTo(to.x, to.y);
+      context.lineTo(
+        to.x - Math.cos(angle - Math.PI / 6) * 7,
+        to.y - Math.sin(angle - Math.PI / 6) * 7,
+      );
+      context.lineTo(
+        to.x - Math.cos(angle + Math.PI / 6) * 7,
+        to.y - Math.sin(angle + Math.PI / 6) * 7,
+      );
+      context.closePath();
+      context.fillStyle = color;
+      context.globalAlpha = 0.8;
+      context.fill();
+      context.globalAlpha = 1;
+      writeLabel(
+        label,
+        to.x + Math.cos(angle) * 14,
+        to.y + Math.sin(angle) * 14,
+        color,
+      );
+    };
+
+    if (!result) {
+      const start = toCanvas({ x: 0.2, y: 0.5 });
+      const target = { x: 0.88, y: targetY };
+      const verticalOffset = target.y - 0.5;
+      const horizontalContact = Math.sqrt(
+        Math.max(0, (PUCK_RADIUS * 2) ** 2 - verticalOffset ** 2),
+      );
+      const contact = toCanvas({
+        x: target.x - horizontalContact,
+        y: 0.5,
+      });
+      const targetPoint = toCanvas(target);
+      const incomingEnd = { x: contact.x - 8, y: contact.y };
+      const screenAngle = Math.atan2(
+        targetPoint.y - contact.y,
+        targetPoint.x - contact.x,
+      );
+      const angle = plannedCollisionAngle(targetY);
+
+      drawArrow(start, incomingEnd, "#c98220", "gelen doğrultu · 0°", true);
+      drawArrow(contact, targetPoint, "#397d78", "çarpışma doğrultusu", true);
 
       if (Math.abs(angle) >= 1) {
         context.beginPath();
-        context.arc(origin.x, origin.y, radius, 0, screenAngle, screenAngle < 0);
-        context.strokeStyle = color;
-        context.lineWidth = 2.5;
+        context.arc(contact.x, contact.y, 24, 0, screenAngle, screenAngle < 0);
+        context.strokeStyle = "rgba(94, 89, 126, 0.68)";
+        context.lineWidth = 1.2;
         context.stroke();
       }
 
       const labelAngle = Math.abs(angle) < 1 ? 0 : screenAngle / 2;
       writeLabel(
-        `${label} = ${formatPhysics(angle, 0)}°`,
-        origin.x + Math.cos(labelAngle) * (radius + 18),
-        origin.y + Math.sin(labelAngle) * (radius + 18),
-        color,
+        `α = ${formatPhysics(angle, 0)}°`,
+        contact.x + Math.cos(labelAngle) * 39,
+        contact.y + Math.sin(labelAngle) * 39,
+        "#66577c",
       );
+      writeLabel(
+        "2. diski düşey sürükle",
+        targetPoint.x,
+        targetPoint.y - 37,
+        "#365f64",
+      );
+      return;
+    }
+
+    const origin = toCanvas({ x: result.collisionX, y: result.collisionY });
+    const largestMomentum = Math.max(
+      result.momentumOneBefore,
+      result.momentumOneAfter,
+      result.momentumTwoAfter,
+      0.001,
+    );
+    const vectorLength = (magnitude: number) =>
+      44 + (magnitude / largestMomentum) * Math.min(62, width * 0.08);
+    const vectorEnd = (x: number, y: number, magnitude: number) => {
+      if (magnitude < PHYSICS_EPSILON) return { ...origin };
+      const length = vectorLength(magnitude);
+      return {
+        x: origin.x + (x / magnitude) * length,
+        y: origin.y - (y / magnitude) * length,
+      };
     };
+    const incomingStart = {
+      x: origin.x - vectorLength(result.momentumOneBefore),
+      y: origin.y,
+    };
+
+    drawArrow(incomingStart, origin, "#c98220", "pᵢ", true);
 
     context.beginPath();
     context.arc(origin.x, origin.y, 5, 0, Math.PI * 2);
-    context.fillStyle = "#9b6b92";
+    context.fillStyle = "rgba(115, 79, 109, 0.86)";
     context.fill();
-    context.lineWidth = 2;
-    context.strokeStyle = "white";
+    context.lineWidth = 1.5;
+    context.strokeStyle = "rgba(255,255,255,0.9)";
     context.stroke();
+    writeLabel("çarpışma", origin.x, origin.y - 15, "#70506b");
 
     if (result.mode === "inelastic") {
-      drawAngle(angleOne, "#77506f", "birlikte", 42);
-      writeLabel(
-        "Saçılma yok",
-        origin.x + 48,
-        origin.y + 24,
-        "#77506f",
+      const totalMagnitude = Math.hypot(
+        result.momentumAfterX,
+        result.momentumAfterY,
       );
-    } else {
-      drawAngle(angleOne, "#d98619", "θ₁", 35);
-      drawAngle(angleTwo, "#167f75", "θ₂", 54);
+      drawArrow(
+        origin,
+        vectorEnd(result.momentumAfterX, result.momentumAfterY, totalMagnitude),
+        "#76566f",
+        "birlikte",
+      );
+      return;
     }
-  }, [angleOne, angleTwo, result]);
+
+    const oneEnd = vectorEnd(
+      result.momentumOneAfterX,
+      result.momentumOneAfterY,
+      result.momentumOneAfter,
+    );
+    const twoEnd = vectorEnd(
+      result.momentumTwoAfterX,
+      result.momentumTwoAfterY,
+      result.momentumTwoAfter,
+    );
+    drawArrow(origin, oneEnd, "#d4861f", `p₁ · ${formatPhysics(roundedAngle(result.momentumOneAfterX, result.momentumOneAfterY), 0)}°`);
+    drawArrow(origin, twoEnd, "#168178", `p₂ · ${formatPhysics(roundedAngle(result.momentumTwoAfterX, result.momentumTwoAfterY), 0)}°`);
+
+    for (const [end, color] of [
+      [oneEnd, "#d4861f"],
+      [twoEnd, "#168178"],
+    ] as const) {
+      context.save();
+      context.setLineDash([3, 4]);
+      context.beginPath();
+      context.moveTo(origin.x, origin.y);
+      context.lineTo(end.x, origin.y);
+      context.lineTo(end.x, end.y);
+      context.strokeStyle = color;
+      context.globalAlpha = 0.24;
+      context.lineWidth = 1;
+      context.stroke();
+      context.restore();
+    }
+  }, [result, targetY]);
 
   useEffect(() => {
     draw();
@@ -310,12 +426,12 @@ function ScatteringAngleOverlay({ result }: { result: CollisionResult }) {
 
   return (
     <canvas
-      className="collision-scattering-overlay"
+      className="collision-scattering-overlay collision-surface-vectors"
       ref={canvasRef}
       aria-label={
-        result.mode === "inelastic"
-          ? `Diskler birlikte ${formatPhysics(angleOne, 0)} derece doğrultusunda hareket ediyor; saçılma yok.`
-          : `Saçılma açıları: birinci disk ${formatPhysics(angleOne, 0)} derece, ikinci disk ${formatPhysics(angleTwo, 0)} derece.`
+        result
+          ? "Çarpışma anındaki gelen ve çarpışma sonrasındaki momentum doğrultuları"
+          : `Çarpışma öncesi doğrultu ayarı: ${formatPhysics(plannedCollisionAngle(targetY), 0)} derece`
       }
     />
   );
@@ -328,7 +444,7 @@ function VectorAnalysisCanvas({ result }: { result: CollisionResult }) {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const width = Math.max(canvas.getBoundingClientRect().width, 320);
-    const height = 300;
+    const height = 230;
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = width * ratio;
     canvas.height = height * ratio;
@@ -336,7 +452,7 @@ function VectorAnalysisCanvas({ result }: { result: CollisionResult }) {
     if (!context) return;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
-    context.fillStyle = "#fbfdfc";
+    context.fillStyle = "#f8fbfa";
     context.fillRect(0, 0, width, height);
 
     const largestMomentum = Math.max(
@@ -345,48 +461,26 @@ function VectorAnalysisCanvas({ result }: { result: CollisionResult }) {
       result.momentumTwoAfter,
       0.001,
     );
-    const scale = Math.min(115 / largestMomentum, width * 0.16 / largestMomentum);
-    const leftOrigin = { x: width * 0.24, y: 165 };
-    const rightOrigin = { x: width * 0.73, y: 165 };
+    const scale = Math.min(82 / largestMomentum, width * 0.13 / largestMomentum);
+    const leftOrigin = { x: width * 0.25, y: 132 };
+    const rightOrigin = { x: width * 0.72, y: 132 };
 
     const drawAxes = (origin: Point, title: string) => {
       context.beginPath();
-      context.moveTo(origin.x - 120, origin.y);
-      context.lineTo(origin.x + 130, origin.y);
-      context.moveTo(origin.x, origin.y + 92);
-      context.lineTo(origin.x, origin.y - 104);
-      context.strokeStyle = "#c8d9d5";
+      context.moveTo(origin.x - 92, origin.y);
+      context.lineTo(origin.x + 100, origin.y);
+      context.moveTo(origin.x, origin.y + 65);
+      context.lineTo(origin.x, origin.y - 72);
+      context.strokeStyle = "#d5e1de";
       context.lineWidth = 1;
       context.stroke();
       context.fillStyle = "#39585e";
-      context.font = "900 13px Arial";
+      context.font = "900 11px Arial";
       context.textAlign = "center";
-      context.fillText(title, origin.x, 27);
-      context.font = "800 10px Arial";
-      context.fillText("+x", origin.x + 136, origin.y + 4);
-      context.fillText("+y", origin.x + 10, origin.y - 105);
-    };
-
-    const drawComponents = (
-      origin: Point,
-      x: number,
-      y: number,
-      color: string,
-      offsetY: number,
-    ) => {
-      const endX = origin.x + x * scale;
-      const endY = origin.y - y * scale + offsetY;
-      context.save();
-      context.setLineDash([5, 4]);
-      context.beginPath();
-      context.moveTo(origin.x, origin.y + offsetY);
-      context.lineTo(endX, origin.y + offsetY);
-      context.lineTo(endX, endY);
-      context.strokeStyle = color;
-      context.globalAlpha = 0.48;
-      context.lineWidth = 1.5;
-      context.stroke();
-      context.restore();
+      context.fillText(title, origin.x, 24);
+      context.font = "800 8px Arial";
+      context.fillText("+x", origin.x + 105, origin.y + 3);
+      context.fillText("+y", origin.x + 9, origin.y - 73);
     };
 
     const drawArrow = (
@@ -404,11 +498,11 @@ function VectorAnalysisCanvas({ result }: { result: CollisionResult }) {
       const length = Math.hypot(dx, dy);
       if (length < 0.5) {
         context.beginPath();
-        context.arc(origin.x, startY, 5, 0, Math.PI * 2);
+        context.arc(origin.x, startY, 4, 0, Math.PI * 2);
         context.fillStyle = color;
         context.fill();
-        context.font = "900 10px Arial";
-        context.fillText(`${label} = 0`, origin.x + 28, startY - 8);
+        context.font = "800 8px Arial";
+        context.fillText(`${label} = 0`, origin.x + 25, startY - 7);
         return;
       }
       const angle = Math.atan2(dy, dx);
@@ -420,98 +514,71 @@ function VectorAnalysisCanvas({ result }: { result: CollisionResult }) {
       context.moveTo(origin.x, startY);
       context.lineTo(endX, endY);
       context.strokeStyle = color;
-      context.lineWidth = 4;
+      context.lineWidth = 2.2;
       context.stroke();
       context.restore();
       context.beginPath();
       context.moveTo(endX, endY);
       context.lineTo(
-        endX - Math.cos(angle - Math.PI / 6) * 12,
-        endY - Math.sin(angle - Math.PI / 6) * 12,
+        endX - Math.cos(angle - Math.PI / 6) * 8,
+        endY - Math.sin(angle - Math.PI / 6) * 8,
       );
       context.lineTo(
-        endX - Math.cos(angle + Math.PI / 6) * 12,
-        endY - Math.sin(angle + Math.PI / 6) * 12,
+        endX - Math.cos(angle + Math.PI / 6) * 8,
+        endY - Math.sin(angle + Math.PI / 6) * 8,
       );
       context.closePath();
       context.fillStyle = color;
       context.fill();
-      context.font = "900 10px Arial";
+      context.font = "900 8px Arial";
       context.textAlign = "center";
-      context.fillText(label, endX + Math.cos(angle) * 14, endY + Math.sin(angle) * 14);
+      context.fillText(label, endX + Math.cos(angle) * 12, endY + Math.sin(angle) * 12);
     };
 
-    drawAxes(leftOrigin, "ÇARPIŞMA ÖNCESİ");
-    drawAxes(rightOrigin, "ÇARPIŞMA SONRASI");
+    context.beginPath();
+    context.moveTo(width * 0.5, 18);
+    context.lineTo(width * 0.5, height - 18);
+    context.strokeStyle = "#e0e9e7";
+    context.lineWidth = 1;
+    context.stroke();
+
+    drawAxes(leftOrigin, "ÖNCE");
+    drawAxes(rightOrigin, "SONRA");
     drawArrow(
       leftOrigin,
       result.momentumOneBefore,
       0,
       "#d98619",
-      "p₁i",
-      -5,
+      "1. disk",
     );
-    drawArrow(leftOrigin, 0, 0, "#167f75", "p₂i", 8);
-    drawArrow(
-      leftOrigin,
-      result.momentumBeforeX,
-      result.momentumBeforeY,
-      "#9b6b92",
-      "Σpᵢ",
-      22,
-      true,
-    );
+    drawArrow(leftOrigin, 0, 0, "#167f75", "2. disk durgun", 12);
 
-    drawComponents(
-      rightOrigin,
-      result.momentumOneAfterX,
-      result.momentumOneAfterY,
-      "#d98619",
-      -5,
-    );
-    drawComponents(
-      rightOrigin,
-      result.momentumTwoAfterX,
-      result.momentumTwoAfterY,
-      "#167f75",
-      5,
-    );
-    drawArrow(
-      rightOrigin,
-      result.momentumOneAfterX,
-      result.momentumOneAfterY,
-      "#d98619",
-      "p₁s",
-      -5,
-    );
-    drawArrow(
-      rightOrigin,
-      result.momentumTwoAfterX,
-      result.momentumTwoAfterY,
-      "#167f75",
-      "p₂s",
-      5,
-    );
-    drawArrow(
-      rightOrigin,
-      result.momentumAfterX,
-      result.momentumAfterY,
-      "#9b6b92",
-      "Σpₛ",
-      22,
-      true,
-    );
-
-    context.font = "800 9px Arial";
-    context.textAlign = "left";
-    context.fillStyle = "#d98619";
-    context.fillText("● 1. disk", 20, 286);
-    context.fillStyle = "#167f75";
-    context.fillText("● 2. disk", 92, 286);
-    context.fillStyle = "#71868a";
-    context.fillText("Kesikli çizgiler: x ve y bileşenleri", 165, 286);
-    context.fillStyle = "#9b6b92";
-    context.fillText("Mor: toplam momentum", Math.max(355, width - 170), 286);
+    if (result.mode === "inelastic") {
+      drawArrow(
+        rightOrigin,
+        result.momentumAfterX,
+        result.momentumAfterY,
+        "#76566f",
+        "birlikte",
+      );
+    } else {
+      drawArrow(
+        rightOrigin,
+        result.momentumOneAfterX,
+        result.momentumOneAfterY,
+        "#d98619",
+        "1. disk",
+        -4,
+      );
+      drawArrow(
+        rightOrigin,
+        result.momentumTwoAfterX,
+        result.momentumTwoAfterY,
+        "#167f75",
+        "2. disk",
+        4,
+      );
+    }
   }, [result]);
 
   useEffect(() => {
@@ -523,7 +590,7 @@ function VectorAnalysisCanvas({ result }: { result: CollisionResult }) {
   return (
     <canvas
       ref={canvasRef}
-      aria-label="Çarpışma öncesi ve sonrası ölçekli momentum vektörleri ile bileşenleri"
+      aria-label="Çarpışma öncesi ve sonrası sade, ölçekli momentum vektörleri"
     />
   );
 }
@@ -553,16 +620,24 @@ function CollisionVectorAnalysis({
   );
   const energyChange = exactZero(result.energyAfter - result.energyBefore);
   const energyLoss = Math.max(0, exactZero(result.energyBefore - result.energyAfter));
+  const totalMomentumBefore = Math.hypot(
+    result.momentumBeforeX,
+    result.momentumBeforeY,
+  );
+  const totalMomentumAfter = Math.hypot(
+    result.momentumAfterX,
+    result.momentumAfterY,
+  );
 
   return (
     <section className="collision-vector-analysis" aria-labelledby="vector-analysis-title">
       <header>
         <div>
-          <span>DENEY #{result.id} · VEKTÖREL VE İŞLEMSEL ÇÖZÜMLEME</span>
-          <h3 id="vector-analysis-title">Çarpışmanın tam analizi</h3>
+          <span>DENEY #{result.id} · SADE ÇARPIŞMA ANALİZİ</span>
+          <h3 id="vector-analysis-title">Çarpışmayı sade oku</h3>
           <p>
-            Vektörler ölçekli çizildi; bütün bileşenler +x ve +y eksenlerine göre
-            hesaplandı.
+            Okların yönü hareket doğrultusunu, uzunluğu momentum büyüklüğünü
+            gösterir.
           </p>
         </div>
         <button type="button" onClick={onClose}>
@@ -574,90 +649,49 @@ function CollisionVectorAnalysis({
         <VectorAnalysisCanvas result={result} />
       </div>
 
-      <div className="collision-analysis-calculations">
+      <div className="collision-analysis-legend" aria-label="Vektör renkleri">
+        <span className="puck-one">1. disk</span>
+        <span className="puck-two">2. disk</span>
+        {result.mode === "inelastic" && <span className="together">Birlikte hareket</span>}
+      </div>
+
+      <div className="collision-analysis-summary">
         <article className="puck-one">
-          <span>1. DİSK</span>
-          <h4>Hız ve momentum bileşenleri</h4>
-          <code>
-            v₁i = ({formatPhysics(result.initialSpeed)}, 0) m/s
-          </code>
-          <code>
-            p₁i = m₁·v₁i = {formatPhysics(result.massOne)}·
-            {formatPhysics(result.initialSpeed)} ={" "}
-            {formatPhysics(result.momentumOneBefore)} kg·m/s
-          </code>
-          <code>
-            v₁s = ({formatPhysics(result.velocityOneAfterX)},{" "}
-            {formatPhysics(result.velocityOneAfterY)}) m/s
-          </code>
-          <code>
-            p₁sx = m₁·v₁sx = {formatPhysics(result.momentumOneAfterX)} kg·m/s
-          </code>
-          <code>
-            p₁sy = m₁·v₁sy = {formatPhysics(result.momentumOneAfterY)} kg·m/s
-          </code>
-          <b>
-            |p₁s| = {formatPhysics(result.momentumOneAfter)} kg·m/s · θ₁ ={" "}
-            {formatPhysics(angleOne, 0)}°
-          </b>
+          <header><i /><b>1. disk</b><small>turuncu</small></header>
+          <div><span>Önce</span><b>{formatPhysics(result.momentumOneBefore)} kg·m/s</b></div>
+          <div><span>Sonra</span><b>{formatPhysics(result.momentumOneAfter)} kg·m/s</b></div>
+          <div><span>Son doğrultu</span><b>{formatPhysics(angleOne, 0)}°</b></div>
+          <small>
+            pₓ {formatPhysics(result.momentumOneAfterX)} · pᵧ {formatPhysics(result.momentumOneAfterY)}
+          </small>
         </article>
 
         <article className="puck-two">
-          <span>2. DİSK</span>
-          <h4>Hız ve momentum bileşenleri</h4>
-          <code>v₂i = (0, 0) m/s · p₂i = 0</code>
-          <code>
-            v₂s = ({formatPhysics(result.velocityTwoAfterX)},{" "}
-            {formatPhysics(result.velocityTwoAfterY)}) m/s
-          </code>
-          <code>
-            p₂sx = m₂·v₂sx = {formatPhysics(result.momentumTwoAfterX)} kg·m/s
-          </code>
-          <code>
-            p₂sy = m₂·v₂sy = {formatPhysics(result.momentumTwoAfterY)} kg·m/s
-          </code>
-          <b>
-            |p₂s| = {formatPhysics(result.momentumTwoAfter)} kg·m/s · θ₂ ={" "}
-            {formatPhysics(angleTwo, 0)}°
-          </b>
+          <header><i /><b>2. disk</b><small>turkuaz</small></header>
+          <div><span>Önce</span><b>0 kg·m/s</b></div>
+          <div><span>Sonra</span><b>{formatPhysics(result.momentumTwoAfter)} kg·m/s</b></div>
+          <div><span>Son doğrultu</span><b>{formatPhysics(angleTwo, 0)}°</b></div>
+          <small>
+            pₓ {formatPhysics(result.momentumTwoAfterX)} · pᵧ {formatPhysics(result.momentumTwoAfterY)}
+          </small>
         </article>
 
         <article className="momentum-proof">
-          <span>MOMENTUMUN KORUNUMU</span>
-          <h4>Önceki ve sonraki toplamlar</h4>
-          <code>
-            Σpᵢ = p₁i + p₂i = ({formatPhysics(result.momentumBeforeX)},{" "}
-            {formatPhysics(result.momentumBeforeY)}) kg·m/s
-          </code>
-          <code>
-            Σpₛ = ({formatPhysics(result.momentumOneAfterX)} +{" "}
-            {formatPhysics(result.momentumTwoAfterX)},{" "}
-            {formatPhysics(result.momentumOneAfterY)} +{" "}
-            {formatPhysics(result.momentumTwoAfterY)})
-          </code>
-          <code>
-            Σpₛ = ({formatPhysics(result.momentumAfterX)},{" "}
-            {formatPhysics(result.momentumAfterY)}) kg·m/s
-          </code>
-          <code>Δp = Σpₛ − Σpᵢ = (0, 0) kg·m/s</code>
-          <b>Momentum ideal sistemde tam korundu</b>
+          <header><i>✓</i><b>Toplam momentum</b><small>korunum kontrolü</small></header>
+          <div><span>Çarpışmadan önce</span><b>{formatPhysics(totalMomentumBefore)} kg·m/s</b></div>
+          <div><span>Çarpışmadan sonra</span><b>{formatPhysics(totalMomentumAfter)} kg·m/s</b></div>
+          <strong>İdeal sistemde momentum korundu.</strong>
         </article>
 
         <article className="energy-proof">
-          <span>KİNETİK ENERJİ</span>
-          <h4>Enerji karşılaştırması</h4>
-          <code>
-            KEᵢ = ½m₁v₁i² + ½m₂v₂i² = {formatPhysics(result.energyBefore)} J
-          </code>
-          <code>
-            KEₛ = ½m₁v₁s² + ½m₂v₂s² = {formatPhysics(result.energyAfter)} J
-          </code>
-          <code>ΔKE = KEₛ − KEᵢ = {formatPhysics(energyChange)} J</code>
-          <b>
-            {result.energyRetention === 100
-              ? "Kinetik enerji korundu · %100"
-              : `Kinetik enerji korunmadı · ${formatPhysics(energyLoss)} J dönüştü`}
-          </b>
+          <header><i>KE</i><b>Kinetik enerji</b><small>önce ve sonra</small></header>
+          <div><span>Önce</span><b>{formatPhysics(result.energyBefore)} J</b></div>
+          <div><span>Sonra</span><b>{formatPhysics(result.energyAfter)} J</b></div>
+          <strong>
+            {energyChange === 0
+              ? "Enerji korundu."
+              : `${formatPhysics(energyLoss)} J başka enerji türlerine dönüştü.`}
+          </strong>
         </article>
       </div>
 
@@ -665,8 +699,8 @@ function CollisionVectorAnalysis({
         <b>SONUÇ</b>
         <span>
           {result.mode === "elastic"
-            ? `Bu esnek çarpışmada toplam momentum ve kinetik enerji korunmuştur. Çarpışma sonrası hızlar: v₁ = ${formatPhysics(speedOneAfter)} m/s, v₂ = ${formatPhysics(speedTwoAfter)} m/s.`
-            : `Bu esnek olmayan çarpışmada diskler birlikte hareket eder. Toplam momentum korunmuş, ${formatPhysics(energyLoss)} J kinetik enerji ses, ısı ve şekil değişimi gibi enerji türlerine dönüşmüştür.`}
+            ? `Esnek çarpışma: momentum ve kinetik enerji korundu. Son hızlar: 1. disk ${formatPhysics(speedOneAfter)} m/s, 2. disk ${formatPhysics(speedTwoAfter)} m/s.`
+            : `Esnek olmayan çarpışma: diskler birlikte hareket etti. Momentum korundu; ${formatPhysics(energyLoss)} J kinetik enerji başka enerji türlerine dönüştü.`}
         </span>
       </div>
     </section>
@@ -1009,12 +1043,13 @@ export default function CollisionLab() {
     setMarks([]);
     setLatestResult(null);
     setRunState("ready");
+    const angle = plannedCollisionAngle(nextY);
     setNotice(
       nextY < 0.48
-        ? "Durgun disk üst doğrultuya taşındı. İz kâğıdındaki yeni hareket yolunu gözle."
+        ? `Durgun disk üst doğrultuya taşındı; çarpışma doğrultusu ${formatPhysics(angle, 0)}°.`
         : nextY > 0.52
-          ? "Durgun disk alt doğrultuya taşındı. İz kâğıdındaki yeni hareket yolunu gözle."
-          : "Durgun disk merkeze yakın bir çarpışma için yerleştirildi.",
+          ? `Durgun disk alt doğrultuya taşındı; çarpışma doğrultusu ${formatPhysics(angle, 0)}°.`
+          : `Merkeze yakın çarpışma ayarlandı; doğrultu ${formatPhysics(angle, 0)}°.`,
     );
   };
 
@@ -1500,7 +1535,13 @@ export default function CollisionLab() {
                         key={mark.id}
                       />
                     ))}
-                    {latestResult && <ScatteringAngleOverlay result={latestResult} />}
+                    {installed.includes("puck-one") &&
+                      installed.includes("puck-two") && (
+                        <CollisionSurfaceVectors
+                          result={latestResult}
+                          targetY={targetY}
+                        />
+                      )}
                   </div>
                 )}
 
@@ -1530,15 +1571,22 @@ export default function CollisionLab() {
                   </button>
                 )}
 
-                {installed.includes("puck-one") &&
-                  installed.includes("puck-two") &&
-                  runState !== "running" && (
-                    <span className="collision-aim-guide">
-                      <i />
-                      <b>Çarpışma doğrultusu</b>
-                    </span>
-                  )}
               </div>
+            )}
+
+            {installed.includes("air-table") &&
+              installed.includes("compressor") && (
+                <span className="collision-air-hose" aria-hidden="true">
+                  <i />
+                  <i />
+                </span>
+              )}
+
+            {installed.includes("spark-timer") && (
+              <span className="collision-pedal-cable" aria-hidden="true">
+                <i />
+                <i />
+              </span>
             )}
 
             {installed.includes("compressor") && (
@@ -1553,9 +1601,6 @@ export default function CollisionLab() {
                 <em className="compressor-status">
                   {compressorOn ? "HAVA AKIŞI AÇIK" : "KOMPRESÖR KAPALI"}
                 </em>
-                <span className="compressor-hose" aria-hidden="true">
-                  <i />
-                </span>
               </div>
             )}
 
@@ -1572,7 +1617,6 @@ export default function CollisionLab() {
                 <small>s</small>
                 <em>Δt {sparkInterval.toFixed(2)} s</em>
                 <i />
-                <div className="spark-timer-cable" />
               </div>
             )}
 
@@ -1632,6 +1676,27 @@ export default function CollisionLab() {
                 onChange={(event) => {
                   setInitialSpeed(Number(event.target.value));
                   resetPuckPositions();
+                }}
+              />
+            </label>
+            <label>
+              <span>Çarpışma doğrultusu</span>
+              <b>α = {formatPhysics(plannedCollisionAngle(targetY), 0)}°</b>
+              <input
+                type="range"
+                min="0.42"
+                max="0.58"
+                step="0.005"
+                value={targetY}
+                disabled={runState === "running"}
+                aria-label="İkinci diskin düşey konumuyla çarpışma doğrultusunu ayarla"
+                onChange={(event) => {
+                  const nextTargetY = Number(event.target.value);
+                  setTargetY(nextTargetY);
+                  resetPuckPositions(nextTargetY);
+                  setNotice(
+                    `Çarpışma doğrultusu ${formatPhysics(plannedCollisionAngle(nextTargetY), 0)}° olarak ayarlandı.`,
+                  );
                 }}
               />
             </label>
@@ -1732,15 +1797,15 @@ export default function CollisionLab() {
             <div className="collision-analysis-prompt">
               <span>
                 <small>ÇARPIŞMA TAMAMLANDI</small>
-                <b>Momentum ve enerji hesabını adım adım incele.</b>
+                <b>Önce–sonra momentum ve enerji karşılaştırmasını incele.</b>
               </span>
               <button
                 type="button"
                 onClick={() => setShowVectorAnalysis((current) => !current)}
               >
                 {showVectorAnalysis
-                  ? "Vektörel analizi gizle"
-                  : "Vektörel analizi göster"}
+                  ? "Sade analizi gizle"
+                  : "Sade analizi göster"}
               </button>
             </div>
           )}
