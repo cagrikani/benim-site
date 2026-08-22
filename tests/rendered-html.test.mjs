@@ -210,6 +210,10 @@ test("Elektrik alanı TYMM uyumlu Ohm yasası deneyini sunar", async () => {
   assert.match(page, /SONRA BU UÇ/);
   assert.match(page, /Gösterilen kabloyu bağla/);
   assert.match(page, /connectGuidedCable/);
+  assert.match(page, /Güç kaynağını aç/);
+  assert.match(page, /Devre anahtarını kapat/);
+  assert.match(page, /ÖLÇÜME HAZIR/);
+  assert.match(page, /WIRE_ROUTE_LEVELS/);
   assert.match(page, /Ampermetre neden seri, voltmetre neden direncin uçlarına paralel/);
   assert.match(page, /currentMilliamp: \(voltage \/ resistance\) \* 1000/);
   assert.match(page, /Gerilim-akım grafiği/);
@@ -229,6 +233,8 @@ test("Ohm düzeneği gerçekçi cihazlar, bağlantı uçları ve veri alanları 
   assert.match(css, /\.ohm-real-meter-photo/);
   assert.match(css, /\.ohm-real-resistor-photo/);
   assert.match(css, /\.ohm-real-switch-photo/);
+  assert.match(css, /\.ohm-operation-guide\s*\{/);
+  assert.match(css, /\.ohm-terminal\.connected::before/);
   assert.match(css, /\.ohm-power-supply\s*\{/);
   assert.match(css, /\.ohm-resistor-board\s*\{/);
   assert.match(css, /\.ohm-meter\s*\{/);

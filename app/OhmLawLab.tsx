@@ -147,7 +147,8 @@ const REQUIRED_CONNECTIONS: Array<[TerminalId, TerminalId]> = WIRING_STEPS.map(
   ({ from, to }) => [from, to],
 );
 
-const WIRE_COLORS = ["#e34b43", "#183f52", "#f3a72c", "#345f72", "#cb5b4a", "#536e78"];
+const WIRE_COLORS = ["#dc3f38", "#202c31", "#e3a025", "#26363c", "#c93834", "#26363c"];
+const WIRE_ROUTE_LEVELS = [0.945, 0.97, 0.65, 0.69, 0.925, 0.89];
 const EQUIPMENT_IMAGES: Record<EquipmentKind, string> = {
   "power-supply": "./ohm-power-supply-real-v2.webp",
   "resistor-board": "./ohm-resistor-board-real-v2.webp",
@@ -197,20 +198,33 @@ function WireCanvas({ connections }: { connections: Connection[] }) {
       const y1 = (from.y / 100) * height;
       const x2 = (to.x / 100) * width;
       const y2 = (to.y / 100) * height;
-      const bend = Math.max(y1, y2) + 28 + (index % 3) * 10;
+      const bend = Math.max(
+        Math.max(y1, y2) + 20,
+        WIRE_ROUTE_LEVELS[index % WIRE_ROUTE_LEVELS.length] * height,
+      );
+      const wireColor = WIRE_COLORS[index % WIRE_COLORS.length];
 
-      context.beginPath();
-      context.moveTo(x1, y1);
-      context.bezierCurveTo(x1, bend, x2, bend, x2, y2);
-      context.strokeStyle = "rgba(11, 32, 44, 0.2)";
-      context.lineWidth = 8;
+      const traceCable = () => {
+        context.beginPath();
+        context.moveTo(x1, y1);
+        context.bezierCurveTo(x1, bend, x2, bend, x2, y2);
+      };
+
+      traceCable();
+      context.strokeStyle = "rgba(18, 25, 27, 0.32)";
+      context.lineWidth = 11;
       context.lineCap = "round";
+      context.lineJoin = "round";
       context.stroke();
-      context.beginPath();
-      context.moveTo(x1, y1);
-      context.bezierCurveTo(x1, bend, x2, bend, x2, y2);
-      context.strokeStyle = WIRE_COLORS[index % WIRE_COLORS.length];
-      context.lineWidth = 4;
+
+      traceCable();
+      context.strokeStyle = wireColor;
+      context.lineWidth = 7;
+      context.stroke();
+
+      traceCable();
+      context.strokeStyle = "rgba(255, 255, 255, 0.28)";
+      context.lineWidth = 1.35;
       context.stroke();
     });
   }, [connections]);
@@ -714,7 +728,13 @@ export default function OhmLawLab() {
                 <i>✓</i>
                 <span>
                   <b>Ampermetre seri, voltmetre dirence paralel bağlandı.</b>
-                  <small>Ölçüme geçmek için güç kaynağını açabilirsin.</small>
+                  <small>
+                    {!powerOn
+                      ? "Ölçüme geçmek için güç kaynağını aç."
+                      : !switchClosed
+                        ? "Şimdi devre anahtarını kapat."
+                        : "Devre enerjili; ideal ölçümü kaydedebilirsin."}
+                  </small>
                 </span>
               </div>
             )}
@@ -727,6 +747,22 @@ export default function OhmLawLab() {
               alt="Elektrik devresinin kurulduğu gerçekçi okul laboratuvarı tezgâhı"
               draggable={false}
             />
+            {circuitComplete && (
+              <div className={`ohm-operation-guide ${circuitActive ? "complete" : ""}`} role="status">
+                <span className={powerOn ? "done" : "active"}>
+                  <i>{powerOn ? "✓" : "1"}</i>
+                  <b>Güç kaynağını aç</b>
+                  <small>{powerOn ? "Güç açık" : "Önce güç düğmesine bas"}</small>
+                </span>
+                <em>→</em>
+                <span className={switchClosed ? "done" : powerOn ? "active" : "pending"}>
+                  <i>{switchClosed ? "✓" : "2"}</i>
+                  <b>Devre anahtarını kapat</b>
+                  <small>{switchClosed ? "Anahtar kapalı" : "Sonra metal kolu kapat"}</small>
+                </span>
+                {circuitActive && <strong>ÖLÇÜME HAZIR</strong>}
+              </div>
+            )}
             <WireCanvas connections={connections} />
 
             {installed.includes("power-supply") && (
