@@ -29,8 +29,8 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
   {
     key: "mechanics",
     title: "Mekanik",
-    description: "Hareketten torka, yedi etkileşimli deney.",
-    detail: "7 deney açık",
+    description: "Hareketten salınımlara, altı etkileşimli deney.",
+    detail: "6 deney açık",
     visual: "./portal-mechanics.webp",
     available: true,
   },

@@ -27,13 +27,12 @@ dosya yolları kullandığından bir alt klasörde de çalışabilir.
 
 ## Açık deney seti: Mekanik
 
-- Serbest vektör çalışma alanı
 - Hava rayında düzgün ve sabit ivmeli hareket
 - Serbest düşme
 - İki boyutta hareket
 - İki boyutlu çarpışmalar
 - Balistik sarkaç
-- Dönme dinamiği ve tork
+- Basit harmonik hareket
 
 Mekanik deneylerinde öğrenciler düzenekleri kurabilir, ölçüm alabilir, grafikleri
 inceleyebilir ve kanıta dayalı kısa deney raporlarını yazabilir.

@@ -8,7 +8,6 @@ import CollisionLab from "./CollisionLab";
 import FreeFallLab from "./FreeFallLab";
 import HarmonicMotionLab from "./HarmonicMotionLab";
 import MotionLab from "./MotionLab";
-import TorqueLab from "./TorqueLab";
 import TwoDimensionalMotionLab from "./TwoDimensionalMotionLab";
 
 type ActiveModule =
@@ -17,7 +16,6 @@ type ActiveModule =
   | "two-dimensional"
   | "collisions"
   | "ballistic-pendulum"
-  | "torque"
   | "harmonic-motion"
   | null;
 
@@ -84,9 +82,6 @@ export default function MechanicsLabHub({
             >
               Balistik sarkaç
             </button>
-            <button type="button" onClick={() => setActiveModule("torque")}>
-              Tork
-            </button>
             <button
               type="button"
               onClick={() => setActiveModule("harmonic-motion")}
@@ -99,7 +94,6 @@ export default function MechanicsLabHub({
           TYMM ·{" "}
           {activeModule === "collisions" ||
           activeModule === "ballistic-pendulum" ||
-          activeModule === "torque" ||
           activeModule === "harmonic-motion"
             ? "12."
             : activeModule === "free-fall" ||
@@ -218,25 +212,6 @@ export default function MechanicsLabHub({
               <strong>Deneyi aç →</strong>
             </button>
             <button
-              className="torque-module-choice"
-              type="button"
-              aria-pressed={activeModule === "torque"}
-              onClick={() => setActiveModule("torque")}
-            >
-              <span
-                className="module-choice-visual torque-choice-visual"
-                aria-hidden="true"
-              >
-                <img src="./mechanics-torque.webp" alt="" draggable="false" />
-              </span>
-              <span className="module-choice-copy">
-                <small>MODÜL 06 · DENEY 6</small>
-                <b>Dönme dinamiği ve tork</b>
-                <em>Düzeneği kur; yarıçap, kütle ve eylemsizliği araştır</em>
-              </span>
-              <strong>Deneyi aç →</strong>
-            </button>
-            <button
               className="harmonic-module-choice"
               type="button"
               aria-pressed={activeModule === "harmonic-motion"}
@@ -253,7 +228,7 @@ export default function MechanicsLabHub({
                 />
               </span>
               <span className="module-choice-copy">
-                <small>MODÜL 07 · DENEY 7</small>
+                <small>MODÜL 06 · DENEY 6</small>
                 <b>Basit harmonik hareket</b>
                 <em>Yay–kütle ve basit sarkaç deneyleri</em>
               </span>
@@ -272,7 +247,6 @@ export default function MechanicsLabHub({
         {activeModule === "two-dimensional" && <TwoDimensionalMotionLab />}
         {activeModule === "collisions" && <CollisionLab />}
         {activeModule === "ballistic-pendulum" && <BallisticPendulumLab />}
-        {activeModule === "torque" && <TorqueLab />}
         {activeModule === "harmonic-motion" && <HarmonicMotionLab />}
       </div>
 
