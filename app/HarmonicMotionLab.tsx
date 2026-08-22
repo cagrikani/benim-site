@@ -25,8 +25,16 @@ type Trial = {
   mass: number;
   springConstant: number;
   amplitude: number;
+  oscillationCount: number;
+  totalTime: number;
   period: number;
   frequency: number;
+  minVelocity: number;
+  maxVelocity: number;
+  minAcceleration: number;
+  maxAcceleration: number;
+  minForce: number;
+  maxForce: number;
 };
 
 const MIME = "application/x-harmonic-motion-equipment";
@@ -383,6 +391,7 @@ export default function HarmonicMotionLab() {
   const [mass, setMass] = useState(200);
   const [springConstant, setSpringConstant] = useState(10);
   const [amplitude, setAmplitude] = useState(6);
+  const [oscillationTarget, setOscillationTarget] = useState(10);
   const [previewDisplacement, setPreviewDisplacement] = useState(6);
   const [runState, setRunState] = useState<RunState>("ready");
   const [time, setTime] = useState(0);
@@ -400,6 +409,10 @@ export default function HarmonicMotionLab() {
   const omega = Math.sqrt(springConstant / massKg);
   const period = 2 * Math.PI * Math.sqrt(massKg / springConstant);
   const frequency = 1 / period;
+  const maximumVelocity = amplitude * omega;
+  const maximumAcceleration = amplitude * omega ** 2;
+  const maximumRestoringForce = springConstant * (amplitude / 100);
+  const measurementTime = oscillationTarget * period;
   const equilibriumExtension = (massKg * G) / springConstant;
   const displacement =
     runState === "running" || runState === "paused" || runState === "complete"
@@ -466,12 +479,12 @@ export default function HarmonicMotionLab() {
       if (startTimeRef.current === null) startTimeRef.current = timestamp;
       const nextTime = elapsedBeforeStartRef.current +
         (timestamp - startTimeRef.current) / 1000;
-      const finishTime = period * 4;
+      const finishTime = measurementTime;
       if (nextTime >= finishTime) {
         setTime(finishTime);
         elapsedBeforeStartRef.current = finishTime;
         setRunState("complete");
-        setMessage("Dört salınım tamamlandı. İdeal periyot ölçümü tabloya kaydedilebilir.");
+        setMessage(`${oscillationTarget} salınım tamamlandı. İdeal ölçüm tabloya kaydedilebilir.`);
         animationRef.current = null;
         return;
       }
@@ -480,7 +493,7 @@ export default function HarmonicMotionLab() {
     };
     animationRef.current = requestAnimationFrame(animate);
     return stopAnimation;
-  }, [period, runState, stopAnimation]);
+  }, [measurementTime, oscillationTarget, runState, stopAnimation]);
 
   const resetMotion = useCallback((nextAmplitude = amplitude) => {
     stopAnimation();
@@ -550,19 +563,28 @@ export default function HarmonicMotionLab() {
   };
 
   const recordTrial = () => {
-    if (!setupComplete || (runState !== "complete" && time < period)) {
-      setMessage("Kaydetmeden önce en az bir tam salınımı gözle.");
+    if (!setupComplete || runState !== "complete") {
+      setMessage(`Kaydetmeden önce seçtiğin ${oscillationTarget} salınımı tamamla.`);
       return;
     }
+    const trialId = nextTrialIdRef.current++;
     setTrials((current) => [
       ...current,
       {
-        id: nextTrialIdRef.current++,
+        id: trialId,
         mass,
         springConstant,
         amplitude,
+        oscillationCount: oscillationTarget,
+        totalTime: measurementTime,
         period,
         frequency,
+        minVelocity: -maximumVelocity,
+        maxVelocity: maximumVelocity,
+        minAcceleration: -maximumAcceleration,
+        maxAcceleration: maximumAcceleration,
+        minForce: -maximumRestoringForce,
+        maxForce: maximumRestoringForce,
       },
     ]);
     setMessage("İdeal ölçüm deney günlüğüne kaydedildi.");
@@ -689,7 +711,7 @@ export default function HarmonicMotionLab() {
               </span>
               <span>
                 <small>SALINIM</small>
-                <b>{format(cycleCount, 2)}</b>
+                <b>{format(cycleCount, 2)} / {oscillationTarget}</b>
               </span>
               <i className={runState === "running" ? "active" : ""} />
             </div>
@@ -878,6 +900,26 @@ export default function HarmonicMotionLab() {
             <b>{format(amplitude, 1)} cm</b>
           </label>
         </article>
+        <article>
+          <small>ÖLÇÜM SÜRESİ</small>
+          <h3>Salınım sayısı</h3>
+          <label className="harmonic-number-control">
+            <input
+              type="number"
+              min="1"
+              max="20"
+              step="1"
+              value={oscillationTarget}
+              onChange={(event) => {
+                const value = clamp(Number(event.target.value) || 1, 1, 20);
+                changeParameter(() => setOscillationTarget(value));
+              }}
+              disabled={runState === "running"}
+              aria-label="Yay kütle sistemi salınım sayısı"
+            />
+            <b>salınım</b>
+          </label>
+        </article>
         <div className="shm-action-buttons">
           <button type="button" onClick={releaseMass} disabled={!setupComplete || runState === "running"}>
             {runState === "complete" ? "YENİDEN BIRAK" : "KÜTLEYİ BIRAK"}
@@ -937,8 +979,8 @@ export default function HarmonicMotionLab() {
         <div className="shm-data-heading">
           <div>
             <small>DENEY GÜNLÜĞÜ</small>
-            <h3>Tek değişkeni değiştir, sonucu karşılaştır</h3>
-            <p>Kütle, yay sertliği veya genliği değiştirerek yeni bir ölçüm kaydet.</p>
+            <h3>Seçtiğin salınım sayısıyla temel büyüklükleri kaydet</h3>
+            <p>Kayıt tablosunda toplam süre ile yönlü minimum–maksimum değerleri karşılaştır.</p>
           </div>
           <button type="button" onClick={recordTrial}>ÖLÇÜMÜ KAYDET</button>
         </div>
@@ -947,24 +989,30 @@ export default function HarmonicMotionLab() {
             <thead>
               <tr>
                 <th>Deneme</th>
-                <th>Kütle</th>
-                <th>Yay sertliği</th>
-                <th>Genlik</th>
-                <th>Periyot</th>
-                <th>Frekans</th>
+                <th>Koşullar</th>
+                <th>Salınım N</th>
+                <th>Toplam süre</th>
+                <th>Periyot T</th>
+                <th>Frekans f</th>
+                <th>Hız v (min / maks)</th>
+                <th>İvme a (min / maks)</th>
+                <th>Kuvvet F (min / maks)</th>
               </tr>
             </thead>
             <tbody>
               {trials.length === 0 ? (
-                <tr><td colSpan={6}>Bir tam salınımı gözle ve ilk ideal ölçümü kaydet.</td></tr>
+                <tr><td colSpan={9}>Salınım sayısını seç, ölçümü tamamla ve ilk ideal kaydı oluştur.</td></tr>
               ) : trials.map((trial) => (
                 <tr key={trial.id}>
                   <td>{trial.id}</td>
-                  <td>{trial.mass} g</td>
-                  <td>{trial.springConstant} N/m</td>
-                  <td>{format(trial.amplitude, 1)} cm</td>
+                  <td>{trial.mass} g · {trial.springConstant} N/m · A={format(trial.amplitude, 1)} cm</td>
+                  <td>{trial.oscillationCount}</td>
+                  <td>{format(trial.totalTime, 3)} s</td>
                   <td>{format(trial.period, 3)} s</td>
                   <td>{format(trial.frequency, 3)} Hz</td>
+                  <td className="harmonic-pair">{format(trial.minVelocity, 2)} / +{format(trial.maxVelocity, 2)} cm/s</td>
+                  <td className="harmonic-pair">{format(trial.minAcceleration, 2)} / +{format(trial.maxAcceleration, 2)} cm/s²</td>
+                  <td className="harmonic-pair">{format(trial.minForce, 3)} / +{format(trial.maxForce, 3)} N</td>
                 </tr>
               ))}
             </tbody>

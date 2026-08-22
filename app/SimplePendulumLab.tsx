@@ -25,13 +25,21 @@ type Trial = {
   environmentName: string;
   length: number;
   releaseDistance: number;
-  tenPeriodTime: number;
+  oscillationCount: number;
+  measurementTime: number;
   period: number;
+  frequency: number;
+  minVelocity: number;
+  maxVelocity: number;
+  minAcceleration: number;
+  maxAcceleration: number;
+  minForce: number;
+  maxForce: number;
   gravity: number;
 };
 
 const MIME = "application/x-simple-pendulum-equipment";
-const OSCILLATION_COUNT = 10;
+const BOB_MASS_KG = 0.05;
 const ENVIRONMENTS: Array<{
   id: EnvironmentId;
   name: string;
@@ -84,7 +92,7 @@ const EQUIPMENT: Array<{
   { kind: "pendulum", name: "İp ve metal bilye", detail: "İnce, esnemez ip kullanılır" },
   { kind: "ruler", name: "Metre cetveli", detail: "Askı noktası–bilye merkezi ölçülür" },
   { kind: "photogate", name: "Optik geçiş kapısı", detail: "Bilyenin denge geçişini algılar" },
-  { kind: "timer", name: "Dijital zamanlayıcı", detail: "On tam salınımı kaydeder" },
+  { kind: "timer", name: "Dijital zamanlayıcı", detail: "Seçilen salınım sayısını kaydeder" },
 ];
 const EQUIPMENT_IMAGES: Partial<Record<EquipmentKind, string>> = {
   stand: "./shm-retort-stand-real-v2.png",
@@ -220,6 +228,7 @@ export default function SimplePendulumLab() {
   const [length, setLength] = useState(60);
   const [environmentId, setEnvironmentId] = useState<EnvironmentId>("earth");
   const [releaseDistance, setReleaseDistance] = useState(8);
+  const [oscillationTarget, setOscillationTarget] = useState(10);
   const [previewAngle, setPreviewAngle] = useState(-7.7);
   const [runState, setRunState] = useState<RunState>("ready");
   const [time, setTime] = useState(0);
@@ -247,8 +256,13 @@ export default function SimplePendulumLab() {
     : previewAngle * (Math.PI / 180);
   const currentAngleDegrees = currentAngleRadians * (180 / Math.PI);
   const horizontalPosition = length * Math.sin(currentAngleRadians);
-  const tenPeriodTime = OSCILLATION_COUNT * period;
-  const countedOscillations = Math.min(OSCILLATION_COUNT, time / period);
+  const frequency = 1 / period;
+  const amplitudeMeters = releaseDistance / 100;
+  const maximumVelocity = omega * amplitudeMeters;
+  const maximumAcceleration = omega ** 2 * amplitudeMeters;
+  const maximumRestoringForce = BOB_MASS_KG * maximumAcceleration;
+  const measurementTime = oscillationTarget * period;
+  const countedOscillations = Math.min(oscillationTarget, time / period);
   const calculatedGravity =
     (4 * Math.PI ** 2 * lengthMeters) / period ** 2;
   const stringLengthPixels = 150 + length * 1.25;
@@ -267,11 +281,11 @@ export default function SimplePendulumLab() {
     const animate = (timestamp: number) => {
       if (startTimeRef.current === null) startTimeRef.current = timestamp;
       const elapsed = (timestamp - startTimeRef.current) / 1000;
-      if (elapsed >= tenPeriodTime) {
-        setTime(tenPeriodTime);
+      if (elapsed >= measurementTime) {
+        setTime(measurementTime);
         setRunState("complete");
         setPreviewAngle(initialAngle * (180 / Math.PI));
-        setMessage("On tam salınım tamamlandı. Ölçülen periyottan g’yi hesapla.");
+        setMessage(`${oscillationTarget} tam salınım tamamlandı. Ölçülen periyottan g’yi hesapla.`);
         animationRef.current = null;
         return;
       }
@@ -280,7 +294,7 @@ export default function SimplePendulumLab() {
     };
     animationRef.current = requestAnimationFrame(animate);
     return stopAnimation;
-  }, [initialAngle, runState, stopAnimation, tenPeriodTime]);
+  }, [initialAngle, measurementTime, oscillationTarget, runState, stopAnimation]);
 
   const installEquipment = (kind: EquipmentKind) => {
     if (installed.includes(kind)) return;
@@ -396,6 +410,13 @@ export default function SimplePendulumLab() {
     setMessage("Başlangıç uzaklığı ayarlandı. Bilyeyi serbest bırak.");
   };
 
+  const changeOscillationTarget = (nextTarget: number) => {
+    const safeTarget = clamp(nextTarget || 1, 1, 20);
+    setOscillationTarget(safeTarget);
+    resetMeasurement();
+    setMessage(`${safeTarget} salınımlık ölçüm ayarlandı. Bilyeyi serbest bırak.`);
+  };
+
   const changeEnvironment = (nextEnvironment: EnvironmentId) => {
     stopAnimation();
     setEnvironmentId(nextEnvironment);
@@ -411,19 +432,28 @@ export default function SimplePendulumLab() {
 
   const recordTrial = () => {
     if (runState !== "complete" || !gravityCalculated) {
-      setMessage("Kaydetmek için on salınımı tamamla ve g değerini hesapla.");
+      setMessage(`Kaydetmek için seçtiğin ${oscillationTarget} salınımı tamamla ve g değerini hesapla.`);
       return;
     }
+    const trialId = nextTrialIdRef.current++;
     setTrials((current) => [
       ...current,
       {
-        id: nextTrialIdRef.current++,
+        id: trialId,
         environment: selectedEnvironment.id,
         environmentName: selectedEnvironment.name,
         length,
         releaseDistance,
-        tenPeriodTime,
+        oscillationCount: oscillationTarget,
+        measurementTime,
         period,
+        frequency,
+        minVelocity: -maximumVelocity,
+        maxVelocity: maximumVelocity,
+        minAcceleration: -maximumAcceleration,
+        maxAcceleration: maximumAcceleration,
+        minForce: -maximumRestoringForce,
+        maxForce: maximumRestoringForce,
         gravity: calculatedGravity,
       },
     ]);
@@ -432,7 +462,7 @@ export default function SimplePendulumLab() {
 
   const calculateGravity = () => {
     if (runState !== "complete") {
-      setMessage("Önce on tam salınımın süresini ölç.");
+      setMessage(`Önce seçtiğin ${oscillationTarget} tam salınımın süresini ölç.`);
       return;
     }
     setGravityCalculated(true);
@@ -458,7 +488,7 @@ export default function SimplePendulumLab() {
         <span><b>1</b> Gerçek düzeneği kur</span>
         <span><b>2</b> İp uzunluğunu ölç</span>
         <span><b>3</b> Bilyeyi çekip bırak</span>
-        <span><b>4</b> 10 salınımdan g’yi bul</span>
+        <span><b>4</b> {oscillationTarget} salınımdan g’yi bul</span>
       </div>
 
       <section className="pend-environment-selector">
@@ -542,7 +572,7 @@ export default function SimplePendulumLab() {
             </div>
             <div className="pend-live-counter">
               <span><small>ZAMAN</small><b>{format(time, 2)} s</b></span>
-              <span><small>SALINIM</small><b>{format(countedOscillations, 2)} / 10</b></span>
+              <span><small>SALINIM</small><b>{format(countedOscillations, 2)} / {oscillationTarget}</b></span>
               <i className={runState === "running" ? "active" : ""} />
             </div>
           </div>
@@ -693,6 +723,23 @@ export default function SimplePendulumLab() {
             <b>{format(releaseDistance, 1)} cm</b>
           </label>
         </article>
+        <article>
+          <small>ÖLÇÜM SÜRESİ</small>
+          <h3>Salınım sayısı</h3>
+          <label className="harmonic-number-control">
+            <input
+              type="number"
+              min="1"
+              max="20"
+              step="1"
+              value={oscillationTarget}
+              onChange={(event) => changeOscillationTarget(Number(event.target.value))}
+              disabled={runState === "running"}
+              aria-label="Basit sarkaç salınım sayısı"
+            />
+            <b>salınım</b>
+          </label>
+        </article>
         <div className="pend-action-buttons">
           <button type="button" onClick={releaseBob} disabled={!setupComplete || runState === "running"}>
             {runState === "complete" ? "YENİDEN BIRAK" : "BİLYEYİ BIRAK"}
@@ -714,8 +761,9 @@ export default function SimplePendulumLab() {
           <h3>Yer çekimi ivmesini bul</h3>
           <div>
             <span><small>Seçilen ortam</small><b>{selectedEnvironment.name}</b></span>
-            <span><small>10 salınım</small><b>{runState === "complete" ? `${format(tenPeriodTime, 3)} s` : "Ölçüm bekleniyor"}</b></span>
+            <span><small>{oscillationTarget} salınım</small><b>{runState === "complete" ? `${format(measurementTime, 3)} s` : "Ölçüm bekleniyor"}</b></span>
             <span><small>Bir salınımın periyodu</small><b>{runState === "complete" ? `${format(period, 3)} s` : "—"}</b></span>
+            <span><small>Frekans</small><b>{runState === "complete" ? `${format(frequency, 3)} Hz` : "—"}</b></span>
             <span><small>Sarkaç uzunluğu</small><b>{format(lengthMeters, 2)} m</b></span>
           </div>
           <p>g = 4π²L / T²</p>
@@ -748,8 +796,8 @@ export default function SimplePendulumLab() {
         <div className="pend-data-heading">
           <div>
             <small>DENEY GÜNLÜĞÜ</small>
-            <h3>Ortamı veya uzunluğu değiştir, ölçümü tekrarla</h3>
-            <p>Her ortamda on salınımı tamamlayarak periyot ve g değerini karşılaştır.</p>
+            <h3>Seçtiğin salınım sayısıyla temel büyüklükleri kaydet</h3>
+            <p>Her ortamda toplam süre ile yönlü minimum–maksimum değerleri karşılaştır.</p>
           </div>
           <button type="button" onClick={recordTrial}>ÖLÇÜMÜ KAYDET</button>
         </div>
@@ -758,25 +806,31 @@ export default function SimplePendulumLab() {
             <thead>
               <tr>
                 <th>Deneme</th>
-                <th>Ortam</th>
-                <th>İp uzunluğu L</th>
-                <th>Başlangıç uzaklığı</th>
-                <th>10 salınım süresi</th>
+                <th>Ortam / koşullar</th>
+                <th>Salınım N</th>
+                <th>Toplam süre</th>
                 <th>Periyot T</th>
+                <th>Frekans f</th>
+                <th>Hız v (min / maks)</th>
+                <th>İvme a (min / maks)</th>
+                <th>Kuvvet F (min / maks)</th>
                 <th>Hesaplanan g</th>
               </tr>
             </thead>
             <tbody>
               {trials.length === 0 ? (
-                <tr><td colSpan={7}>Bilyeyi bırak, on salınımı tamamla ve ilk ölçümü kaydet.</td></tr>
+                <tr><td colSpan={10}>Salınım sayısını seç, bilyeyi bırak ve ilk ideal kaydı oluştur.</td></tr>
               ) : trials.map((trial) => (
                 <tr key={trial.id}>
                   <td>{trial.id}</td>
-                  <td>{trial.environmentName}</td>
-                  <td>{trial.length} cm</td>
-                  <td>{format(trial.releaseDistance, 1)} cm</td>
-                  <td>{format(trial.tenPeriodTime, 3)} s</td>
+                  <td>{trial.environmentName} · L={trial.length} cm · A={format(trial.releaseDistance, 1)} cm · 50 g</td>
+                  <td>{trial.oscillationCount}</td>
+                  <td>{format(trial.measurementTime, 3)} s</td>
                   <td>{format(trial.period, 3)} s</td>
+                  <td>{format(trial.frequency, 3)} Hz</td>
+                  <td className="harmonic-pair">{format(trial.minVelocity, 3)} / +{format(trial.maxVelocity, 3)} m/s</td>
+                  <td className="harmonic-pair">{format(trial.minAcceleration, 3)} / +{format(trial.maxAcceleration, 3)} m/s²</td>
+                  <td className="harmonic-pair">{format(trial.minForce, 4)} / +{format(trial.maxForce, 4)} N</td>
                   <td>{format(trial.gravity, 2)} m/s²</td>
                 </tr>
               ))}
@@ -830,8 +884,8 @@ export default function SimplePendulumLab() {
           <textarea rows={4} aria-label="Sarkaç uzunluğu ile periyot ilişkisi" />
         </label>
         <label>
-          <span>2 · Neden tek salınım yerine on salınımın süresini ölçtün?</span>
-          <textarea rows={4} aria-label="On salınım ölçmenin gerekçesi" />
+          <span>2 · Neden tek salınım yerine seçtiğin salınım sayısının toplam süresini ölçtün?</span>
+          <textarea rows={4} aria-label="Birden fazla salınım ölçmenin gerekçesi" />
         </label>
         <label>
           <span>3 · Aynı uzunlukta farklı ortamlarda ölçülen periyotları karşılaştır.</span>

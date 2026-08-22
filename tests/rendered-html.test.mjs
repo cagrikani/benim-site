@@ -1164,6 +1164,15 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(page, /Konum x/);
   assert.match(page, /Hız v/);
   assert.match(page, /İvme a/);
+  assert.match(page, /oscillationTarget/);
+  assert.match(page, /Salınım sayısı/);
+  assert.match(page, /type="number"/);
+  assert.match(page, /maximumVelocity = amplitude \* omega/);
+  assert.match(page, /maximumAcceleration = amplitude \* omega \*\* 2/);
+  assert.match(page, /maximumRestoringForce = springConstant/);
+  assert.match(page, /Hız v \(min \/ maks\)/);
+  assert.match(page, /İvme a \(min \/ maks\)/);
+  assert.match(page, /Kuvvet F \(min \/ maks\)/);
   assert.match(page, /Toplam enerji sabit kalır/);
   assert.match(page, /İdeal sistemde korunur/);
   assert.match(page, /DENEY GÜNLÜĞÜ/);
@@ -1188,7 +1197,7 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(css, /\.shm-energy-bar\s*\{/);
 });
 
-test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", async () => {
+test("basit sarkaç düzeneği seçilen salınım sayısından yer çekimi ivmesini hesaplar", async () => {
   const page = await readFile(
     new URL("app/SimplePendulumLab.tsx", projectRoot),
     "utf8",
@@ -1199,7 +1208,11 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(page, /Metre cetveli/);
   assert.match(page, /Optik geçiş kapısı/);
   assert.match(page, /Dijital zamanlayıcı/);
-  assert.match(page, /OSCILLATION_COUNT = 10/);
+  assert.match(page, /BOB_MASS_KG = 0\.05/);
+  assert.match(page, /oscillationTarget/);
+  assert.match(page, /Salınım sayısı/);
+  assert.match(page, /type="number"/);
+  assert.doesNotMatch(page, /OSCILLATION_COUNT/);
   assert.match(page, /ENVIRONMENTS/);
   assert.match(page, /gravity: 1\.62/);
   assert.match(page, /gravity: 3\.71/);
@@ -1215,7 +1228,13 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(page, /onBobPointerUp/);
   assert.match(page, /setPointerCapture/);
   assert.match(page, /requestAnimationFrame/);
-  assert.match(page, /10 salınım süresi/);
+  assert.match(page, /measurementTime = oscillationTarget \* period/);
+  assert.match(page, /maximumVelocity = omega \* amplitudeMeters/);
+  assert.match(page, /maximumAcceleration = omega \*\* 2 \* amplitudeMeters/);
+  assert.match(page, /maximumRestoringForce = BOB_MASS_KG/);
+  assert.match(page, /Hız v \(min \/ maks\)/);
+  assert.match(page, /İvme a \(min \/ maks\)/);
+  assert.match(page, /Kuvvet F \(min \/ maks\)/);
   assert.match(page, /Hesaplanan g/);
   assert.match(page, /Aynı sarkacı farklı gök cisimlerinde dene/);
   assert.match(page, /ORTAMLAR ARASI KARŞILAŞTIRMA/);
