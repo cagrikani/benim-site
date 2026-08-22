@@ -192,6 +192,12 @@ test("Elektrik alanı TYMM uyumlu Ohm yasası deneyini sunar", async () => {
   assert.match(page, /Doğru akım ampermetresi/);
   assert.match(page, /Doğru akım voltmetresi/);
   assert.match(page, /Yalıtımlı bağlantı kabloları/);
+  assert.match(page, /ohm-lab-bench-real-v2\.webp/);
+  assert.match(page, /ohm-power-supply-real-v2\.webp/);
+  assert.match(page, /ohm-analog-meter-real-v2\.webp/);
+  assert.match(page, /ohm-resistor-board-real-v2\.webp/);
+  assert.match(page, /ohm-knife-switch-real-v2\.webp/);
+  assert.match(page, /ohm-cable-kit-real-v2\.webp/);
   assert.match(page, /onEquipmentDragStart/);
   assert.match(page, /onStageDrop/);
   assert.match(page, /REQUIRED_CONNECTIONS/);
@@ -218,6 +224,11 @@ test("Ohm düzeneği gerçekçi cihazlar, bağlantı uçları ve veri alanları 
   assert.match(css, /\.ohm-builder\s*\{/);
   assert.match(css, /\.ohm-equipment-panel,/);
   assert.match(css, /\.ohm-apparatus\s*\{/);
+  assert.match(css, /\.ohm-real-bench-photo\s*\{/);
+  assert.match(css, /\.ohm-real-power-photo,/);
+  assert.match(css, /\.ohm-real-meter-photo/);
+  assert.match(css, /\.ohm-real-resistor-photo/);
+  assert.match(css, /\.ohm-real-switch-photo/);
   assert.match(css, /\.ohm-power-supply\s*\{/);
   assert.match(css, /\.ohm-resistor-board\s*\{/);
   assert.match(css, /\.ohm-meter\s*\{/);

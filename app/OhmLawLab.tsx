@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type CSSProperties,
   type DragEvent as ReactDragEvent,
@@ -85,16 +87,16 @@ const TERMINALS: Record<
   TerminalId,
   { x: number; y: number; label: string; equipment: EquipmentKind; polarity: "red" | "black" }
 > = {
-  "source-positive": { x: 18, y: 30, label: "Kaynak +", equipment: "power-supply", polarity: "red" },
-  "source-negative": { x: 18, y: 45, label: "Kaynak -", equipment: "power-supply", polarity: "black" },
-  "ammeter-positive": { x: 31, y: 72, label: "Ampermetre +", equipment: "ammeter", polarity: "red" },
-  "ammeter-negative": { x: 43, y: 72, label: "Ampermetre -", equipment: "ammeter", polarity: "black" },
-  "resistor-left": { x: 40, y: 32, label: "Direnç sol", equipment: "resistor-board", polarity: "red" },
-  "resistor-right": { x: 63, y: 32, label: "Direnç sağ", equipment: "resistor-board", polarity: "black" },
-  "switch-left": { x: 77, y: 37, label: "Anahtar giriş", equipment: "switch", polarity: "red" },
-  "switch-right": { x: 89, y: 37, label: "Anahtar çıkış", equipment: "switch", polarity: "black" },
-  "voltmeter-positive": { x: 55, y: 72, label: "Voltmetre +", equipment: "voltmeter", polarity: "red" },
-  "voltmeter-negative": { x: 69, y: 72, label: "Voltmetre -", equipment: "voltmeter", polarity: "black" },
+  "source-positive": { x: 17, y: 56, label: "Kaynak +", equipment: "power-supply", polarity: "red" },
+  "source-negative": { x: 9, y: 56, label: "Kaynak -", equipment: "power-supply", polarity: "black" },
+  "ammeter-positive": { x: 42, y: 88, label: "Ampermetre +", equipment: "ammeter", polarity: "red" },
+  "ammeter-negative": { x: 29, y: 88, label: "Ampermetre -", equipment: "ammeter", polarity: "black" },
+  "resistor-left": { x: 36, y: 54, label: "Direnç sol", equipment: "resistor-board", polarity: "red" },
+  "resistor-right": { x: 64, y: 54, label: "Direnç sağ", equipment: "resistor-board", polarity: "black" },
+  "switch-left": { x: 79, y: 54, label: "Anahtar giriş", equipment: "switch", polarity: "red" },
+  "switch-right": { x: 94, y: 54, label: "Anahtar çıkış", equipment: "switch", polarity: "black" },
+  "voltmeter-positive": { x: 70, y: 88, label: "Voltmetre +", equipment: "voltmeter", polarity: "red" },
+  "voltmeter-negative": { x: 56, y: 88, label: "Voltmetre -", equipment: "voltmeter", polarity: "black" },
 };
 
 const WIRING_STEPS: Array<{
@@ -146,6 +148,14 @@ const REQUIRED_CONNECTIONS: Array<[TerminalId, TerminalId]> = WIRING_STEPS.map(
 );
 
 const WIRE_COLORS = ["#e34b43", "#183f52", "#f3a72c", "#345f72", "#cb5b4a", "#536e78"];
+const EQUIPMENT_IMAGES: Record<EquipmentKind, string> = {
+  "power-supply": "./ohm-power-supply-real-v2.webp",
+  "resistor-board": "./ohm-resistor-board-real-v2.webp",
+  ammeter: "./ohm-analog-meter-real-v2.webp",
+  voltmeter: "./ohm-analog-meter-real-v2.webp",
+  switch: "./ohm-knife-switch-real-v2.webp",
+  cables: "./ohm-cable-kit-real-v2.webp",
+};
 
 function connectionKey(first: TerminalId, second: TerminalId) {
   return [first, second].sort().join("--");
@@ -157,10 +167,8 @@ const REQUIRED_KEYS = new Set(
 
 function EquipmentIcon({ kind }: { kind: EquipmentKind }) {
   return (
-    <span className={`ohm-equipment-icon ohm-icon-${kind}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
+    <span className={`ohm-equipment-icon ohm-icon-${kind} has-photo`} aria-hidden="true">
+      <img src={EQUIPMENT_IMAGES[kind]} alt="" draggable={false} />
     </span>
   );
 }
@@ -232,10 +240,14 @@ function Meter({
   const needle = -58 + Math.min(1, value / max) * 116;
   return (
     <div className={`ohm-meter ohm-${kind} ${active ? "active" : ""}`}>
-      <span className="ohm-meter-handle" />
+      <img
+        className="ohm-real-meter-photo"
+        src="./ohm-analog-meter-real-v2.webp"
+        alt={kind === "ammeter" ? "Gerçekçi analog doğru akım ampermetresi" : "Gerçekçi analog doğru akım voltmetresi"}
+        draggable={false}
+      />
       <div className="ohm-meter-face">
         <span>{kind === "ammeter" ? "DC mA" : "DC V"}</span>
-        <i className="ohm-meter-scale" />
         <i
           className="ohm-meter-needle"
           style={{ "--meter-needle": `${needle}deg` } as CSSProperties}
@@ -709,35 +721,48 @@ export default function OhmLawLab() {
           </section>
 
           <div className="ohm-apparatus">
-            <div className="ohm-lab-wall" />
-            <div className="ohm-workbench"><i /><i /></div>
+            <img
+              className="ohm-real-bench-photo"
+              src="./ohm-lab-bench-real-v2.webp"
+              alt="Elektrik devresinin kurulduğu gerçekçi okul laboratuvarı tezgâhı"
+              draggable={false}
+            />
             <WireCanvas connections={connections} />
 
             {installed.includes("power-supply") && (
               <div className={`ohm-power-supply ${powerOn ? "on" : ""}`}>
-                <span className="ohm-source-handle" />
+                <img
+                  className="ohm-real-power-photo"
+                  src="./ohm-power-supply-real-v2.webp"
+                  alt="Gerçekçi alçak gerilim doğru akım güç kaynağı"
+                  draggable={false}
+                />
+                <strong>DC GÜÇ KAYNAĞI</strong>
                 <div className="ohm-source-display">
-                  <small>DC OUTPUT</small>
                   <b>{powerOn ? voltage.toFixed(1) : "0.0"}</b>
                   <em>V</em>
                 </div>
-                <span className="ohm-source-knob"><i /></span>
-                <strong>ALÇAK GERİLİM<br />GÜÇ KAYNAĞI</strong>
-                <button type="button" onClick={togglePower}>
-                  {powerOn ? "KAPAT" : "AÇ"}
+                <button
+                  type="button"
+                  onClick={togglePower}
+                  aria-label={powerOn ? "Güç kaynağını kapat" : "Güç kaynağını aç"}
+                >
+                  <i />
+                  <span>{powerOn ? "GÜÇ AÇIK" : "GÜÇ"}</span>
                 </button>
               </div>
             )}
 
             {installed.includes("resistor-board") && (
               <div className="ohm-resistor-board">
-                <small>OMİK DİRENÇ PANOSU</small>
-                <div className={`ohm-resistor resistor-${resistance}`}>
-                  <i className="lead" />
-                  <span><i /><i /><i /><i /></span>
-                  <i className="lead" />
-                </div>
-                <b>{resistance} Ω</b>
+                <img
+                  className="ohm-real-resistor-photo"
+                  src="./ohm-resistor-board-real-v2.webp"
+                  alt="Gerçekçi omik direnç deney panosu"
+                  draggable={false}
+                />
+                <small>OMİK DİRENÇ</small>
+                <b>R = {resistance} Ω</b>
               </div>
             )}
 
@@ -755,6 +780,12 @@ export default function OhmLawLab() {
                 onClick={toggleSwitch}
                 aria-label={switchClosed ? "Devre anahtarını aç" : "Devre anahtarını kapat"}
               >
+                <img
+                  className="ohm-real-switch-photo"
+                  src="./ohm-knife-switch-real-v2.webp"
+                  alt="Gerçekçi laboratuvar devre anahtarı"
+                  draggable={false}
+                />
                 <span><i /></span>
                 <b>{switchClosed ? "KAPALI DEVRE" : "AÇIK DEVRE"}</b>
               </button>

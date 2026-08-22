@@ -25433,6 +25433,382 @@ footer > a {
 
 .ohm-report-conclusion { margin-top: 12px; }
 
+/* Ohm yasası · foto-gerçekçi tezgâh yenilemesi */
+.ohm-equipment-icon.has-photo {
+  display: grid;
+  place-items: center;
+  border: 1px solid #d7e3e0;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255,255,255,0.98), rgba(232,240,237,0.92));
+  box-shadow: inset 0 1px 0 white;
+}
+
+.ohm-equipment-icon.has-photo::before,
+.ohm-equipment-icon.has-photo::after,
+.ohm-equipment-icon.has-photo > i {
+  display: none;
+}
+
+.ohm-equipment-icon.has-photo img {
+  display: block;
+  width: 92%;
+  height: 92%;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 4px rgba(28, 45, 50, 0.18));
+  user-select: none;
+}
+
+.ohm-apparatus {
+  min-height: 640px;
+  border-color: #c7d5d1;
+  background: #dfe9e6;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.72);
+}
+
+.ohm-real-bench-photo {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  user-select: none;
+}
+
+.ohm-lab-wall,
+.ohm-workbench {
+  display: none;
+}
+
+.ohm-wire-canvas {
+  z-index: 11;
+  filter: drop-shadow(0 3px 2px rgba(15, 29, 33, 0.22));
+}
+
+.ohm-power-supply,
+.ohm-resistor-board,
+.ohm-meter,
+.ohm-circuit-switch {
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.ohm-power-supply {
+  top: auto;
+  bottom: 38%;
+  left: 2%;
+  width: 28%;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 1.5;
+}
+
+.ohm-real-power-photo,
+.ohm-real-resistor-photo,
+.ohm-real-meter-photo,
+.ohm-real-switch-photo {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.ohm-real-power-photo,
+.ohm-real-meter-photo {
+  filter: drop-shadow(8px 13px 10px rgba(25, 35, 37, 0.24));
+}
+
+.ohm-real-resistor-photo,
+.ohm-real-switch-photo {
+  filter: drop-shadow(6px 9px 7px rgba(40, 31, 23, 0.2));
+}
+
+.ohm-source-handle,
+.ohm-source-knob {
+  display: none;
+}
+
+.ohm-source-display {
+  z-index: 2;
+  top: 42%;
+  left: 17%;
+  width: 45%;
+  height: 25%;
+  padding: 3px 8px;
+  border: 2px solid #26383c;
+  border-radius: 5px;
+  background: rgba(10, 28, 25, 0.96);
+  color: #aaf5ca;
+  box-shadow: inset 0 0 9px rgba(77, 235, 153, 0.2);
+  text-align: right;
+}
+
+.ohm-source-display b {
+  font-size: clamp(13px, 1.65vw, 22px);
+}
+
+.ohm-power-supply strong {
+  z-index: 3;
+  top: auto;
+  bottom: -4px;
+  left: 50%;
+  width: max-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(244,248,247,0.94);
+  box-shadow: 0 4px 10px rgba(31,50,55,0.14);
+  color: #274954;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  transform: translateX(-50%);
+}
+
+.ohm-power-supply > button {
+  z-index: 4;
+  right: 8%;
+  bottom: 20%;
+  display: grid;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ohm-power-supply > button i {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border: 2px solid #d7e2df;
+  border-radius: 50%;
+  background: #28383d;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.ohm-power-supply > button span {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  width: max-content;
+  padding: 3px 5px;
+  border-radius: 4px;
+  background: rgba(20,42,50,0.88);
+  color: white;
+  font-size: 6px;
+  font-weight: 900;
+  transform: translateX(-50%);
+}
+
+.ohm-power-supply.on > button {
+  background: transparent;
+  box-shadow: none;
+}
+
+.ohm-power-supply.on > button i {
+  border-color: #e7fff5;
+  background: #24b985;
+  box-shadow: 0 0 0 5px rgba(36,185,133,0.19), 0 0 12px rgba(36,185,133,0.65);
+}
+
+.ohm-resistor-board {
+  top: auto;
+  bottom: 40%;
+  left: 34%;
+  width: 32%;
+  height: auto;
+  aspect-ratio: 1.78;
+  padding: 0;
+}
+
+.ohm-resistor-board > small,
+.ohm-resistor-board > b {
+  position: absolute;
+  z-index: 3;
+  bottom: -4px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  box-shadow: 0 4px 10px rgba(31,50,55,0.14);
+}
+
+.ohm-resistor-board > small {
+  left: 19%;
+  background: rgba(244,248,247,0.94);
+  color: #596f72;
+  font-size: 7px;
+  letter-spacing: 0.08em;
+}
+
+.ohm-resistor-board > b {
+  right: 18%;
+  background: #173e4f;
+  color: white;
+  font-size: 8px;
+}
+
+.ohm-meter {
+  top: auto;
+  bottom: 4%;
+  width: 19.5%;
+  min-width: 0;
+  height: auto;
+  aspect-ratio: 1.094;
+}
+
+.ohm-ammeter { left: 26%; }
+.ohm-voltmeter { left: 54%; }
+
+.ohm-meter-handle,
+.ohm-meter-scale {
+  display: none;
+}
+
+.ohm-meter-face {
+  z-index: 3;
+  inset: 24% 16% 40%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.ohm-meter-face > span {
+  top: 0;
+  color: #3e4f51;
+  font-size: clamp(6px, 0.72vw, 10px);
+  text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+}
+
+.ohm-meter-needle {
+  bottom: 2%;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 78%;
+  border-radius: 2px;
+  background: #d5342d;
+  box-shadow: 0 0 1px rgba(92,25,20,0.7);
+}
+
+.ohm-meter-face b {
+  right: 0;
+  bottom: -35%;
+  padding: 3px 5px;
+  border: 1px solid rgba(83,106,108,0.25);
+  background: rgba(248,250,243,0.93);
+  font-size: clamp(7px, 0.75vw, 10px);
+}
+
+.ohm-meter > small {
+  z-index: 4;
+  right: auto;
+  bottom: -3px;
+  left: 50%;
+  width: max-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(244,248,247,0.94);
+  box-shadow: 0 4px 10px rgba(31,50,55,0.14);
+  color: #2d4b54;
+  font-size: 7px;
+  transform: translateX(-50%);
+}
+
+.ohm-meter.active {
+  box-shadow: none;
+  filter: drop-shadow(0 0 7px rgba(22,127,117,0.32));
+}
+
+.ohm-circuit-switch {
+  top: auto;
+  right: 2.5%;
+  bottom: 40%;
+  width: 22%;
+  height: auto;
+  aspect-ratio: 2.25;
+  padding: 0;
+}
+
+.ohm-circuit-switch > span {
+  z-index: 3;
+  top: 39%;
+  right: 28%;
+  left: 28%;
+  height: 0;
+  background: none;
+}
+
+.ohm-circuit-switch > span::before,
+.ohm-circuit-switch > span::after {
+  display: none;
+}
+
+.ohm-circuit-switch > span i {
+  bottom: auto;
+  left: 0;
+  width: 100%;
+  height: 7px;
+  border: 1px solid #6e7776;
+  border-radius: 4px;
+  background: linear-gradient(#f8faf8, #8d9694 45%, #e2e7e4 55%, #727b7a);
+  box-shadow: 0 2px 3px rgba(40,36,25,0.32);
+  transform: rotate(-28deg);
+  transform-origin: left center;
+}
+
+.ohm-circuit-switch.closed > span i {
+  transform: rotate(0deg);
+}
+
+.ohm-circuit-switch b {
+  z-index: 4;
+  right: auto;
+  bottom: -5px;
+  left: 50%;
+  width: max-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(244,248,247,0.94);
+  box-shadow: 0 4px 10px rgba(31,50,55,0.14);
+  color: #294b59;
+  font-size: 7px;
+  transform: translateX(-50%);
+}
+
+.ohm-circuit-switch.closed b {
+  background: #dff3e9;
+  color: #13705e;
+}
+
+.ohm-terminal {
+  z-index: 15;
+  width: 25px;
+  height: 25px;
+  border-color: rgba(255,255,255,0.96);
+  box-shadow: 0 3px 9px rgba(13,34,44,0.38), inset 0 0 0 1px rgba(0,0,0,0.12);
+}
+
+.ohm-terminal::after {
+  inset: 6px;
+  background: #c9a65f;
+}
+
+.ohm-empty-stage {
+  z-index: 20;
+  border-color: rgba(103,131,125,0.55);
+  background: rgba(250,253,252,0.9);
+  box-shadow: 0 16px 36px rgba(23,54,64,0.13);
+}
+
 .sr-only {
   position: absolute !important;
   width: 1px !important;
