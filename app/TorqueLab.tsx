@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type CSSProperties,
   type DragEvent as ReactDragEvent,
@@ -130,6 +132,17 @@ const ATTACHMENTS: Array<{
   },
 ];
 
+const EQUIPMENT_IMAGES: Record<SetupKind, string> = {
+  base: "./torque-base-spindle-v2.webp",
+  "main-disk": "./torque-main-disc-v2.webp",
+  "stepped-pulley": "./torque-stepped-pulley-v2.webp",
+  "optical-reader": "./torque-optical-reader-v2.webp",
+  "table-pulley": "./torque-edge-pulley-v2.webp",
+  "string-pan": "./torque-mass-pan-v2.webp",
+  "data-logger": "./motion-equipment-timer.webp",
+  attachments: "./torque-inertia-kit-v2.webp",
+};
+
 function format(value: number, digits = 2) {
   return value.toLocaleString("tr-TR", {
     minimumFractionDigits: digits,
@@ -140,9 +153,7 @@ function format(value: number, digits = 2) {
 function EquipmentIcon({ kind }: { kind: SetupKind }) {
   return (
     <span className={`torque-equipment-icon torque-icon-${kind}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
+      <img src={EQUIPMENT_IMAGES[kind]} alt="" draggable={false} />
     </span>
   );
 }
@@ -513,7 +524,7 @@ export default function TorqueLab() {
 
   const discStyle = {
     "--torque-disc-turn": `${progress * 1080}deg`,
-    "--torque-pan-drop": `${progress * 178}px`,
+    "--torque-pan-drop": `${progress * 132}px`,
     "--torque-radius-scale": `${radius / 0.02}`,
   } as CSSProperties;
 
@@ -645,30 +656,37 @@ export default function TorqueLab() {
           </div>
 
           <div className="torque-apparatus" style={discStyle}>
+            <img
+              className="torque-bench-photo"
+              src="./motion-lab-bench-v3.webp"
+              alt=""
+              draggable={false}
+              aria-hidden="true"
+            />
             <div className="torque-lab-wall">
               <span>DÖNME DİNAMİĞİ DENEYİ</span>
-            </div>
-            <div className="torque-workbench">
-              <i className="torque-bench-top" />
-              <i className="torque-bench-leg leg-left" />
-              <i className="torque-bench-leg leg-right" />
             </div>
 
           {installed.includes("base") && (
             <div className="torque-base">
-              <i className="torque-base-rail" />
-              <i className="torque-base-foot foot-one" />
-              <i className="torque-base-foot foot-two" />
-              <i className="torque-axis" />
+              <img
+                className="torque-base-photo"
+                src="./torque-base-spindle-v2.webp"
+                alt="Ayarlanabilir ayaklı metal taban ve merkez dönme mili"
+                draggable={false}
+              />
             </div>
           )}
 
           {installed.includes("main-disk") && (
             <div className={`torque-disc ${runState === "running" ? "spinning" : ""}`} style={discStyle}>
-              <i className="torque-disc-body" />
-              <i className="torque-disc-rim" />
+              <img
+                className="torque-disc-photo"
+                src="./torque-main-disc-v2.webp"
+                alt="Yatay metal ana disk"
+                draggable={false}
+              />
               <i className="torque-disc-marker" />
-              <i className="torque-disc-center" />
               {attachment === "second-disk" && <i className="torque-extra-disc" />}
               {attachment === "ring" && <i className="torque-metal-ring" />}
               {attachment === "block" && <i className="torque-metal-block" />}
@@ -677,26 +695,33 @@ export default function TorqueLab() {
 
           {installed.includes("stepped-pulley") && (
             <div className="torque-stepped-pulley" style={discStyle}>
-              <i />
-              <i />
-              <i />
+              <img
+                src="./torque-stepped-pulley-v2.webp"
+                alt="Üç kademeli yarıçap makarası"
+                draggable={false}
+              />
               <span>{format(radius * 100, 2)} cm</span>
             </div>
           )}
 
           {installed.includes("optical-reader") && (
             <div className={`torque-optical-reader ${runState === "running" ? "active" : ""}`}>
-              <i className="reader-wheel" />
-              <i className="reader-body" />
-              <i className="reader-arm" />
-              <span>OPTİK</span>
+              <img
+                src="./torque-optical-reader-v2.webp"
+                alt="Tekerleği disk kenarına temas eden optik okuyucu"
+                draggable={false}
+              />
+              <i className="reader-contact-pulse" />
             </div>
           )}
 
           {installed.includes("table-pulley") && (
             <div className="torque-edge-pulley">
-              <i />
-              <b />
+              <img
+                src="./torque-edge-pulley-v2.webp"
+                alt="Masa kenarına sıkıştırılmış ip yönlendirme makarası"
+                draggable={false}
+              />
             </div>
           )}
 
@@ -704,9 +729,11 @@ export default function TorqueLab() {
             <>
               <div className={`torque-string ${stringWound || runState === "running" ? "wound" : ""}`} />
               <div className="torque-hanging-pan" style={discStyle}>
-                <i className="pan-wire wire-left" />
-                <i className="pan-wire wire-right" />
-                <i className="pan-tray" />
+                <img
+                  src="./torque-mass-pan-v2.webp"
+                  alt="İpe bağlı kefe ve asılı kütleler"
+                  draggable={false}
+                />
                 <b>{Math.round(addedMass * 1000)} g</b>
               </div>
             </>
@@ -714,6 +741,11 @@ export default function TorqueLab() {
 
           {installed.includes("data-logger") && (
             <div className={`torque-data-logger ${sensorZeroed ? "zeroed" : ""}`}>
+              <img
+                src="./motion-equipment-timer.webp"
+                alt="Optik okuyucuya bağlı hareket zamanlayıcı"
+                draggable={false}
+              />
               <span>
                 <small>MOTION TIMER</small>
                 <b>{format(currentAngularSpeed, 2)}</b>
@@ -728,10 +760,12 @@ export default function TorqueLab() {
 
           {installed.includes("attachments") && (
             <div className="torque-attachment-rack">
+              <img
+                src="./torque-inertia-kit-v2.webp"
+                alt="Yedek disk, metal halka ve metal blok"
+                draggable={false}
+              />
               <b>EK CİSİMLER</b>
-              <i className="rack-second-disc" />
-              <i className="rack-ring" />
-              <i className="rack-block" />
             </div>
           )}
 

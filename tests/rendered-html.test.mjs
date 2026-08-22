@@ -1144,6 +1144,14 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /Kalan malzemeleri istediğin sırayla sürükleyebilirsin/);
   assert.match(page, /isDragOver/);
   assert.match(page, /Malzeme tezgâha bırakılınca doğru bağlantı noktasına oturur/);
+  assert.match(page, /torque-base-spindle-v2\.webp/);
+  assert.match(page, /torque-main-disc-v2\.webp/);
+  assert.match(page, /torque-stepped-pulley-v2\.webp/);
+  assert.match(page, /torque-optical-reader-v2\.webp/);
+  assert.match(page, /torque-edge-pulley-v2\.webp/);
+  assert.match(page, /torque-mass-pan-v2\.webp/);
+  assert.match(page, /torque-inertia-kit-v2\.webp/);
+  assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.doesNotMatch(page, /Önce .* parçasını yerleştir/);
   assert.match(page, /const RADII = \[0\.015, 0\.02, 0\.025\]/);
   assert.match(page, /const MASSES = \[0\.03, 0\.05, 0\.07, 0\.09\]/);
@@ -1287,7 +1295,9 @@ test("tork düzeneği yatay disk, optik okuyucu ve masa makarasını gerçekçi 
   assert.match(css, /\.torque-apparatus\s*\{/);
   assert.match(css, /\.torque-workbench\s*\{/);
   assert.match(css, /\.torque-base\s*\{/);
+  assert.match(css, /\.torque-base-photo\s*[,\{]/);
   assert.match(css, /\.torque-disc\s*\{/);
+  assert.match(css, /\.torque-disc-photo\s*[,\{]/);
   assert.match(css, /\.torque-stepped-pulley\s*\{/);
   assert.match(css, /\.torque-optical-reader\s*\{/);
   assert.match(css, /\.torque-edge-pulley\s*\{/);
