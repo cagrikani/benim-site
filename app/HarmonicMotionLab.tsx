@@ -80,6 +80,7 @@ const EQUIPMENT_IMAGES: Partial<Record<EquipmentKind, string>> = {
   spring: "./shm-metal-spring-real-v2.png",
   mass: "./shm-mass-hanger-real-v2.png",
   ruler: "./freefall-equipment-ruler.webp",
+  sensor: "./shm-motion-sensor-real-v3.png",
   timer: "./motion-equipment-timer.webp",
 };
 
@@ -111,7 +112,7 @@ function EquipmentIcon({ kind }: { kind: EquipmentKind }) {
 }
 
 function SpringCoil({ offset }: { offset: number }) {
-  const height = clamp(188 + offset, 122, 258);
+  const height = clamp(150 + offset, 118, 182);
 
   return (
     <img
@@ -461,7 +462,7 @@ export default function HarmonicMotionLab() {
     setMessage("İdeal ölçüm deney günlüğüne kaydedildi.");
   };
 
-  const oscillatorOffsetPixels = displacement * 6.4;
+  const oscillatorOffsetPixels = displacement * 3;
   const energySafeTotal = Math.max(totalEnergy, 0.000001);
 
   const changeExperiment = (mode: "spring" | "pendulum") => {
@@ -672,9 +673,12 @@ export default function HarmonicMotionLab() {
 
             {installed.includes("sensor") && (
               <div className={`shm-motion-sensor ${runState === "running" ? "active" : ""}`}>
-                <i className="shm-sensor-eye" />
-                <i className="shm-sensor-body" />
-                <span>HAREKET<br />ALGILAYICI</span>
+                <img
+                  className="shm-real-motion-sensor-photo"
+                  src="./shm-motion-sensor-real-v3.png"
+                  alt="Kütlenin düşey konumunu ölçen ultrasonik hareket algılayıcısı"
+                  draggable={false}
+                />
                 {runState === "running" && <b />}
               </div>
             )}

@@ -34,6 +34,7 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "shm-retort-stand-real-v2.png",
     "shm-metal-spring-real-v2.png",
     "shm-mass-hanger-real-v2.png",
+    "shm-motion-sensor-real-v3.png",
     "pendulum-bob-real-v2.png",
     "motion-lab-bench-v3.webp",
     "motion-equipment-air-track.webp",
@@ -1131,10 +1132,11 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(page, /shm-retort-stand-real-v2\.png/);
   assert.match(page, /shm-metal-spring-real-v2\.png/);
   assert.match(page, /shm-mass-hanger-real-v2\.png/);
+  assert.match(page, /shm-motion-sensor-real-v3\.png/);
   assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.match(page, /motion-equipment-timer\.webp/);
   assert.match(page, /freefall-equipment-ruler\.webp/);
-  assert.match(page, /const oscillatorOffsetPixels = displacement \* 6\.4/);
+  assert.match(page, /const oscillatorOffsetPixels = displacement \* 3/);
   assert.match(page, /<SpringCoil offset=\{oscillatorOffsetPixels\}/);
   assert.match(page, /translate3d\(0, \$\{oscillatorOffsetPixels\}px, 0\)/);
   assert.doesNotMatch(page, /--shm-mass-top/);
@@ -1219,6 +1221,7 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(page, /pendulum-bob-real-v2\.png/);
   assert.match(page, /motion-lab-bench-v3\.webp/);
   assert.match(page, /motion-equipment-timer\.webp/);
+  assert.match(page, /motion-equipment-gate\.webp/);
   assert.doesNotMatch(page, /kind:\s*"clamp"|installed\.includes\("clamp"\)/);
   assert.match(page, /KISA DENEY RAPORU/);
   assert.doesNotMatch(page, /Math\.random|hata kaynağı|ölçüm belirsizliği|Yüzdesel fark/i);

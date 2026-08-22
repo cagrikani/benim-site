@@ -37407,3 +37407,248 @@ footer > a {
     left: 252px;
   }
 }
+
+/* Basit harmonik hareket · profesyonel tezgâh hizalaması */
+
+.shm-real-bench-photo,
+.pend-real-bench-photo {
+  top: 168px;
+}
+
+.shm-real-stand-photo,
+.pend-real-stand-photo {
+  top: 10px;
+  left: 75px;
+  z-index: 2;
+  width: 280px;
+  height: 420px;
+}
+
+.shm-stand::after,
+.pend-stand::after {
+  position: absolute;
+  top: 423px;
+  left: 82px;
+  z-index: 1;
+  width: 265px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(24, 35, 37, 0.34), rgba(24, 35, 37, 0) 72%);
+  content: "";
+  pointer-events: none;
+}
+
+.shm-spring {
+  top: 80px;
+  left: 299px;
+  z-index: 6;
+  width: 46px;
+  transition: none;
+  will-change: height;
+}
+
+.shm-mass {
+  top: 230px;
+  left: 283px;
+  width: 78px;
+  height: 95px;
+  transition: none;
+}
+
+.shm-real-mass-photo {
+  inset: -8px 2px -10px;
+  width: calc(100% - 4px);
+  height: calc(100% + 18px);
+}
+
+.shm-mass > span {
+  right: -16px;
+  bottom: -2px;
+}
+
+.shm-ruler {
+  top: 89px;
+  left: 395px;
+  width: 34px;
+  height: 318px;
+}
+
+.shm-reference-marks {
+  top: 178px;
+  left: 440px;
+  height: 130px;
+}
+
+.shm-motion-sensor {
+  top: 363px;
+  left: 272px;
+  z-index: 4;
+  width: 100px;
+  height: 67px;
+  filter: drop-shadow(4px 7px 6px rgba(23, 38, 42, 0.28));
+}
+
+.shm-real-motion-sensor-photo,
+.pend-real-photogate-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.shm-motion-sensor > .shm-sensor-eye,
+.shm-motion-sensor > .shm-sensor-body,
+.shm-motion-sensor > span {
+  display: none;
+}
+
+.shm-motion-sensor > b {
+  top: -33px;
+  left: 47px;
+  z-index: 0;
+  width: 7px;
+  height: 36px;
+  border-right-width: 1px;
+  border-left-width: 1px;
+  opacity: 0.72;
+}
+
+.shm-data-logger,
+.pend-timer {
+  top: 324px;
+  right: 75px;
+  width: 166px;
+  height: 106px;
+}
+
+.shm-data-logger > strong,
+.pend-timer > strong {
+  top: 28px;
+  left: 37px;
+  width: 88px;
+  padding: 2px 4px;
+  font-size: 16px;
+}
+
+.shm-data-logger > em,
+.pend-timer > em {
+  top: 53px;
+  left: 117px;
+}
+
+.shm-sensor-cable {
+  top: 393px;
+  right: 238px;
+  width: 338px;
+  height: 40px;
+  border-width: 3px;
+  border-color: #263d42;
+  filter: drop-shadow(0 2px 1px rgba(18, 34, 37, 0.22));
+  transform: none;
+}
+
+.pend-swing-arm {
+  top: 80px;
+  left: 321px;
+}
+
+.pend-string {
+  height: calc(var(--pend-length) - 25px);
+}
+
+.pend-bob {
+  top: calc(var(--pend-length) - 31px);
+  left: -29px;
+  width: 58px;
+  height: 58px;
+}
+
+.pend-ruler {
+  top: 84px;
+  left: 385px;
+  height: var(--pend-length);
+  min-height: 0;
+  max-height: 280px;
+}
+
+.pend-photogate {
+  top: calc(47px + var(--pend-length));
+  left: 268px;
+  z-index: 7;
+  width: 106px;
+  height: 74px;
+  filter: drop-shadow(4px 7px 6px rgba(23, 38, 42, 0.25));
+}
+
+.pend-photogate .gate-left,
+.pend-photogate .gate-right,
+.pend-photogate .gate-base {
+  display: none;
+}
+
+.pend-photogate::before {
+  top: 30px;
+  right: 18px;
+  left: 18px;
+  z-index: 2;
+  border-top-width: 1px;
+}
+
+.pend-photogate > b {
+  right: auto;
+  bottom: -7px;
+  left: 50%;
+  z-index: 3;
+  min-width: max-content;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(246, 249, 248, 0.93);
+  box-shadow: 0 2px 5px rgba(25, 43, 46, 0.16);
+  color: #315257;
+  font-size: 5px;
+  transform: translateX(-50%);
+}
+
+.pend-timer-cable {
+  top: 393px;
+  right: 238px;
+  width: 345px;
+  height: 40px;
+  border-width: 3px;
+  border-color: #263d42;
+  filter: drop-shadow(0 2px 1px rgba(18, 34, 37, 0.22));
+  transform: none;
+}
+
+.pend-timer > span {
+  top: 82px;
+  left: 42px;
+}
+
+@media (max-width: 520px) {
+  .shm-real-stand-photo,
+  .pend-real-stand-photo {
+    left: 75px;
+  }
+
+  .shm-spring {
+    left: 299px;
+  }
+
+  .shm-mass {
+    left: 283px;
+  }
+
+  .pend-swing-arm {
+    left: 321px;
+  }
+
+  .pend-photogate {
+    left: 268px;
+  }
+}

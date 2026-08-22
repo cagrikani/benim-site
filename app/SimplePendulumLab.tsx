@@ -251,7 +251,7 @@ export default function SimplePendulumLab() {
   const countedOscillations = Math.min(OSCILLATION_COUNT, time / period);
   const calculatedGravity =
     (4 * Math.PI ** 2 * lengthMeters) / period ** 2;
-  const stringLengthPixels = 165 + length * 1.6;
+  const stringLengthPixels = 150 + length * 1.25;
 
   const stopAnimation = useCallback(() => {
     if (animationRef.current !== null) {
@@ -615,9 +615,12 @@ export default function SimplePendulumLab() {
             )}
             {installed.includes("photogate") && (
               <div className={`pend-photogate ${runState === "running" ? "active" : ""}`}>
-                <i className="gate-left" />
-                <i className="gate-right" />
-                <i className="gate-base" />
+                <img
+                  className="pend-real-photogate-photo"
+                  src="./motion-equipment-gate.webp"
+                  alt="Bilyenin denge noktasından geçişini ölçen optik kapı"
+                  draggable={false}
+                />
                 <b>OPTİK KAPI</b>
               </div>
             )}
