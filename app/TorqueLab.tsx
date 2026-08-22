@@ -42,21 +42,15 @@ type Trial = {
 const G = 9.81;
 const PAN_MASS = 0.005;
 const MIME = "application/x-torque-equipment";
-const FIXED_RIG_PARTS: SetupKind[] = [
+const SETUP_ORDER: SetupKind[] = [
   "base",
   "main-disk",
   "stepped-pulley",
   "optical-reader",
   "table-pulley",
-];
-const STUDENT_SETUP_ORDER: SetupKind[] = [
   "string-pan",
   "data-logger",
   "attachments",
-];
-const SETUP_ORDER: SetupKind[] = [
-  ...FIXED_RIG_PARTS,
-  ...STUDENT_SETUP_ORDER,
 ];
 const EQUIPMENT: Array<{
   kind: SetupKind;
@@ -299,7 +293,7 @@ export default function TorqueLab() {
   const animationRef = useRef<number | null>(null);
   const runStartedAtRef = useRef(0);
   const nextIdRef = useRef(1);
-  const [installed, setInstalled] = useState<SetupKind[]>(() => [...FIXED_RIG_PARTS]);
+  const [installed, setInstalled] = useState<SetupKind[]>([]);
   const [experiment, setExperiment] = useState<ExperimentKind>("radius");
   const [radius, setRadius] = useState(0.015);
   const [addedMass, setAddedMass] = useState(0.04);
@@ -310,7 +304,7 @@ export default function TorqueLab() {
   const [progress, setProgress] = useState(0);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState(
-    "Sabit düzenek hazır. 1. adım: İp, kefe ve kütleleri tezgâha yerleştir.",
+    "1. adım: Metal tabanı ve dönme eksenini tezgâha yerleştir.",
   );
   const [records, setRecords] = useState<Trial[]>([]);
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -324,12 +318,8 @@ export default function TorqueLab() {
   });
 
   const setupComplete = installed.length === SETUP_ORDER.length;
-  const fixedRigReady = FIXED_RIG_PARTS.every((kind) => installed.includes(kind));
-  const studentInstalledCount = STUDENT_SETUP_ORDER.filter((kind) =>
-    installed.includes(kind),
-  ).length;
   const nextSetup =
-    STUDENT_SETUP_ORDER.find((kind) => !installed.includes(kind)) ?? null;
+    SETUP_ORDER.find((kind) => !installed.includes(kind)) ?? null;
   const selectedAttachment =
     ATTACHMENTS.find((item) => item.kind === attachment) ?? ATTACHMENTS[0];
   const totalHangingMass = addedMass + PAN_MASS;
@@ -339,6 +329,7 @@ export default function TorqueLab() {
   const measuredAlpha = theoreticalAlpha;
   const latest = records.at(-1) ?? null;
   const currentAngularSpeed = measuredAlpha * timer;
+  const visibleWeightCount = Math.max(1, Math.round((addedMass * 1000) / 10));
 
   const completion = useMemo(() => {
     const radiusTrials = new Set(
@@ -366,7 +357,7 @@ export default function TorqueLab() {
 
   const addEquipment = (kind: SetupKind) => {
     if (runState === "running" || installed.includes(kind)) return;
-    if (!STUDENT_SETUP_ORDER.includes(kind) || kind !== nextSetup) {
+    if (!SETUP_ORDER.includes(kind) || kind !== nextSetup) {
       const expectedName = EQUIPMENT.find((item) => item.kind === nextSetup)?.shortName;
       setMessage(`Sıradaki adım: ${expectedName ?? "düzeneği tamamlama parçası"}.`);
       return;
@@ -377,7 +368,7 @@ export default function TorqueLab() {
       setMessage("Düzenek hazır. Deney serisini seç, ipi sar ve okuyucuyu sıfırla.");
     } else {
       const placedName = EQUIPMENT.find((item) => item.kind === kind)?.shortName;
-      const followingKind = STUDENT_SETUP_ORDER.find((item) => !nextInstalled.includes(item));
+      const followingKind = SETUP_ORDER.find((item) => !nextInstalled.includes(item));
       const followingName = EQUIPMENT.find((item) => item.kind === followingKind)?.shortName;
       setMessage(
         `${placedName} yerine oturdu. Sıradaki adım: ${followingName}.`,
@@ -397,7 +388,7 @@ export default function TorqueLab() {
     event.preventDefault();
     setIsDragOver(false);
     const kind = event.dataTransfer.getData(MIME) as SetupKind;
-    if (STUDENT_SETUP_ORDER.includes(kind)) addEquipment(kind);
+    if (SETUP_ORDER.includes(kind)) addEquipment(kind);
   };
 
   const selectRadius = (value: number) => {
@@ -528,7 +519,7 @@ export default function TorqueLab() {
 
   const resetApparatus = () => {
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    setInstalled([...FIXED_RIG_PARTS]);
+    setInstalled([]);
     setStringWound(false);
     setSensorZeroed(false);
     setRunState("ready");
@@ -536,13 +527,15 @@ export default function TorqueLab() {
     setTimer(0);
     setShowAnalysis(false);
     setIsDragOver(false);
-    setMessage("Sabit düzenek hazır. 1. adım: İp, kefe ve kütleleri tezgâha yerleştir.");
+    setMessage("1. adım: Metal tabanı ve dönme eksenini tezgâha yerleştir.");
   };
 
   const discStyle = {
-    "--torque-disc-turn": `${progress * 1080}deg`,
+    "--torque-disc-turn": `${progress * 1260}deg`,
+    "--torque-edge-turn": `${progress * -1260}deg`,
     "--torque-pan-drop": `${progress * 132}px`,
     "--torque-radius-scale": `${radius / 0.02}`,
+    "--torque-spool-half": `${radius * 1600}px`,
   } as CSSProperties;
 
   const radiusBarValues = RADII.map((value) => ({
@@ -581,13 +574,13 @@ export default function TorqueLab() {
 
       <div className="torque-learning-strip">
         <span>
-          <b>✓</b> Sabit düzenek hazır
+          <b>1</b> Düzeneği sırayla kur
         </span>
         <span>
-          <b>1</b> Üç ek parçayı sırayla yerleştir
+          <b>2</b> Yarıçapı, kütleyi veya cismi seç
         </span>
         <span>
-          <b>2</b> İpi sar, sıfırla ve ölç
+          <b>3</b> İpi sar, sıfırla ve ölç
         </span>
       </div>
 
@@ -596,7 +589,7 @@ export default function TorqueLab() {
           <small>DENEYİ SEÇ VE ÇALIŞTIR</small>
           <b>
             {!setupComplete
-              ? `Önce ${STUDENT_SETUP_ORDER.length - studentInstalledCount} ek parçayı sırayla yerleştir`
+              ? `Önce ${SETUP_ORDER.length - installed.length} parçayı sırayla yerleştir`
               : experiment === "radius"
                 ? "Yarıçap – açısal ivme"
                 : experiment === "mass"
@@ -606,7 +599,7 @@ export default function TorqueLab() {
           <span>
             {setupComplete
               ? `r ${format(radius * 100, 2)} cm · ${Math.round(addedMass * 1000)} g · ${selectedAttachment.name}`
-              : "Sabit düzenek hazırdır; vurgulanan parçaya dokunabilir veya sahneye sürükleyebilirsin."}
+              : "Vurgulanan parçaya dokunabilir veya sahneye sürükleyebilirsin; düzenek adım adım oluşur."}
           </span>
         </div>
 
@@ -704,20 +697,13 @@ export default function TorqueLab() {
           <div className="torque-panel-heading">
             <div>
               <small>KURULUM SIRASI</small>
-              <h3>Düzeneği üç adımda tamamla</h3>
+              <h3>Düzeneği parça parça kur</h3>
             </div>
-            <span>{studentInstalledCount}/{STUDENT_SETUP_ORDER.length}</span>
-          </div>
-          <div className="torque-fixed-ready">
-            <span>✓</span>
-            <div>
-              <b>Sabit düzenek hazır</b>
-              <small>Disk · optik okuyucu · kenar makarası</small>
-            </div>
+            <span>{installed.length}/{SETUP_ORDER.length}</span>
           </div>
           <p>Vurgulanan parçayı tezgâha sürükle veya parçaya dokun.</p>
           <div className="torque-equipment-list">
-            {EQUIPMENT.filter((item) => STUDENT_SETUP_ORDER.includes(item.kind)).map((item) => {
+            {EQUIPMENT.map((item) => {
               const isInstalled = installed.includes(item.kind);
               const isNext = item.kind === nextSetup;
               return (
@@ -738,7 +724,7 @@ export default function TorqueLab() {
                       {isInstalled
                         ? "Tezgâha yerleşti"
                         : isNext
-                          ? `${studentInstalledCount + 1}. adım · şimdi ekle`
+                          ? `${installed.length + 1}. adım · şimdi ekle`
                           : "Önce üstteki adımı tamamla"}
                     </small>
                   </span>
@@ -747,12 +733,12 @@ export default function TorqueLab() {
             })}
           </div>
           <small className="torque-touch-note">
-            Parçalar yalnızca doğru sırada etkinleşir ve doğru bağlantı noktasına oturur.
+            Her parça, önceki adım tamamlanınca etkinleşir ve aynı sahnede doğru konuma oturur.
           </small>
         </section>
 
         <div
-          className={`torque-stage ${setupComplete ? "setup-complete" : ""} ${fixedRigReady ? "fixed-rig" : ""} ${isDragOver ? "drag-over" : ""}`}
+          className={`torque-stage ${setupComplete ? "setup-complete" : ""} ${isDragOver ? "drag-over" : ""}`}
           onDragOver={(event) => event.preventDefault()}
           onDragEnter={() => setIsDragOver(true)}
           onDragLeave={(event) => {
@@ -773,7 +759,7 @@ export default function TorqueLab() {
                     ? "Ölçüm tamamlandı"
                     : setupComplete
                       ? "Düzenek ölçüme hazır"
-                      : "Sabit düzenek hazır · ek parçaları tamamla"}
+                      : "Düzeneği sırayla tamamla"}
               </b>
             </div>
             <div className="torque-live-readouts">
@@ -790,7 +776,7 @@ export default function TorqueLab() {
                 <b>{runState === "complete" ? format(measuredAlpha, 3) : "—"} rad/s²</b>
               </span>
               <button type="button" onClick={resetApparatus} disabled={runState === "running"}>
-                Ek parçaları sıfırla
+                Düzeneği sök
               </button>
             </div>
           </div>
@@ -807,145 +793,129 @@ export default function TorqueLab() {
               <span>DÖNME DİNAMİĞİ DENEYİ</span>
             </div>
 
-            {fixedRigReady && (
-              <div className="torque-integrated-rig">
-                <img
-                  src="./torque-integrated-rig-v3.webp"
-                  alt="Optik okuyucusu ve kenar makarası bağlı bütünleşik dönme dinamiği düzeneği"
-                  draggable={false}
-                />
-                <i className="torque-rig-marker" />
-                <span className="torque-rig-radius">
-                  r = {format(radius * 100, 2)} cm · F = {format(force, 2)} N
-                </span>
-                <span className="torque-rig-label label-reader">Optik okuyucu</span>
-                <span className="torque-rig-label label-disc">Ana disk</span>
-                <span className="torque-rig-label label-pulley">Kenar makarası</span>
-                <i className={`torque-rig-reader-light ${runState === "running" ? "active" : ""}`} />
-                {attachment === "second-disk" && <i className="torque-rig-extra-disc" />}
-                {attachment === "ring" && <i className="torque-rig-metal-ring" />}
-                {attachment === "block" && <i className="torque-rig-metal-block" />}
-              </div>
-            )}
+            <div className="torque-kinetic-rig" aria-label="Parça parça kurulan hareketli dönme dinamiği düzeneği">
+              {installed.includes("base") && (
+                <div className="torque-kinetic-base">
+                  <i className="kinetic-base-rail" />
+                  <i className="kinetic-base-foot foot-left" />
+                  <i className="kinetic-base-foot foot-right" />
+                  <i className="kinetic-axis-bearing" />
+                  <i className="kinetic-axis-shaft" />
+                  <span>Metal taban ve dönme ekseni</span>
+                </div>
+              )}
 
-          {installed.includes("base") && !fixedRigReady && (
-            <div className="torque-base">
-              <img
-                className="torque-base-photo"
-                src="./torque-base-spindle-v2.webp"
-                alt="Ayarlanabilir ayaklı metal taban ve merkez dönme mili"
-                draggable={false}
-              />
+              {installed.includes("main-disk") && (
+                <div className={`torque-kinetic-disc ${runState === "running" ? "running" : ""}`}>
+                  <i className="kinetic-disc-edge" />
+                  <div className="kinetic-disc-surface">
+                    <i className="kinetic-disc-marker" />
+                    <i className="kinetic-disc-stud stud-one" />
+                    <i className="kinetic-disc-stud stud-two" />
+                    <i className="kinetic-disc-stud stud-three" />
+                    <i className="kinetic-disc-hub" />
+                    {attachment === "second-disk" && <i className="kinetic-extra-disc" />}
+                    {attachment === "ring" && <i className="kinetic-metal-ring" />}
+                    {attachment === "block" && <i className="kinetic-metal-block" />}
+                  </div>
+                  <span>Ana disk · {attachment === "main" ? "991 g" : selectedAttachment.name}</span>
+                </div>
+              )}
+
+              {installed.includes("stepped-pulley") && (
+                <div className="torque-kinetic-spool">
+                  <i className={`spool-tier tier-25 ${radius === 0.025 ? "active" : ""}`} />
+                  <i className={`spool-tier tier-20 ${radius === 0.02 ? "active" : ""}`} />
+                  <i className={`spool-tier tier-15 ${radius === 0.015 ? "active" : ""}`} />
+                  <i className="kinetic-spool-winding" />
+                  <b>{format(radius * 100, 2)} cm kademesi</b>
+                </div>
+              )}
+
+              {installed.includes("optical-reader") && (
+                <div className={`torque-kinetic-reader ${runState === "running" ? "active" : ""}`}>
+                  <i className="kinetic-reader-post" />
+                  <i className="kinetic-reader-body" />
+                  <i className="kinetic-reader-arm" />
+                  <i className="kinetic-reader-wheel" />
+                  <i className="kinetic-reader-light" />
+                  <span>Optik okuyucu</span>
+                </div>
+              )}
+
+              {installed.includes("table-pulley") && (
+                <div className={`torque-kinetic-edge-pulley ${runState === "running" ? "active" : ""}`}>
+                  <i className="kinetic-edge-bracket" />
+                  <i className="kinetic-edge-wheel" />
+                  <i className="kinetic-edge-clamp" />
+                  <span>Kenar makarası</span>
+                </div>
+              )}
+
+              {installed.includes("string-pan") && (
+                <>
+                  <div className={`torque-kinetic-cord ${stringWound || runState === "running" ? "wound" : ""}`}>
+                    <i className="kinetic-cord-horizontal" />
+                    <i className="kinetic-cord-arc" />
+                    <i className="kinetic-cord-vertical" />
+                  </div>
+                  <div className="torque-kinetic-hanger" style={discStyle}>
+                    <i className="kinetic-hanger-hook" />
+                    <i className="kinetic-hanger-stem" />
+                    <div className="kinetic-weight-stack" aria-label={`${visibleWeightCount} adet 10 gramlık kütle`}>
+                      {Array.from({ length: visibleWeightCount }, (_, index) => (
+                        <i key={index} />
+                      ))}
+                    </div>
+                    <i className="kinetic-hanger-tray" />
+                    <b>5 g kefe + {Math.round(addedMass * 1000)} g</b>
+                  </div>
+                </>
+              )}
+
+              {installed.includes("data-logger") && (
+                <div className={`torque-data-logger ${sensorZeroed ? "zeroed" : ""}`}>
+                  <img
+                    src="./motion-equipment-timer.webp"
+                    alt="Optik okuyucuya bağlı hareket zamanlayıcı"
+                    draggable={false}
+                  />
+                  <span>
+                    <small>MOTION TIMER</small>
+                    <b>{format(currentAngularSpeed, 2)}</b>
+                    <em>rad/s</em>
+                  </span>
+                  <i className="logger-led" />
+                  <i className="logger-button button-one" />
+                  <i className="logger-button button-two" />
+                  <i className="logger-cable" />
+                </div>
+              )}
+
+              {installed.includes("attachments") && (
+                <div className="torque-attachment-rack">
+                  <img
+                    src="./torque-inertia-kit-v2.webp"
+                    alt="Yedek disk, metal halka ve metal blok"
+                    draggable={false}
+                  />
+                  <b>EK CİSİMLER</b>
+                </div>
+              )}
+
+              {setupComplete && (
+                <div className="torque-kinetic-live-label">
+                  <span>Seçili yarıçap <b>{format(radius * 100, 2)} cm</b></span>
+                  <span>Asılı kütle <b>{Math.round(addedMass * 1000)} g</b></span>
+                  <span>Tork <b>{format(torque, 3)} N·m</b></span>
+                </div>
+              )}
             </div>
-          )}
-
-          {installed.includes("main-disk") && !fixedRigReady && (
-            <div className={`torque-disc ${runState === "running" ? "spinning" : ""}`} style={discStyle}>
-              <img
-                className="torque-disc-photo"
-                src="./torque-main-disc-v2.webp"
-                alt="Yatay metal ana disk"
-                draggable={false}
-              />
-              <i className="torque-disc-marker" />
-              {attachment === "second-disk" && <i className="torque-extra-disc" />}
-              {attachment === "ring" && <i className="torque-metal-ring" />}
-              {attachment === "block" && <i className="torque-metal-block" />}
-            </div>
-          )}
-
-          {installed.includes("stepped-pulley") && !fixedRigReady && (
-            <div className="torque-stepped-pulley" style={discStyle}>
-              <img
-                src="./torque-stepped-pulley-v2.webp"
-                alt="Üç kademeli yarıçap makarası"
-                draggable={false}
-              />
-              <span>{format(radius * 100, 2)} cm</span>
-            </div>
-          )}
-
-          {installed.includes("optical-reader") && !fixedRigReady && (
-            <div className={`torque-optical-reader ${runState === "running" ? "active" : ""}`}>
-              <img
-                src="./torque-optical-reader-v2.webp"
-                alt="Tekerleği disk kenarına temas eden optik okuyucu"
-                draggable={false}
-              />
-              <i className="reader-contact-pulse" />
-            </div>
-          )}
-
-          {installed.includes("table-pulley") && !fixedRigReady && (
-            <div className="torque-edge-pulley">
-              <img
-                src="./torque-edge-pulley-v2.webp"
-                alt="Masa kenarına sıkıştırılmış ip yönlendirme makarası"
-                draggable={false}
-              />
-            </div>
-          )}
-
-          {installed.includes("string-pan") && (
-            <>
-              <div className={`torque-string ${stringWound || runState === "running" ? "wound" : ""}`} />
-              <div className="torque-hanging-pan" style={discStyle}>
-                <img
-                  src="./torque-mass-pan-v2.webp"
-                  alt="İpe bağlı kefe ve asılı kütleler"
-                  draggable={false}
-                />
-                <b>{Math.round(addedMass * 1000)} g</b>
-              </div>
-            </>
-          )}
-
-          {installed.includes("data-logger") && (
-            <div className={`torque-data-logger ${sensorZeroed ? "zeroed" : ""}`}>
-              <img
-                src="./motion-equipment-timer.webp"
-                alt="Optik okuyucuya bağlı hareket zamanlayıcı"
-                draggable={false}
-              />
-              <span>
-                <small>MOTION TIMER</small>
-                <b>{format(currentAngularSpeed, 2)}</b>
-                <em>rad/s</em>
-              </span>
-              <i className="logger-led" />
-              <i className="logger-button button-one" />
-              <i className="logger-button button-two" />
-              <i className="logger-cable" />
-            </div>
-          )}
-
-          {installed.includes("attachments") && (
-            <div className="torque-attachment-rack">
-              <img
-                src="./torque-inertia-kit-v2.webp"
-                alt="Yedek disk, metal halka ve metal blok"
-                draggable={false}
-              />
-              <b>EK CİSİMLER</b>
-            </div>
-          )}
-
-            {setupComplete && (
-              <div className="torque-force-overlay">
-                <span className="torque-radius-line">
-                  r = {format(radius * 100, 2)} cm
-                </span>
-                <span className="torque-force-arrow">
-                  F = {format(force, 2)} N
-                </span>
-                <small>İp diske teğet bağlanmıştır.</small>
-              </div>
-            )}
 
             {!setupComplete && (
               <div className="torque-bench-hint">
                 <b>
-                  {studentInstalledCount + 1}. adım · {EQUIPMENT.find((item) => item.kind === nextSetup)?.shortName}
+                  {installed.length + 1}. adım · {EQUIPMENT.find((item) => item.kind === nextSetup)?.shortName}
                 </b>
                 <span>Vurgulanan parçayı buraya bırak; doğru bağlantıya kendiliğinden oturur.</span>
               </div>
