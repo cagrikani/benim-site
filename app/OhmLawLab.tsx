@@ -87,8 +87,8 @@ const TERMINALS: Record<
   TerminalId,
   { x: number; y: number; label: string; equipment: EquipmentKind; polarity: "red" | "black" }
 > = {
-  "source-positive": { x: 17, y: 56, label: "Kaynak +", equipment: "power-supply", polarity: "red" },
-  "source-negative": { x: 9, y: 56, label: "Kaynak -", equipment: "power-supply", polarity: "black" },
+  "source-positive": { x: 11.6, y: 55.7, label: "Kaynak kırmızı giriş", equipment: "power-supply", polarity: "red" },
+  "source-negative": { x: 9.1, y: 55.7, label: "Kaynak siyah giriş", equipment: "power-supply", polarity: "black" },
   "ammeter-positive": { x: 42, y: 88, label: "Ampermetre +", equipment: "ammeter", polarity: "red" },
   "ammeter-negative": { x: 29, y: 88, label: "Ampermetre -", equipment: "ammeter", polarity: "black" },
   "resistor-left": { x: 36, y: 43, label: "Direnç kırmızı giriş", equipment: "resistor-board", polarity: "red" },
@@ -211,20 +211,20 @@ function WireCanvas({ connections }: { connections: Connection[] }) {
       };
 
       traceCable();
-      context.strokeStyle = "rgba(18, 25, 27, 0.32)";
-      context.lineWidth = 11;
+      context.strokeStyle = "rgba(18, 25, 27, 0.27)";
+      context.lineWidth = 7.5;
       context.lineCap = "round";
       context.lineJoin = "round";
       context.stroke();
 
       traceCable();
       context.strokeStyle = wireColor;
-      context.lineWidth = 7;
+      context.lineWidth = 4.6;
       context.stroke();
 
       traceCable();
-      context.strokeStyle = "rgba(255, 255, 255, 0.28)";
-      context.lineWidth = 1.35;
+      context.strokeStyle = "rgba(255, 255, 255, 0.34)";
+      context.lineWidth = 0.85;
       context.stroke();
     });
   }, [connections]);

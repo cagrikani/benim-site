@@ -203,6 +203,11 @@ test("Elektrik alanı TYMM uyumlu Ohm yasası deneyini sunar", async () => {
   assert.match(page, /REQUIRED_CONNECTIONS/);
   assert.match(page, /WIRING_STEPS/);
   assert.match(page, /source-positive/);
+  assert.match(page, /"source-positive": \{ x: 11\.6, y: 55\.7/);
+  assert.match(page, /"source-negative": \{ x: 9\.1, y: 55\.7/);
+  assert.match(page, /Kaynak kırmızı giriş/);
+  assert.match(page, /Kaynak siyah giriş/);
+  assert.match(page, /context\.lineWidth = 4\.6/);
   assert.match(page, /ammeter-positive/);
   assert.match(page, /voltmeter-positive/);
   assert.match(page, /"resistor-left": \{ x: 36, y: 43/);
