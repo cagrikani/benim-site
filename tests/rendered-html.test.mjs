@@ -31,6 +31,8 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "mechanics-collisions.webp",
     "mechanics-ballistic.webp",
     "mechanics-harmonic-motion.webp",
+    "harmonic-tab-spring-real-v2.png",
+    "harmonic-tab-pendulum-real-v2.png",
     "shm-retort-stand-real-v2.png",
     "shm-metal-spring-real-v2.png",
     "shm-mass-hanger-real-v2.png",
@@ -1129,6 +1131,8 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(page, /Yay–kütle sistemi/);
   assert.match(page, /Basit sarkaç/);
   assert.match(page, /SimplePendulumLab/);
+  assert.match(page, /harmonic-tab-spring-real-v2\.png/);
+  assert.match(page, /harmonic-tab-pendulum-real-v2\.png/);
   assert.match(page, /SpringCoil/);
   assert.match(page, /shm-retort-stand-real-v2\.png/);
   assert.match(page, /createLinearGradient/);
@@ -1168,6 +1172,8 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
 
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
   assert.match(css, /\.shm-workspace\s*\{/);
+  assert.match(css, /\.shm-tab-spring > img/);
+  assert.match(css, /\.shm-tab-pendulum > img/);
   assert.match(css, /\.shm-apparatus\s*\{/);
   assert.match(css, /\.shm-stand\s*\{/);
   assert.match(css, /\.shm-spring\s*\{/);
@@ -1240,6 +1246,8 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(css, /\.pend-bob\s*\{/);
   assert.match(css, /\.pend-ruler\s*\{/);
   assert.match(css, /\.pend-photogate\s*\{/);
+  assert.match(css, /top: calc\(80px \+ var\(--pend-length\)\);/);
+  assert.match(css, /z-index: 9;\s*width: 140px;/);
   assert.match(css, /\.pend-timer\s*\{/);
   assert.match(css, /\.pend-environment-selector\s*\{/);
   assert.match(css, /\.pend-environment-window\s*\{/);

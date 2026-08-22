@@ -233,7 +233,13 @@ function ExperimentTabs({
         className={active === "spring" ? "active" : ""}
         onClick={() => onChange("spring")}
       >
-        <span className="shm-tab-spring" aria-hidden="true"><i /><i /><i /></span>
+        <span className="shm-tab-spring" aria-hidden="true">
+          <img
+            src="./harmonic-tab-spring-real-v2.png"
+            alt=""
+            draggable={false}
+          />
+        </span>
         <span><small>DENEY 1</small><b>Yay–kütle sistemi</b><em>Periyot ve enerji dönüşümü</em></span>
       </button>
       <button
@@ -241,7 +247,13 @@ function ExperimentTabs({
         className={active === "pendulum" ? "active" : ""}
         onClick={() => onChange("pendulum")}
       >
-        <span className="shm-tab-pendulum" aria-hidden="true"><i /><i /><i /></span>
+        <span className="shm-tab-pendulum" aria-hidden="true">
+          <img
+            src="./harmonic-tab-pendulum-real-v2.png"
+            alt=""
+            draggable={false}
+          />
+        </span>
         <span><small>DENEY 2</small><b>Basit sarkaç</b><em>Periyottan yer çekimi ivmesi</em></span>
       </button>
     </div>

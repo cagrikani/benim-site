@@ -37658,3 +37658,90 @@ footer > a {
     left: 268px;
   }
 }
+
+/* Harmonik hareket · foto-gerçekçi deney seçimleri ve kapı derinliği */
+
+.shm-experiment-tabs > button {
+  grid-template-columns: 112px 1fr;
+  min-height: 122px;
+  padding: 11px;
+}
+
+.shm-tab-spring,
+.shm-tab-pendulum {
+  width: 112px;
+  height: 98px;
+  border: 1px solid #d6e3e0;
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 50% 38%, #fff 0 34%, #edf3f1 72%, #dbe7e3 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 7px 15px rgba(29, 55, 58, 0.12);
+}
+
+.shm-tab-spring > img,
+.shm-tab-pendulum > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 3px 5px 2px;
+  object-fit: contain;
+  filter: drop-shadow(3px 5px 4px rgba(26, 42, 45, 0.25));
+  pointer-events: none;
+  user-select: none;
+}
+
+.shm-experiment-tabs > button.active .shm-tab-spring,
+.shm-experiment-tabs > button.active .shm-tab-pendulum {
+  border-color: rgba(224, 143, 27, 0.7);
+  background:
+    radial-gradient(circle at 50% 38%, #fffdf7 0 34%, #f5eee0 75%, #e8dbc3 100%);
+}
+
+.pend-swing-arm {
+  z-index: 8;
+}
+
+.pend-bob {
+  top: calc(var(--pend-length) - 28px);
+  left: -26px;
+  width: 52px;
+  height: 52px;
+}
+
+.pend-photogate {
+  top: calc(80px + var(--pend-length));
+  left: 251px;
+  z-index: 9;
+  width: 140px;
+  height: 76px;
+  filter: drop-shadow(5px 8px 6px rgba(23, 38, 42, 0.28));
+}
+
+.pend-photogate::before {
+  top: 31px;
+  right: 23px;
+  left: 23px;
+  z-index: 3;
+}
+
+.pend-photogate > b {
+  bottom: -6px;
+}
+
+@media (max-width: 520px) {
+  .shm-experiment-tabs > button {
+    grid-template-columns: 92px 1fr;
+  }
+
+  .shm-tab-spring,
+  .shm-tab-pendulum {
+    width: 92px;
+    height: 86px;
+  }
+
+  .pend-photogate {
+    left: 251px;
+  }
+}
