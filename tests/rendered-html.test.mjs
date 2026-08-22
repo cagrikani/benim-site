@@ -1151,7 +1151,12 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /torque-edge-pulley-v2\.webp/);
   assert.match(page, /torque-mass-pan-v2\.webp/);
   assert.match(page, /torque-inertia-kit-v2\.webp/);
+  assert.match(page, /torque-integrated-rig-v3\.webp/);
   assert.match(page, /motion-lab-bench-v3\.webp/);
+  assert.match(page, /torque-command-center/);
+  assert.match(page, /DENEYİ SEÇ VE ÇALIŞTIR/);
+  assert.match(page, /İpi sar/);
+  assert.match(page, /Kefeyi bırak/);
   assert.doesNotMatch(page, /Önce .* parçasını yerleştir/);
   assert.match(page, /const RADII = \[0\.015, 0\.02, 0\.025\]/);
   assert.match(page, /const MASSES = \[0\.03, 0\.05, 0\.07, 0\.09\]/);
@@ -1162,9 +1167,9 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /const torque = force \* radius/);
   assert.match(page, /completion\.total === 11/);
   assert.match(page, /Açısal hız - zaman/);
-  assert.match(page, /Yarıçap - açısal ivme/);
-  assert.match(page, /Kütle - açısal ivme/);
-  assert.match(page, /Eylemsizlik momenti - açısal ivme/);
+  assert.match(page, /Yarıçap [–-] açısal ivme/);
+  assert.match(page, /Kütle [–-] açısal ivme/);
+  assert.match(page, /Eylemsizlik momenti [–-] açısal ivme/);
   assert.match(page, /İşlemsel analizi göster/);
   assert.match(page, /τ = r · F/);
   assert.match(page, /α = τ \/ I/);
@@ -1298,6 +1303,9 @@ test("tork düzeneği yatay disk, optik okuyucu ve masa makarasını gerçekçi 
   assert.match(css, /\.torque-base-photo\s*[,\{]/);
   assert.match(css, /\.torque-disc\s*\{/);
   assert.match(css, /\.torque-disc-photo\s*[,\{]/);
+  assert.match(css, /\.torque-command-center\s*\{/);
+  assert.match(css, /\.torque-integrated-rig\s*\{/);
+  assert.match(css, /\.torque-rig-marker\s*[,\{]/);
   assert.match(css, /\.torque-stepped-pulley\s*\{/);
   assert.match(css, /\.torque-optical-reader\s*\{/);
   assert.match(css, /\.torque-edge-pulley\s*\{/);

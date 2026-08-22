@@ -318,6 +318,13 @@ export default function TorqueLab() {
   });
 
   const setupComplete = installed.length === SETUP_ORDER.length;
+  const fixedRigReady = [
+    "base",
+    "main-disk",
+    "stepped-pulley",
+    "optical-reader",
+    "table-pulley",
+  ].every((kind) => installed.includes(kind as SetupKind));
   const nextSetup =
     SETUP_ORDER.find((kind) => !installed.includes(kind)) ?? null;
   const selectedAttachment =
@@ -574,6 +581,114 @@ export default function TorqueLab() {
         </span>
       </div>
 
+      <section className="torque-command-center" aria-label="Tork deneyi hızlı kontrol alanı">
+        <div className="torque-command-copy">
+          <small>DENEYİ SEÇ VE ÇALIŞTIR</small>
+          <b>
+            {!setupComplete
+              ? `Önce ${SETUP_ORDER.length - installed.length} malzemeyi tezgâha yerleştir`
+              : experiment === "radius"
+                ? "Yarıçap – açısal ivme"
+                : experiment === "mass"
+                  ? "Kütle – açısal ivme"
+                  : "Eylemsizlik momenti – açısal ivme"}
+          </b>
+          <span>
+            {setupComplete
+              ? `r ${format(radius * 100, 2)} cm · ${Math.round(addedMass * 1000)} g · ${selectedAttachment.name}`
+              : "Malzeme rafındaki parçalara sırayla dokunabilir veya sahneye sürükleyebilirsin."}
+          </span>
+        </div>
+
+        <div className="torque-command-options">
+          <div className="torque-series-tabs" role="group" aria-label="Araştırma serisi">
+            <button
+              type="button"
+              className={experiment === "radius" ? "selected" : ""}
+              onClick={() => selectRadius(radius)}
+              disabled={!setupComplete || runState === "running"}
+            >
+              A · Yarıçap
+            </button>
+            <button
+              type="button"
+              className={experiment === "mass" ? "selected" : ""}
+              onClick={() => selectMass(MASSES.includes(addedMass) ? addedMass : MASSES[0])}
+              disabled={!setupComplete || runState === "running"}
+            >
+              B · Kütle
+            </button>
+            <button
+              type="button"
+              className={experiment === "inertia" ? "selected" : ""}
+              onClick={() => selectAttachment(attachment)}
+              disabled={!setupComplete || runState === "running"}
+            >
+              C · Dönen cisim
+            </button>
+          </div>
+
+          <div className="torque-value-tabs" role="group" aria-label="Deney değeri">
+            {experiment === "radius" && RADII.map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={radius === value ? "selected" : ""}
+                onClick={() => selectRadius(value)}
+                disabled={!setupComplete || runState === "running"}
+              >
+                {format(value * 100, 2)} cm
+              </button>
+            ))}
+            {experiment === "mass" && MASSES.map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={addedMass === value ? "selected" : ""}
+                onClick={() => selectMass(value)}
+                disabled={!setupComplete || runState === "running"}
+              >
+                {Math.round(value * 1000)} g
+              </button>
+            ))}
+            {experiment === "inertia" && ATTACHMENTS.map((item) => (
+              <button
+                key={item.kind}
+                type="button"
+                className={attachment === item.kind ? "selected" : ""}
+                onClick={() => selectAttachment(item.kind)}
+                disabled={!setupComplete || runState === "running"}
+              >
+                {item.kind === "main"
+                  ? "Ana disk"
+                  : item.kind === "second-disk"
+                    ? "+ Yedek disk"
+                    : item.kind === "ring"
+                      ? "+ Halka"
+                      : "+ Blok"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="torque-command-actions">
+          <button type="button" onClick={windString} disabled={!setupComplete || runState === "running"}>
+            <span>1</span> İpi sar
+          </button>
+          <button type="button" onClick={zeroSensor} disabled={!setupComplete || runState === "running"}>
+            <span>2</span> Sıfırla
+          </button>
+          <button
+            className="primary"
+            type="button"
+            onClick={release}
+            disabled={!setupComplete || runState === "running"}
+          >
+            <span>3</span> {runState === "running" ? "Ölçülüyor" : "Kefeyi bırak"}
+          </button>
+        </div>
+      </section>
+
       <div className="torque-workspace">
         <section className="torque-equipment-panel">
           <div className="torque-panel-heading">
@@ -614,7 +729,7 @@ export default function TorqueLab() {
         </section>
 
         <div
-          className={`torque-stage ${setupComplete ? "setup-complete" : ""} ${isDragOver ? "drag-over" : ""}`}
+          className={`torque-stage ${setupComplete ? "setup-complete" : ""} ${fixedRigReady ? "fixed-rig" : ""} ${isDragOver ? "drag-over" : ""}`}
           onDragOver={(event) => event.preventDefault()}
           onDragEnter={() => setIsDragOver(true)}
           onDragLeave={(event) => {
@@ -667,7 +782,28 @@ export default function TorqueLab() {
               <span>DÖNME DİNAMİĞİ DENEYİ</span>
             </div>
 
-          {installed.includes("base") && (
+            {fixedRigReady && (
+              <div className="torque-integrated-rig">
+                <img
+                  src="./torque-integrated-rig-v3.webp"
+                  alt="Optik okuyucusu ve kenar makarası bağlı bütünleşik dönme dinamiği düzeneği"
+                  draggable={false}
+                />
+                <i className="torque-rig-marker" />
+                <span className="torque-rig-radius">
+                  r = {format(radius * 100, 2)} cm · F = {format(force, 2)} N
+                </span>
+                <span className="torque-rig-label label-reader">Optik okuyucu</span>
+                <span className="torque-rig-label label-disc">Ana disk</span>
+                <span className="torque-rig-label label-pulley">Kenar makarası</span>
+                <i className={`torque-rig-reader-light ${runState === "running" ? "active" : ""}`} />
+                {attachment === "second-disk" && <i className="torque-rig-extra-disc" />}
+                {attachment === "ring" && <i className="torque-rig-metal-ring" />}
+                {attachment === "block" && <i className="torque-rig-metal-block" />}
+              </div>
+            )}
+
+          {installed.includes("base") && !fixedRigReady && (
             <div className="torque-base">
               <img
                 className="torque-base-photo"
@@ -678,7 +814,7 @@ export default function TorqueLab() {
             </div>
           )}
 
-          {installed.includes("main-disk") && (
+          {installed.includes("main-disk") && !fixedRigReady && (
             <div className={`torque-disc ${runState === "running" ? "spinning" : ""}`} style={discStyle}>
               <img
                 className="torque-disc-photo"
@@ -693,7 +829,7 @@ export default function TorqueLab() {
             </div>
           )}
 
-          {installed.includes("stepped-pulley") && (
+          {installed.includes("stepped-pulley") && !fixedRigReady && (
             <div className="torque-stepped-pulley" style={discStyle}>
               <img
                 src="./torque-stepped-pulley-v2.webp"
@@ -704,7 +840,7 @@ export default function TorqueLab() {
             </div>
           )}
 
-          {installed.includes("optical-reader") && (
+          {installed.includes("optical-reader") && !fixedRigReady && (
             <div className={`torque-optical-reader ${runState === "running" ? "active" : ""}`}>
               <img
                 src="./torque-optical-reader-v2.webp"
@@ -715,7 +851,7 @@ export default function TorqueLab() {
             </div>
           )}
 
-          {installed.includes("table-pulley") && (
+          {installed.includes("table-pulley") && !fixedRigReady && (
             <div className="torque-edge-pulley">
               <img
                 src="./torque-edge-pulley-v2.webp"
@@ -808,103 +944,6 @@ export default function TorqueLab() {
           </div>
         </div>
       </div>
-
-      <section className="torque-controls">
-        <article className={experiment === "radius" ? "active" : ""}>
-          <small>A · DÖNME YARIÇAPI</small>
-          <h3>İpi hangi kademeye saracaksın?</h3>
-          <p>40 g kütle ve ana disk sabit kalır.</p>
-          <div className="torque-option-row">
-            {RADII.map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={experiment === "radius" && radius === value ? "selected" : ""}
-                onClick={() => selectRadius(value)}
-                disabled={!setupComplete || runState === "running"}
-              >
-                {format(value * 100, 2)} cm
-              </button>
-            ))}
-          </div>
-          <span>{completion.radius}/3 ölçüm</span>
-        </article>
-
-        <article className={experiment === "mass" ? "active" : ""}>
-          <small>B · ASILI KÜTLE</small>
-          <h3>Kefeye kaç gram ekleyeceksin?</h3>
-          <p>2,00 cm yarıçap ve ana disk sabit kalır.</p>
-          <div className="torque-option-row four">
-            {MASSES.map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={experiment === "mass" && addedMass === value ? "selected" : ""}
-                onClick={() => selectMass(value)}
-                disabled={!setupComplete || runState === "running"}
-              >
-                {Math.round(value * 1000)} g
-              </button>
-            ))}
-          </div>
-          <span>{completion.mass}/4 ölçüm</span>
-        </article>
-
-        <article className={experiment === "inertia" ? "active" : ""}>
-          <small>C · EYLEMSİZLİK MOMENTİ</small>
-          <h3>Ana diske hangi cismi ekleyeceksin?</h3>
-          <p>40 g kütle ve 2,00 cm yarıçap sabit kalır.</p>
-          <div className="torque-attachment-options">
-            {ATTACHMENTS.map((item) => (
-              <button
-                key={item.kind}
-                type="button"
-                className={experiment === "inertia" && attachment === item.kind ? "selected" : ""}
-                onClick={() => selectAttachment(item.kind)}
-                disabled={!setupComplete || runState === "running"}
-              >
-                <i className={`attachment-shape shape-${item.kind}`} />
-                <span>
-                  <b>{item.name}</b>
-                  <small>I = {format(item.inertia * 1000, 2)} × 10⁻³ kg·m²</small>
-                </span>
-              </button>
-            ))}
-          </div>
-          <span>{completion.inertia}/4 ölçüm</span>
-        </article>
-      </section>
-
-      <section className="torque-action-deck">
-        <div>
-          <small>SEÇİLİ DENEY</small>
-          <b>
-            {experiment === "radius"
-              ? "Yarıçap - açısal ivme"
-              : experiment === "mass"
-                ? "Kütle - açısal ivme"
-                : "Eylemsizlik momenti - açısal ivme"}
-          </b>
-          <span>
-            r {format(radius * 100, 2)} cm · ek kütle {Math.round(addedMass * 1000)} g ·{" "}
-            {selectedAttachment.name}
-          </span>
-        </div>
-        <button type="button" onClick={windString} disabled={!setupComplete || runState === "running"}>
-          1 · İpi kademeye sar
-        </button>
-        <button type="button" onClick={zeroSensor} disabled={!setupComplete || runState === "running"}>
-          2 · Okuyucuyu sıfırla
-        </button>
-        <button
-          className="torque-release-button"
-          type="button"
-          onClick={release}
-          disabled={runState === "running"}
-        >
-          {runState === "running" ? "ÖLÇÜM SÜRÜYOR" : "3 · KEFEYİ BIRAK"}
-        </button>
-      </section>
 
       <section className="torque-data-section">
         <div className="torque-data-heading">
