@@ -42,15 +42,21 @@ type Trial = {
 const G = 9.81;
 const PAN_MASS = 0.005;
 const MIME = "application/x-torque-equipment";
-const SETUP_ORDER: SetupKind[] = [
+const FIXED_RIG_PARTS: SetupKind[] = [
   "base",
   "main-disk",
   "stepped-pulley",
   "optical-reader",
   "table-pulley",
+];
+const STUDENT_SETUP_ORDER: SetupKind[] = [
   "string-pan",
   "data-logger",
   "attachments",
+];
+const SETUP_ORDER: SetupKind[] = [
+  ...FIXED_RIG_PARTS,
+  ...STUDENT_SETUP_ORDER,
 ];
 const EQUIPMENT: Array<{
   kind: SetupKind;
@@ -293,7 +299,7 @@ export default function TorqueLab() {
   const animationRef = useRef<number | null>(null);
   const runStartedAtRef = useRef(0);
   const nextIdRef = useRef(1);
-  const [installed, setInstalled] = useState<SetupKind[]>([]);
+  const [installed, setInstalled] = useState<SetupKind[]>(() => [...FIXED_RIG_PARTS]);
   const [experiment, setExperiment] = useState<ExperimentKind>("radius");
   const [radius, setRadius] = useState(0.015);
   const [addedMass, setAddedMass] = useState(0.04);
@@ -304,7 +310,7 @@ export default function TorqueLab() {
   const [progress, setProgress] = useState(0);
   const [timer, setTimer] = useState(0);
   const [message, setMessage] = useState(
-    "Sol raftaki bir malzemeyi tutup deney tezgâhına sürükle.",
+    "Sabit düzenek hazır. 1. adım: İp, kefe ve kütleleri tezgâha yerleştir.",
   );
   const [records, setRecords] = useState<Trial[]>([]);
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -318,15 +324,12 @@ export default function TorqueLab() {
   });
 
   const setupComplete = installed.length === SETUP_ORDER.length;
-  const fixedRigReady = [
-    "base",
-    "main-disk",
-    "stepped-pulley",
-    "optical-reader",
-    "table-pulley",
-  ].every((kind) => installed.includes(kind as SetupKind));
+  const fixedRigReady = FIXED_RIG_PARTS.every((kind) => installed.includes(kind));
+  const studentInstalledCount = STUDENT_SETUP_ORDER.filter((kind) =>
+    installed.includes(kind),
+  ).length;
   const nextSetup =
-    SETUP_ORDER.find((kind) => !installed.includes(kind)) ?? null;
+    STUDENT_SETUP_ORDER.find((kind) => !installed.includes(kind)) ?? null;
   const selectedAttachment =
     ATTACHMENTS.find((item) => item.kind === attachment) ?? ATTACHMENTS[0];
   const totalHangingMass = addedMass + PAN_MASS;
@@ -363,14 +366,21 @@ export default function TorqueLab() {
 
   const addEquipment = (kind: SetupKind) => {
     if (runState === "running" || installed.includes(kind)) return;
+    if (!STUDENT_SETUP_ORDER.includes(kind) || kind !== nextSetup) {
+      const expectedName = EQUIPMENT.find((item) => item.kind === nextSetup)?.shortName;
+      setMessage(`Sıradaki adım: ${expectedName ?? "düzeneği tamamlama parçası"}.`);
+      return;
+    }
     const nextInstalled = [...installed, kind];
     setInstalled(nextInstalled);
     if (nextInstalled.length === SETUP_ORDER.length) {
       setMessage("Düzenek hazır. Deney serisini seç, ipi sar ve okuyucuyu sıfırla.");
     } else {
       const placedName = EQUIPMENT.find((item) => item.kind === kind)?.shortName;
+      const followingKind = STUDENT_SETUP_ORDER.find((item) => !nextInstalled.includes(item));
+      const followingName = EQUIPMENT.find((item) => item.kind === followingKind)?.shortName;
       setMessage(
-        `${placedName} yerine oturdu. Kalan malzemeleri istediğin sırayla sürükleyebilirsin.`,
+        `${placedName} yerine oturdu. Sıradaki adım: ${followingName}.`,
       );
     }
   };
@@ -387,7 +397,7 @@ export default function TorqueLab() {
     event.preventDefault();
     setIsDragOver(false);
     const kind = event.dataTransfer.getData(MIME) as SetupKind;
-    if (SETUP_ORDER.includes(kind)) addEquipment(kind);
+    if (STUDENT_SETUP_ORDER.includes(kind)) addEquipment(kind);
   };
 
   const selectRadius = (value: number) => {
@@ -518,7 +528,7 @@ export default function TorqueLab() {
 
   const resetApparatus = () => {
     if (animationRef.current) cancelAnimationFrame(animationRef.current);
-    setInstalled([]);
+    setInstalled([...FIXED_RIG_PARTS]);
     setStringWound(false);
     setSensorZeroed(false);
     setRunState("ready");
@@ -526,7 +536,7 @@ export default function TorqueLab() {
     setTimer(0);
     setShowAnalysis(false);
     setIsDragOver(false);
-    setMessage("Sol raftaki bir malzemeyi tutup deney tezgâhına sürükle.");
+    setMessage("Sabit düzenek hazır. 1. adım: İp, kefe ve kütleleri tezgâha yerleştir.");
   };
 
   const discStyle = {
@@ -571,13 +581,13 @@ export default function TorqueLab() {
 
       <div className="torque-learning-strip">
         <span>
-          <b>1</b> Malzemeleri sürükle
+          <b>✓</b> Sabit düzenek hazır
         </span>
         <span>
-          <b>2</b> İpi sar ve ölç
+          <b>1</b> Üç ek parçayı sırayla yerleştir
         </span>
         <span>
-          <b>3</b> Tek değişkeni karşılaştır
+          <b>2</b> İpi sar, sıfırla ve ölç
         </span>
       </div>
 
@@ -586,7 +596,7 @@ export default function TorqueLab() {
           <small>DENEYİ SEÇ VE ÇALIŞTIR</small>
           <b>
             {!setupComplete
-              ? `Önce ${SETUP_ORDER.length - installed.length} malzemeyi tezgâha yerleştir`
+              ? `Önce ${STUDENT_SETUP_ORDER.length - studentInstalledCount} ek parçayı sırayla yerleştir`
               : experiment === "radius"
                 ? "Yarıçap – açısal ivme"
                 : experiment === "mass"
@@ -596,7 +606,7 @@ export default function TorqueLab() {
           <span>
             {setupComplete
               ? `r ${format(radius * 100, 2)} cm · ${Math.round(addedMass * 1000)} g · ${selectedAttachment.name}`
-              : "Malzeme rafındaki parçalara sırayla dokunabilir veya sahneye sürükleyebilirsin."}
+              : "Sabit düzenek hazırdır; vurgulanan parçaya dokunabilir veya sahneye sürükleyebilirsin."}
           </span>
         </div>
 
@@ -693,38 +703,51 @@ export default function TorqueLab() {
         <section className="torque-equipment-panel">
           <div className="torque-panel-heading">
             <div>
-              <small>MALZEME RAFI</small>
-              <h3>Tut, sürükle ve tezgâha bırak</h3>
+              <small>KURULUM SIRASI</small>
+              <h3>Düzeneği üç adımda tamamla</h3>
             </div>
-            <span>{installed.length}/{SETUP_ORDER.length}</span>
+            <span>{studentInstalledCount}/{STUDENT_SETUP_ORDER.length}</span>
           </div>
-          <p>Malzeme tezgâha bırakılınca doğru bağlantı noktasına oturur.</p>
+          <div className="torque-fixed-ready">
+            <span>✓</span>
+            <div>
+              <b>Sabit düzenek hazır</b>
+              <small>Disk · optik okuyucu · kenar makarası</small>
+            </div>
+          </div>
+          <p>Vurgulanan parçayı tezgâha sürükle veya parçaya dokun.</p>
           <div className="torque-equipment-list">
-            {EQUIPMENT.map((item) => {
+            {EQUIPMENT.filter((item) => STUDENT_SETUP_ORDER.includes(item.kind)).map((item) => {
               const isInstalled = installed.includes(item.kind);
               const isNext = item.kind === nextSetup;
               return (
                 <button
                   key={item.kind}
                   type="button"
-                  draggable={!isInstalled && runState !== "running"}
+                  draggable={!isInstalled && isNext && runState !== "running"}
                   className={`${isInstalled ? "installed" : ""} ${isNext ? "next" : ""}`}
                   onDragStart={(event) => onEquipmentDragStart(event, item.kind)}
                   onClick={() => addEquipment(item.kind)}
-                  disabled={isInstalled || runState === "running"}
+                  disabled={isInstalled || !isNext || runState === "running"}
                   title={item.name}
                 >
                   <EquipmentIcon kind={item.kind} />
                   <span>
                     <b>{item.shortName}</b>
-                    <small>{isInstalled ? "Tezgâha yerleşti" : "Sahneye sürükle"}</small>
+                    <small>
+                      {isInstalled
+                        ? "Tezgâha yerleşti"
+                        : isNext
+                          ? `${studentInstalledCount + 1}. adım · şimdi ekle`
+                          : "Önce üstteki adımı tamamla"}
+                    </small>
                   </span>
                 </button>
               );
             })}
           </div>
           <small className="torque-touch-note">
-            Dokunmatik ekranda malzemeye dokunarak da ekleyebilirsin.
+            Parçalar yalnızca doğru sırada etkinleşir ve doğru bağlantı noktasına oturur.
           </small>
         </section>
 
@@ -748,7 +771,9 @@ export default function TorqueLab() {
                   ? "Optik okuyucu ölçüm alıyor"
                   : runState === "complete"
                     ? "Ölçüm tamamlandı"
-                    : "Malzemeleri bu alana bırak"}
+                    : setupComplete
+                      ? "Düzenek ölçüme hazır"
+                      : "Sabit düzenek hazır · ek parçaları tamamla"}
               </b>
             </div>
             <div className="torque-live-readouts">
@@ -765,7 +790,7 @@ export default function TorqueLab() {
                 <b>{runState === "complete" ? format(measuredAlpha, 3) : "—"} rad/s²</b>
               </span>
               <button type="button" onClick={resetApparatus} disabled={runState === "running"}>
-                Düzeneği sök
+                Ek parçaları sıfırla
               </button>
             </div>
           </div>
@@ -919,8 +944,10 @@ export default function TorqueLab() {
 
             {!setupComplete && (
               <div className="torque-bench-hint">
-                <b>Malzemeyi buraya bırak</b>
-                <span>Parça doğru konumuna kendiliğinden oturur.</span>
+                <b>
+                  {studentInstalledCount + 1}. adım · {EQUIPMENT.find((item) => item.kind === nextSetup)?.shortName}
+                </b>
+                <span>Vurgulanan parçayı buraya bırak; doğru bağlantıya kendiliğinden oturur.</span>
               </div>
             )}
           </div>

@@ -1139,11 +1139,16 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /onEquipmentDragStart/);
   assert.match(page, /onStageDrop/);
   assert.match(page, /torque-workspace/);
-  assert.match(page, /MALZEME RAFI/);
-  assert.match(page, /Tut, sürükle ve tezgâha bırak/);
-  assert.match(page, /Kalan malzemeleri istediğin sırayla sürükleyebilirsin/);
+  assert.match(page, /KURULUM SIRASI/);
+  assert.match(page, /Düzeneği üç adımda tamamla/);
+  assert.match(page, /Sabit düzenek hazır/);
+  assert.match(page, /FIXED_RIG_PARTS/);
+  assert.match(page, /STUDENT_SETUP_ORDER/);
+  assert.match(page, /useState<SetupKind\[]>\(\(\) => \[\.\.\.FIXED_RIG_PARTS\]\)/);
+  assert.match(page, /kind !== nextSetup/);
+  assert.match(page, /Önce üstteki adımı tamamla/);
   assert.match(page, /isDragOver/);
-  assert.match(page, /Malzeme tezgâha bırakılınca doğru bağlantı noktasına oturur/);
+  assert.match(page, /doğru bağlantı noktasına oturur/);
   assert.match(page, /torque-base-spindle-v2\.webp/);
   assert.match(page, /torque-main-disc-v2\.webp/);
   assert.match(page, /torque-stepped-pulley-v2\.webp/);
@@ -1157,7 +1162,6 @@ test("tork modülü PDF düzeneğini üç araştırma serisiyle kurar", async ()
   assert.match(page, /DENEYİ SEÇ VE ÇALIŞTIR/);
   assert.match(page, /İpi sar/);
   assert.match(page, /Kefeyi bırak/);
-  assert.doesNotMatch(page, /Önce .* parçasını yerleştir/);
   assert.match(page, /const RADII = \[0\.015, 0\.02, 0\.025\]/);
   assert.match(page, /const MASSES = \[0\.03, 0\.05, 0\.07, 0\.09\]/);
   assert.match(page, /second-disk/);
