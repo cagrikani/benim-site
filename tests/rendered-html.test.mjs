@@ -31,6 +31,10 @@ test("sunucu paketi Fizik Atölyesi olarak taşınabilir yapıdadır", async () 
     "mechanics-collisions.webp",
     "mechanics-ballistic.webp",
     "mechanics-harmonic-motion.webp",
+    "shm-retort-stand-real-v2.png",
+    "shm-metal-spring-real-v2.png",
+    "shm-mass-hanger-real-v2.png",
+    "pendulum-bob-real-v2.png",
     "motion-lab-bench-v3.webp",
     "motion-equipment-air-track.webp",
     "motion-equipment-pump.webp",
@@ -1124,7 +1128,12 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(page, /Basit sarkaç/);
   assert.match(page, /SimplePendulumLab/);
   assert.match(page, /SpringCoil/);
-  assert.match(page, /createLinearGradient/);
+  assert.match(page, /shm-retort-stand-real-v2\.png/);
+  assert.match(page, /shm-metal-spring-real-v2\.png/);
+  assert.match(page, /shm-mass-hanger-real-v2\.png/);
+  assert.match(page, /motion-lab-bench-v3\.webp/);
+  assert.match(page, /motion-equipment-timer\.webp/);
+  assert.match(page, /freefall-equipment-ruler\.webp/);
   assert.match(page, /const oscillatorOffsetPixels = displacement \* 6\.4/);
   assert.match(page, /<SpringCoil offset=\{oscillatorOffsetPixels\}/);
   assert.match(page, /translate3d\(0, \$\{oscillatorOffsetPixels\}px, 0\)/);
@@ -1160,7 +1169,9 @@ test("basit harmonik hareket modülü iki gerçek deney ve ideal ölçüm sunar"
   assert.match(css, /\.shm-stand\s*\{/);
   assert.match(css, /\.shm-spring\s*\{/);
   assert.match(css, /\.shm-mass\s*\{/);
-  assert.match(css, /\.shm-mass\s*\{[^}]*top:\s*313px;[^}]*transition:\s*transform/s);
+  assert.match(css, /\.shm-real-stand-photo\s*[,\{]/);
+  assert.match(css, /\.shm-real-mass-photo\s*\{/);
+  assert.match(css, /\.shm-real-bench-photo\s*[,\{]/);
   assert.match(css, /\.shm-ruler\s*\{/);
   assert.match(css, /\.shm-motion-sensor\s*\{/);
   assert.match(css, /\.shm-data-logger\s*\{/);
@@ -1174,8 +1185,7 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
     "utf8",
   );
   assert.match(page, /application\/x-simple-pendulum-equipment/);
-  assert.match(page, /Ağır tabanlı statif/);
-  assert.match(page, /Sarkaç kıskacı/);
+  assert.match(page, /Statif ve sarkaç kıskacı/);
   assert.match(page, /İp ve metal bilye/);
   assert.match(page, /Metre cetveli/);
   assert.match(page, /Optik geçiş kapısı/);
@@ -1202,6 +1212,14 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(page, /ORTAMLAR ARASI KARŞILAŞTIRMA/);
   assert.match(page, /environmentResults/);
   assert.match(page, /g = 4π²L \/ T²/);
+  assert.match(page, /g’Yİ HESAPLA/);
+  assert.match(page, /gravityCalculated/);
+  assert.match(page, /calculateGravity/);
+  assert.match(page, /shm-retort-stand-real-v2\.png/);
+  assert.match(page, /pendulum-bob-real-v2\.png/);
+  assert.match(page, /motion-lab-bench-v3\.webp/);
+  assert.match(page, /motion-equipment-timer\.webp/);
+  assert.doesNotMatch(page, /kind:\s*"clamp"|installed\.includes\("clamp"\)/);
   assert.match(page, /KISA DENEY RAPORU/);
   assert.doesNotMatch(page, /Math\.random|hata kaynağı|ölçüm belirsizliği|Yüzdesel fark/i);
 
@@ -1209,7 +1227,10 @@ test("basit sarkaç düzeneği on salınımdan yer çekimi ivmesini hesaplar", a
   assert.match(css, /\.pend-workspace\s*\{/);
   assert.match(css, /\.pend-apparatus\s*\{/);
   assert.match(css, /\.pend-stand\s*\{/);
-  assert.match(css, /\.pend-clamp-block\s*\{/);
+  assert.match(css, /\.pend-real-stand-photo\s*[,\{]/);
+  assert.match(css, /\.pend-real-bench-photo\s*[,\{]/);
+  assert.match(css, /\.pend-bob > img\s*\{/);
+  assert.match(css, /\.pend-calculate-gravity\s*\{/);
   assert.match(css, /\.pend-swing-arm\s*\{/);
   assert.match(css, /\.pend-string\s*\{/);
   assert.match(css, /\.pend-bob\s*\{/);

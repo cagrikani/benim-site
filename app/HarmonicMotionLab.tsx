@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type DragEvent as ReactDragEvent,
   type PointerEvent as ReactPointerEvent,
@@ -73,6 +75,13 @@ const EQUIPMENT: Array<{
     detail: "Algılayıcıya kabloyla bağlanır",
   },
 ];
+const EQUIPMENT_IMAGES: Partial<Record<EquipmentKind, string>> = {
+  stand: "./shm-retort-stand-real-v2.png",
+  spring: "./shm-metal-spring-real-v2.png",
+  mass: "./shm-mass-hanger-real-v2.png",
+  ruler: "./freefall-equipment-ruler.webp",
+  timer: "./motion-equipment-timer.webp",
+};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -86,75 +95,31 @@ function format(value: number, digits = 2) {
 }
 
 function EquipmentIcon({ kind }: { kind: EquipmentKind }) {
+  const image = EQUIPMENT_IMAGES[kind];
   return (
-    <span className={`shm-equipment-icon shm-equipment-${kind}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
+    <span
+      className={`shm-equipment-icon shm-equipment-${kind} ${image ? "has-photo" : ""}`}
+      aria-hidden="true"
+    >
+      {image ? (
+        <img src={image} alt="" draggable={false} />
+      ) : (
+        <><i /><i /><i /></>
+      )}
     </span>
   );
 }
 
 function SpringCoil({ offset }: { offset: number }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const height = clamp(188 + offset, 122, 258);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const width = 54;
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = width * ratio;
-    canvas.height = height * ratio;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.clearRect(0, 0, width, height);
-
-    const center = width / 2;
-    const coilTop = 12;
-    const coilBottom = height - 13;
-    const turns = 17;
-    const drawCoil = (stroke: string, lineWidth: number, offset = 0) => {
-      context.beginPath();
-      context.moveTo(center + offset, 0);
-      context.lineTo(center + offset, coilTop);
-      const samples = turns * 22;
-      for (let sample = 0; sample <= samples; sample += 1) {
-        const progress = sample / samples;
-        const x = center + Math.sin(progress * Math.PI * 2 * turns) * 18 + offset;
-        const y = coilTop + progress * (coilBottom - coilTop);
-        context.lineTo(x, y);
-      }
-      context.lineTo(center + offset, height);
-      context.strokeStyle = stroke;
-      context.lineWidth = lineWidth;
-      context.lineCap = "round";
-      context.lineJoin = "round";
-      context.stroke();
-    };
-
-    context.shadowColor = "rgba(20, 42, 47, 0.28)";
-    context.shadowBlur = 4;
-    context.shadowOffsetX = 2;
-    drawCoil("#263b40", 5.2);
-    context.shadowColor = "transparent";
-    const gradient = context.createLinearGradient(7, 0, 47, 0);
-    gradient.addColorStop(0, "#52676b");
-    gradient.addColorStop(0.28, "#eef3f1");
-    gradient.addColorStop(0.5, "#829296");
-    gradient.addColorStop(0.74, "#f7faf8");
-    gradient.addColorStop(1, "#40565b");
-    drawCoil(gradient, 2.8);
-    drawCoil("rgba(255,255,255,0.58)", 0.8, -0.8);
-  }, [height]);
-
   return (
-    <canvas
-      ref={canvasRef}
+    <img
       className="shm-spring"
+      src="./shm-metal-spring-real-v2.png"
+      alt="Gerçek metal sarmal yay"
+      draggable={false}
       style={{ height: `${height}px` }}
-      aria-label="Gerçekçi metal sarmal yay"
     />
   );
 }
@@ -513,7 +478,7 @@ export default function HarmonicMotionLab() {
       <section className="harmonic-lab" id="basit-harmonik-hareket">
         <div className="shm-heading">
           <div>
-            <span>MODÜL 07 · BASİT HARMONİK HAREKET</span>
+            <span>MODÜL 06 · BASİT HARMONİK HAREKET</span>
             <h2>Basit Harmonik Hareket</h2>
             <p>
               İki gerçek laboratuvar düzeneğinden birini seç; sistemi kendin kur,
@@ -536,7 +501,7 @@ export default function HarmonicMotionLab() {
     <section className="harmonic-lab" id="basit-harmonik-hareket">
       <div className="shm-heading">
         <div>
-          <span>MODÜL 07 · BASİT HARMONİK HAREKET</span>
+          <span>MODÜL 06 · BASİT HARMONİK HAREKET</span>
           <h2>Basit Harmonik Hareket</h2>
           <p>
             İki gerçek laboratuvar düzeneğinden birini seç; sistemi kendin kur,
@@ -624,6 +589,13 @@ export default function HarmonicMotionLab() {
           </div>
 
           <div className="shm-apparatus">
+            <img
+              className="shm-real-bench-photo"
+              src="./motion-lab-bench-v3.webp"
+              alt=""
+              draggable={false}
+              aria-hidden="true"
+            />
             <div className="shm-lab-wall">
               <span>YAY–KÜTLE DENEYİ</span>
             </div>
@@ -635,6 +607,12 @@ export default function HarmonicMotionLab() {
 
             {installed.includes("stand") && (
               <div className="shm-stand">
+                <img
+                  className="shm-real-stand-photo"
+                  src="./shm-retort-stand-real-v2.png"
+                  alt="Ağır tabanlı gerçek laboratuvar statifi ve bağlantı kıskacı"
+                  draggable={false}
+                />
                 <i className="shm-stand-base" />
                 <i className="shm-stand-rod" />
                 <i className="shm-stand-clamp" />
@@ -660,6 +638,12 @@ export default function HarmonicMotionLab() {
                 onPointerUp={onMassPointerUp}
                 onPointerCancel={() => { dragStartRef.current = null; }}
               >
+                <img
+                  className="shm-real-mass-photo"
+                  src="./shm-mass-hanger-real-v2.png"
+                  alt=""
+                  draggable={false}
+                />
                 <i className="shm-mass-hook" />
                 <span>{mass} g</span>
                 <i className="shm-mass-slot one" />
@@ -670,10 +654,11 @@ export default function HarmonicMotionLab() {
 
             {installed.includes("ruler") && (
               <div className="shm-ruler">
-                {Array.from({ length: 21 }, (_, index) => (
-                  <i key={index} className={index % 5 === 0 ? "major" : ""} />
-                ))}
-                <span>cm</span>
+                <img
+                  src="./freefall-equipment-ruler.webp"
+                  alt="Düşey laboratuvar cetveli"
+                  draggable={false}
+                />
               </div>
             )}
 
@@ -698,6 +683,12 @@ export default function HarmonicMotionLab() {
               <>
                 <div className="shm-sensor-cable" />
                 <div className="shm-data-logger">
+                  <img
+                    className="shm-real-timer-photo"
+                    src="./motion-equipment-timer.webp"
+                    alt="Hareket algılayıcısına bağlı dijital zamanlayıcı"
+                    draggable={false}
+                  />
                   <small>MOTION TIMER</small>
                   <strong>{format(time, 2)}</strong>
                   <em>s</em>

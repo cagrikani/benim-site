@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type DragEvent as ReactDragEvent,
   type PointerEvent as ReactPointerEvent,
@@ -11,7 +13,6 @@ import {
 
 type EquipmentKind =
   | "stand"
-  | "clamp"
   | "pendulum"
   | "ruler"
   | "photogate"
@@ -69,7 +70,6 @@ const ENVIRONMENTS: Array<{
 ];
 const EQUIPMENT_ORDER: EquipmentKind[] = [
   "stand",
-  "clamp",
   "pendulum",
   "ruler",
   "photogate",
@@ -80,13 +80,19 @@ const EQUIPMENT: Array<{
   name: string;
   detail: string;
 }> = [
-  { kind: "stand", name: "Ağır tabanlı statif", detail: "Masa üzerinde sabit durur" },
-  { kind: "clamp", name: "Sarkaç kıskacı", detail: "İpi tek noktadan taşır" },
+  { kind: "stand", name: "Statif ve sarkaç kıskacı", detail: "Ağır tabanıyla masa üzerinde sabit durur" },
   { kind: "pendulum", name: "İp ve metal bilye", detail: "İnce, esnemez ip kullanılır" },
   { kind: "ruler", name: "Metre cetveli", detail: "Askı noktası–bilye merkezi ölçülür" },
   { kind: "photogate", name: "Optik geçiş kapısı", detail: "Bilyenin denge geçişini algılar" },
   { kind: "timer", name: "Dijital zamanlayıcı", detail: "On tam salınımı kaydeder" },
 ];
+const EQUIPMENT_IMAGES: Partial<Record<EquipmentKind, string>> = {
+  stand: "./shm-retort-stand-real-v2.png",
+  pendulum: "./pendulum-bob-real-v2.png",
+  ruler: "./freefall-equipment-ruler.webp",
+  photogate: "./motion-equipment-gate.webp",
+  timer: "./motion-equipment-timer.webp",
+};
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -100,11 +106,17 @@ function format(value: number, digits = 2) {
 }
 
 function PendulumEquipmentIcon({ kind }: { kind: EquipmentKind }) {
+  const image = EQUIPMENT_IMAGES[kind];
   return (
-    <span className={`pend-equipment-icon pend-icon-${kind}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
+    <span
+      className={`pend-equipment-icon pend-icon-${kind} ${image ? "has-photo" : ""}`}
+      aria-hidden="true"
+    >
+      {image ? (
+        <img src={image} alt="" draggable={false} />
+      ) : (
+        <><i /><i /><i /></>
+      )}
     </span>
   );
 }
@@ -211,6 +223,7 @@ export default function SimplePendulumLab() {
   const [previewAngle, setPreviewAngle] = useState(-7.7);
   const [runState, setRunState] = useState<RunState>("ready");
   const [time, setTime] = useState(0);
+  const [gravityCalculated, setGravityCalculated] = useState(false);
   const [trials, setTrials] = useState<Trial[]>([]);
   const [message, setMessage] = useState("Statifi deney masasına yerleştirerek kuruluma başla.");
   const animationRef = useRef<number | null>(null);
@@ -238,7 +251,7 @@ export default function SimplePendulumLab() {
   const countedOscillations = Math.min(OSCILLATION_COUNT, time / period);
   const calculatedGravity =
     (4 * Math.PI ** 2 * lengthMeters) / period ** 2;
-  const stringLengthPixels = 140 + length * 2.1;
+  const stringLengthPixels = 165 + length * 1.6;
 
   const stopAnimation = useCallback(() => {
     if (animationRef.current !== null) {
@@ -258,7 +271,7 @@ export default function SimplePendulumLab() {
         setTime(tenPeriodTime);
         setRunState("complete");
         setPreviewAngle(initialAngle * (180 / Math.PI));
-        setMessage("On tam salınım tamamlandı. Periyot ve yer çekimi ivmesi hazır.");
+        setMessage("On tam salınım tamamlandı. Ölçülen periyottan g’yi hesapla.");
         animationRef.current = null;
         return;
       }
@@ -307,6 +320,7 @@ export default function SimplePendulumLab() {
     stopAnimation();
     setRunState("ready");
     setTime(0);
+    setGravityCalculated(false);
     startTimeRef.current = null;
     const nextAngle = Math.asin(clamp(nextDistance / length, 0, 0.18));
     setPreviewAngle(-(nextAngle * 180) / Math.PI);
@@ -314,11 +328,12 @@ export default function SimplePendulumLab() {
 
   const releaseBob = useCallback(() => {
     if (!setupComplete) {
-      setMessage("Ölçümden önce altı parçanın tamamını sırayla yerleştir.");
+      setMessage(`Ölçümden önce ${EQUIPMENT_ORDER.length} parçanın tamamını sırayla yerleştir.`);
       return;
     }
     stopAnimation();
     setTime(0);
+    setGravityCalculated(false);
     startTimeRef.current = null;
     setRunState("running");
     setMessage("Optik kapı bilyenin denge noktasından geçişlerini sayıyor.");
@@ -330,6 +345,7 @@ export default function SimplePendulumLab() {
     dragStartRef.current = { x: event.clientX, angle: previewAngle };
     setRunState("ready");
     setTime(0);
+    setGravityCalculated(false);
     setMessage("Bilyeyi yana çek; bıraktığında sayaç başlayacak.");
   };
 
@@ -365,6 +381,7 @@ export default function SimplePendulumLab() {
     stopAnimation();
     setRunState("ready");
     setTime(0);
+    setGravityCalculated(false);
     startTimeRef.current = null;
     const safeDistance = Math.min(releaseDistance, nextLength * 0.18);
     setReleaseDistance(safeDistance);
@@ -374,6 +391,7 @@ export default function SimplePendulumLab() {
 
   const changeReleaseDistance = (nextDistance: number) => {
     setReleaseDistance(nextDistance);
+    setGravityCalculated(false);
     resetMeasurement(nextDistance);
     setMessage("Başlangıç uzaklığı ayarlandı. Bilyeyi serbest bırak.");
   };
@@ -383,6 +401,7 @@ export default function SimplePendulumLab() {
     setEnvironmentId(nextEnvironment);
     setRunState("ready");
     setTime(0);
+    setGravityCalculated(false);
     startTimeRef.current = null;
     const environment = ENVIRONMENTS.find((item) => item.id === nextEnvironment);
     setMessage(
@@ -391,8 +410,8 @@ export default function SimplePendulumLab() {
   };
 
   const recordTrial = () => {
-    if (runState !== "complete") {
-      setMessage("Kaydetmek için önce on tam salınımı tamamla.");
+    if (runState !== "complete" || !gravityCalculated) {
+      setMessage("Kaydetmek için on salınımı tamamla ve g değerini hesapla.");
       return;
     }
     setTrials((current) => [
@@ -409,6 +428,17 @@ export default function SimplePendulumLab() {
       },
     ]);
     setMessage("İdeal ölçüm deney günlüğüne kaydedildi.");
+  };
+
+  const calculateGravity = () => {
+    if (runState !== "complete") {
+      setMessage("Önce on tam salınımın süresini ölç.");
+      return;
+    }
+    setGravityCalculated(true);
+    setMessage(
+      `Ölçülen L ve T değerlerinden g = ${format(calculatedGravity, 2)} m/s² bulundu.`,
+    );
   };
 
   const apparatusStyle = {
@@ -521,6 +551,13 @@ export default function SimplePendulumLab() {
             className={`pend-apparatus environment-${selectedEnvironment.id}`}
             style={apparatusStyle}
           >
+            <img
+              className="pend-real-bench-photo"
+              src="./motion-lab-bench-v3.webp"
+              alt=""
+              draggable={false}
+              aria-hidden="true"
+            />
             <div className="pend-lab-wall">
               <span>BASİT SARKAÇ · g ÖLÇÜMÜ</span>
               <div className="pend-environment-window">
@@ -536,15 +573,14 @@ export default function SimplePendulumLab() {
 
             {installed.includes("stand") && (
               <div className="pend-stand">
+                <img
+                  className="pend-real-stand-photo"
+                  src="./shm-retort-stand-real-v2.png"
+                  alt="Ağır tabanlı gerçek laboratuvar statifi ve sarkaç kıskacı"
+                  draggable={false}
+                />
                 <i className="pend-stand-base" />
                 <i className="pend-stand-rod" />
-              </div>
-            )}
-            {installed.includes("clamp") && (
-              <div className="pend-clamp">
-                <i className="pend-clamp-block" />
-                <i className="pend-clamp-arm" />
-                <i className="pend-pivot" />
               </div>
             )}
             {installed.includes("pendulum") && (
@@ -559,15 +595,21 @@ export default function SimplePendulumLab() {
                   onPointerUp={onBobPointerUp}
                   onPointerCancel={() => { dragStartRef.current = null; }}
                 >
-                  <i />
+                  <img
+                    src="./pendulum-bob-real-v2.png"
+                    alt=""
+                    draggable={false}
+                  />
                 </button>
               </div>
             )}
             {installed.includes("ruler") && (
               <div className="pend-ruler">
-                {Array.from({ length: 21 }, (_, index) => (
-                  <i key={index} className={index % 5 === 0 ? "major" : ""} />
-                ))}
+                <img
+                  src="./freefall-equipment-ruler.webp"
+                  alt="Askı noktasından bilye merkezine uzanan metre cetveli"
+                  draggable={false}
+                />
                 <span>L = {length} cm</span>
               </div>
             )}
@@ -583,6 +625,12 @@ export default function SimplePendulumLab() {
               <>
                 <div className="pend-timer-cable" />
                 <div className="pend-timer">
+                  <img
+                    className="pend-real-timer-photo"
+                    src="./motion-equipment-timer.webp"
+                    alt="Optik kapıya bağlı dijital periyot zamanlayıcısı"
+                    draggable={false}
+                  />
                   <small>PERIOD TIMER</small>
                   <strong>{format(time, 2)}</strong>
                   <em>s</em>
@@ -603,7 +651,7 @@ export default function SimplePendulumLab() {
             )}
           </div>
           <div className={`pend-status ${setupComplete ? "ready" : ""}`} aria-live="polite">
-            <b>{setupComplete ? "YÖNERGE" : `KURULUM ${installed.length + 1}/6`}</b>
+            <b>{setupComplete ? "YÖNERGE" : `KURULUM ${installed.length + 1}/${EQUIPMENT_ORDER.length}`}</b>
             <span>{message}</span>
           </div>
         </div>
@@ -668,7 +716,15 @@ export default function SimplePendulumLab() {
             <span><small>Sarkaç uzunluğu</small><b>{format(lengthMeters, 2)} m</b></span>
           </div>
           <p>g = 4π²L / T²</p>
-          <strong>{runState === "complete" ? `${format(calculatedGravity, 2)} m/s²` : "—"}</strong>
+          <button
+            className="pend-calculate-gravity"
+            type="button"
+            onClick={calculateGravity}
+            disabled={runState !== "complete"}
+          >
+            g’Yİ HESAPLA
+          </button>
+          <strong>{gravityCalculated ? `${format(calculatedGravity, 2)} m/s²` : "—"}</strong>
           <em>{selectedEnvironment.name} ortamında ideal olarak ölçülen değer</em>
         </article>
         <article className="pend-observation-card">
