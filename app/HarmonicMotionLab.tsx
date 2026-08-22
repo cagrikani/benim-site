@@ -77,10 +77,9 @@ const EQUIPMENT: Array<{
 ];
 const EQUIPMENT_IMAGES: Partial<Record<EquipmentKind, string>> = {
   stand: "./shm-retort-stand-real-v2.png",
-  spring: "./shm-metal-spring-real-v2.png",
   mass: "./shm-mass-hanger-real-v2.png",
   ruler: "./freefall-equipment-ruler.webp",
-  sensor: "./shm-motion-sensor-real-v3.png",
+  sensor: "./shm-optical-motion-sensor-real-v4.png",
   timer: "./motion-equipment-timer.webp",
 };
 
@@ -112,14 +111,109 @@ function EquipmentIcon({ kind }: { kind: EquipmentKind }) {
 }
 
 function SpringCoil({ offset }: { offset: number }) {
-  const height = clamp(150 + offset, 118, 182);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const height = clamp(140 + offset, 108, 172);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const width = 64;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = width * ratio;
+    canvas.height = height * ratio;
+
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+
+    const center = width / 2;
+    const helixTop = 18;
+    const helixBottom = height - 18;
+    const turns = 14;
+    const samples = turns * 34;
+
+    const traceHelix = (shiftX = 0, shiftY = 0) => {
+      context.beginPath();
+      for (let sample = 0; sample <= samples; sample += 1) {
+        const progress = sample / samples;
+        const angle = progress * Math.PI * 2 * turns - Math.PI / 2;
+        const x = center + Math.sin(angle) * 19 + shiftX;
+        const y = helixTop
+          + progress * (helixBottom - helixTop)
+          + Math.cos(angle) * 1.4
+          + shiftY;
+        if (sample === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+    };
+
+    const strokeHelix = (
+      stroke: string | CanvasGradient,
+      lineWidth: number,
+      shiftX = 0,
+      shiftY = 0,
+    ) => {
+      traceHelix(shiftX, shiftY);
+      context.strokeStyle = stroke;
+      context.lineWidth = lineWidth;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.stroke();
+    };
+
+    const metal = context.createLinearGradient(10, 0, 54, 0);
+    metal.addColorStop(0, "#26373b");
+    metal.addColorStop(0.18, "#829195");
+    metal.addColorStop(0.38, "#f7faf9");
+    metal.addColorStop(0.52, "#9aa8aa");
+    metal.addColorStop(0.72, "#ffffff");
+    metal.addColorStop(1, "#34484c");
+
+    strokeHelix("rgba(20, 35, 39, 0.32)", 7, 2, 2.2);
+    strokeHelix("#263a3f", 5.6);
+    strokeHelix(metal, 4.1);
+    strokeHelix("rgba(255, 255, 255, 0.68)", 1.05, -0.7, -0.3);
+
+    const drawEnd = (y: number, connectorStart: number, connectorEnd: number) => {
+      context.beginPath();
+      context.moveTo(center, connectorStart);
+      context.lineTo(center, connectorEnd);
+      context.strokeStyle = "#31464a";
+      context.lineWidth = 5.4;
+      context.lineCap = "round";
+      context.stroke();
+
+      context.beginPath();
+      context.ellipse(center, y, 9.5, 6.4, 0, 0, Math.PI * 2);
+      context.strokeStyle = "#31464a";
+      context.lineWidth = 5.4;
+      context.stroke();
+
+      context.beginPath();
+      context.ellipse(center - 0.5, y - 0.45, 9.5, 6.4, 0, 0, Math.PI * 2);
+      context.strokeStyle = metal;
+      context.lineWidth = 3.6;
+      context.stroke();
+
+      context.beginPath();
+      context.ellipse(center - 1, y - 1, 8.7, 5.5, 0, Math.PI * 1.08, Math.PI * 1.88);
+      context.strokeStyle = "rgba(255, 255, 255, 0.72)";
+      context.lineWidth = 1;
+      context.stroke();
+    };
+
+    drawEnd(7.5, 13, helixTop + 1);
+    drawEnd(height - 7.5, helixBottom - 1, height - 13);
+  }, [height]);
 
   return (
-    <img
+    <canvas
+      ref={canvasRef}
       className="shm-spring"
-      src="./shm-metal-spring-real-v2.png"
-      alt="Gerçek metal sarmal yay"
-      draggable={false}
+      role="img"
+      aria-label="Kütleyle birlikte sıkışıp gevşeyen metal sarmal yay"
       style={{ height: `${height}px` }}
     />
   );
@@ -462,7 +556,7 @@ export default function HarmonicMotionLab() {
     setMessage("İdeal ölçüm deney günlüğüne kaydedildi.");
   };
 
-  const oscillatorOffsetPixels = displacement * 3;
+  const oscillatorOffsetPixels = displacement * 2.5;
   const energySafeTotal = Math.max(totalEnergy, 0.000001);
 
   const changeExperiment = (mode: "spring" | "pendulum") => {
@@ -675,8 +769,8 @@ export default function HarmonicMotionLab() {
               <div className={`shm-motion-sensor ${runState === "running" ? "active" : ""}`}>
                 <img
                   className="shm-real-motion-sensor-photo"
-                  src="./shm-motion-sensor-real-v3.png"
-                  alt="Kütlenin düşey konumunu ölçen ultrasonik hareket algılayıcısı"
+                  src="./shm-optical-motion-sensor-real-v4.png"
+                  alt="Kütlenin düşey konumunu ölçen optik hareket algılayıcısı"
                   draggable={false}
                 />
                 {runState === "running" && <b />}

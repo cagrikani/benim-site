@@ -37417,7 +37417,7 @@ footer > a {
 
 .shm-real-stand-photo,
 .pend-real-stand-photo {
-  top: 10px;
+  top: 46px;
   left: 75px;
   z-index: 2;
   width: 280px;
@@ -37427,7 +37427,7 @@ footer > a {
 .shm-stand::after,
 .pend-stand::after {
   position: absolute;
-  top: 423px;
+  top: 431px;
   left: 82px;
   z-index: 1;
   width: 265px;
@@ -37439,16 +37439,16 @@ footer > a {
 }
 
 .shm-spring {
-  top: 80px;
-  left: 299px;
+  top: 116px;
+  left: 296px;
   z-index: 6;
-  width: 46px;
+  width: 52px;
   transition: none;
   will-change: height;
 }
 
 .shm-mass {
-  top: 230px;
+  top: 256px;
   left: 283px;
   width: 78px;
   height: 95px;
@@ -37467,24 +37467,24 @@ footer > a {
 }
 
 .shm-ruler {
-  top: 89px;
+  top: 115px;
   left: 395px;
   width: 34px;
   height: 318px;
 }
 
 .shm-reference-marks {
-  top: 178px;
+  top: 204px;
   left: 440px;
   height: 130px;
 }
 
 .shm-motion-sensor {
-  top: 363px;
-  left: 272px;
+  top: 386px;
+  left: 270px;
   z-index: 4;
-  width: 100px;
-  height: 67px;
+  width: 104px;
+  height: 62px;
   filter: drop-shadow(4px 7px 6px rgba(23, 38, 42, 0.28));
 }
 
@@ -37508,11 +37508,11 @@ footer > a {
 }
 
 .shm-motion-sensor > b {
-  top: -33px;
-  left: 47px;
+  top: -25px;
+  left: 49px;
   z-index: 0;
   width: 7px;
-  height: 36px;
+  height: 27px;
   border-right-width: 1px;
   border-left-width: 1px;
   opacity: 0.72;
@@ -37520,7 +37520,7 @@ footer > a {
 
 .shm-data-logger,
 .pend-timer {
-  top: 324px;
+  top: 342px;
   right: 75px;
   width: 166px;
   height: 106px;
@@ -37542,18 +37542,21 @@ footer > a {
 }
 
 .shm-sensor-cable {
-  top: 393px;
-  right: 238px;
-  width: 338px;
-  height: 40px;
-  border-width: 3px;
-  border-color: #263d42;
+  top: 422px;
+  right: auto;
+  left: 373px;
+  width: 328px;
+  height: 28px;
+  border-right: 3px solid #263d42;
+  border-bottom: 3px solid #263d42;
+  border-left: 3px solid #263d42;
+  border-radius: 0 0 18px 18px;
   filter: drop-shadow(0 2px 1px rgba(18, 34, 37, 0.22));
   transform: none;
 }
 
 .pend-swing-arm {
-  top: 80px;
+  top: 116px;
   left: 321px;
 }
 
@@ -37569,7 +37572,7 @@ footer > a {
 }
 
 .pend-ruler {
-  top: 84px;
+  top: 120px;
   left: 385px;
   height: var(--pend-length);
   min-height: 0;
@@ -37577,7 +37580,7 @@ footer > a {
 }
 
 .pend-photogate {
-  top: calc(47px + var(--pend-length));
+  top: calc(83px + var(--pend-length));
   left: 268px;
   z-index: 7;
   width: 106px;
@@ -37615,12 +37618,15 @@ footer > a {
 }
 
 .pend-timer-cable {
-  top: 393px;
-  right: 238px;
-  width: 345px;
-  height: 40px;
-  border-width: 3px;
-  border-color: #263d42;
+  top: 422px;
+  right: auto;
+  left: 373px;
+  width: 328px;
+  height: 28px;
+  border-right: 3px solid #263d42;
+  border-bottom: 3px solid #263d42;
+  border-left: 3px solid #263d42;
+  border-radius: 0 0 18px 18px;
   filter: drop-shadow(0 2px 1px rgba(18, 34, 37, 0.22));
   transform: none;
 }
@@ -37637,7 +37643,7 @@ footer > a {
   }
 
   .shm-spring {
-    left: 299px;
+    left: 296px;
   }
 
   .shm-mass {
