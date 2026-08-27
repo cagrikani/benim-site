@@ -26641,7 +26641,7 @@ footer > a {
   bottom: 92px;
   left: 2%;
   z-index: 12;
-  width: 190px;
+  width: 19%;
   height: 160px;
   border: 0;
   border-radius: 0;
@@ -26695,9 +26695,9 @@ footer > a {
   border: 2px solid rgba(244,240,220,.94);
   box-shadow: 0 2px 4px rgba(25,24,19,.3);
 }
-.mfl-source-port { bottom: 32px; }
-.mfl-source-port.black { right: 67px; }
-.mfl-source-port.red { right: 47px; }
+.mfl-source-port { right: auto; bottom: 41px; transform: translateX(-50%); }
+.mfl-source-port.black { left: 55%; }
+.mfl-source-port.red { left: 65%; }
 .mfl-device-tag { right: 37px; bottom: 15px; z-index: 3; padding: 2px 4px; border-radius: 3px; background: rgba(249,247,232,.8); color: #3d5254; font-size: 6px; }
 
 .mfl-solenoid {
@@ -26735,17 +26735,17 @@ footer > a {
 .mfl-coil-pole { top: 55px; z-index: 13; width: 24px; height: 24px; font-size: 10px; }
 .mfl-coil-pole.left { left: 11%; }
 .mfl-coil-pole.right { right: 11%; }
-.mfl-coil-terminal { bottom: 38px; z-index: 14; width: 11px; height: 11px; border-width: 2px; }
-.mfl-coil-terminal.red { left: 50%; }
-.mfl-coil-terminal.black { left: 60%; }
-.mfl-solenoid.second.opposite .mfl-coil-terminal.red { left: 60%; }
-.mfl-solenoid.second.opposite .mfl-coil-terminal.black { left: 50%; }
+.mfl-coil-terminal { bottom: 63px; z-index: 14; width: 11px; height: 11px; border-width: 2px; transform: translateX(-50%); }
+.mfl-coil-terminal.red { left: 44%; }
+.mfl-coil-terminal.black { left: 57%; }
+.mfl-solenoid.second.opposite .mfl-coil-terminal.red { left: 57%; }
+.mfl-solenoid.second.opposite .mfl-coil-terminal.black { left: 44%; }
 .mfl-solenoid.second.opposite::after { top: 22px; left: 46%; z-index: 14; }
 
 .mfl-probe {
   bottom: 70px;
   z-index: 15;
-  width: 120px;
+  width: 12%;
   height: 240px;
 }
 .mfl-probe > img {
@@ -26770,7 +26770,7 @@ footer > a {
   transform: translateX(-50%);
   pointer-events: none;
 }
-.mfl-probe-ports { top: 163px; bottom: auto; left: 46px; z-index: 19; gap: 13px; }
+.mfl-probe-ports { top: 169px; bottom: auto; left: 54%; z-index: 19; gap: 6px; }
 .mfl-probe-ports i { width: 9px; height: 9px; border-width: 2px; }
 .mfl-probe small {
   right: -18px;
@@ -26790,7 +26790,7 @@ footer > a {
   right: 3%;
   bottom: 83px;
   z-index: 13;
-  width: 175px;
+  width: 17.5%;
   height: 195px;
   border: 0;
   border-radius: 0;
@@ -26820,9 +26820,9 @@ footer > a {
   text-shadow: 0 0 7px rgba(99,255,143,.35);
 }
 .mfl-multimeter > em { top: 109px; z-index: 4; padding: 3px 5px; border-radius: 4px; background: rgba(249,247,235,.88); color: #9b452e; font-size: 6px; }
-.mfl-meter-port { bottom: 41px; }
-.mfl-meter-port.black { left: 40px; }
-.mfl-meter-port.red { right: 30px; }
+.mfl-meter-port { right: auto; bottom: 52px; transform: translateX(-50%); }
+.mfl-meter-port.black { left: 25%; }
+.mfl-meter-port.red { left: 76%; }
 
 .mfl-cables-svg {
   position: absolute;

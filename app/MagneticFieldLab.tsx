@@ -55,11 +55,11 @@ const CORE_SETUP = EQUIPMENT.slice(0, 6).map(({ kind }) => kind);
 const EQUIPMENT_IMAGES: Record<EquipmentKind, string> = {
   rail: "./motion-equipment-air-track.webp",
   "power-supply": "./ohm-power-supply-real-v2.webp",
-  "main-coil": "./magnetic-solenoid-real-v1.webp",
+  "main-coil": "./magnetic-solenoid-real-v2.webp",
   "probe-coil": "./magnetic-probe-coil-real-v1.webp",
   multimeter: "./magnetic-ac-meter-real-v1.webp",
   cables: "./ohm-cable-kit-real-v2.webp",
-  "second-coil": "./magnetic-solenoid-real-v1.webp",
+  "second-coil": "./magnetic-solenoid-real-v2.webp",
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -322,8 +322,10 @@ export default function MagneticFieldLab() {
   const probePercent = 22 + ((probePosition - DOMAIN_MIN) / (DOMAIN_MAX - DOMAIN_MIN)) * 58;
   const secondPercent = 50.5 + secondGap * 1.55;
   const secondBaseX = secondPercent * 10;
-  const secondRedX = secondBaseX + (direction === "same" ? 115 : 138);
-  const secondBlackX = secondBaseX + (direction === "same" ? 138 : 115);
+  const secondRedX = secondBaseX + (direction === "same" ? 101 : 131);
+  const secondBlackX = secondBaseX + (direction === "same" ? 131 : 101);
+  const probeRedX = probePercent * 10 + 9;
+  const probeBlackX = probePercent * 10 + 24;
   const setupLabel = secondCoil
     ? `${secondGap} cm · ${direction === "same" ? "aynı yön" : "zıt yön"}`
     : "Tek bobin";
@@ -494,7 +496,7 @@ export default function MagneticFieldLab() {
             )}
             {placed.includes("main-coil") && (
               <div className="mfl-solenoid main">
-                <img src="./magnetic-solenoid-real-v1.webp" alt="Ray üzerindeki büyük bakır ana bobin" draggable={false} />
+                <img src="./magnetic-solenoid-real-v2.webp" alt="Ray üzerinde sayfa düzlemine paralel büyük bakır ana bobin" draggable={false} />
                 <span className="mfl-coil-pole left">S</span>
                 <span className="mfl-coil-pole right">N</span>
                 <span className="mfl-coil-terminal red" />
@@ -510,7 +512,7 @@ export default function MagneticFieldLab() {
                 onPointerDown={(event) => beginDrag(event, "coil")}
                 aria-label="İkinci bobini ray üzerinde sürükle"
               >
-                <img src="./magnetic-solenoid-real-v1.webp" alt="Ray üzerindeki ikinci bakır bobin" draggable={false} />
+                <img src="./magnetic-solenoid-real-v2.webp" alt="Ray üzerinde sayfa düzlemine paralel ikinci bakır bobin" draggable={false} />
                 <span className="mfl-coil-pole left">{direction === "same" ? "S" : "N"}</span>
                 <span className="mfl-coil-pole right">{direction === "same" ? "N" : "S"}</span>
                 <span className="mfl-coil-terminal red" />
@@ -551,28 +553,28 @@ export default function MagneticFieldLab() {
             {placed.includes("cables") && (
               <>
                 <svg className="mfl-cables mfl-cables-svg" viewBox="0 0 1000 590" preserveAspectRatio="none" aria-hidden="true">
-                  <path className="mfl-cable drive red" d="M 142 442 C 180 492, 360 492, 425 431" />
+                  <path className="mfl-cable drive red" d="M 143 451 C 186 492, 354 488, 411 415" />
                   {secondCoil ? (
                     <>
-                      <path className="mfl-cable drive black" d={`M 123 448 C 190 536, ${secondBlackX - 70} 536, ${secondBlackX} 438`} />
-                      <path className="mfl-cable bridge amber" d={`M 449 438 C 488 474, ${secondRedX - 42} 474, ${secondRedX} 431`} />
+                      <path className="mfl-cable drive black" d={`M 125 451 C 190 530, ${secondBlackX - 70} 530, ${secondBlackX} 415`} />
+                      <path className="mfl-cable bridge amber" d={`M 441 415 C 480 463, ${secondRedX - 40} 463, ${secondRedX} 415`} />
                     </>
                   ) : (
-                    <path className="mfl-cable drive black" d="M 123 448 C 190 520, 392 516, 449 438" />
+                    <path className="mfl-cable drive black" d="M 125 451 C 194 515, 388 511, 441 415" />
                   )}
-                  <path className="mfl-cable measure red" d={`M ${probePercent * 10 - 9} 447 C ${probePercent * 10 + 58} 516, 866 512, 928 444`} />
-                  <path className="mfl-cable measure black" d={`M ${probePercent * 10 + 9} 452 C ${probePercent * 10 + 68} 492, 800 493, 848 444`} />
+                  <path className="mfl-cable measure red" d={`M ${probeRedX} 454 C ${probeRedX + 54} 515, 866 510, 928 449`} />
+                  <path className="mfl-cable measure black" d={`M ${probeBlackX} 454 C ${probeBlackX + 52} 489, 793 489, 839 449`} />
                   <g className="mfl-plug-nodes">
-                    <circle className="red" cx="142" cy="442" r="6" /><circle className="red" cx="425" cy="431" r="6" />
-                    <circle className="black" cx="123" cy="448" r="6" /><circle className="black" cx="449" cy="438" r="6" />
+                    <circle className="red" cx="143" cy="451" r="5" /><circle className="red" cx="411" cy="415" r="5" />
+                    <circle className="black" cx="125" cy="451" r="5" /><circle className="black" cx="441" cy="415" r="5" />
                     {secondCoil && (
                       <>
-                        <circle className="amber" cx={secondRedX} cy="431" r="6" />
-                        <circle className="black" cx={secondBlackX} cy="438" r="6" />
+                        <circle className="amber" cx={secondRedX} cy="415" r="5" />
+                        <circle className="black" cx={secondBlackX} cy="415" r="5" />
                       </>
                     )}
-                    <circle className="red" cx={probePercent * 10 - 9} cy="447" r="6" /><circle className="red" cx="928" cy="444" r="6" />
-                    <circle className="black" cx={probePercent * 10 + 9} cy="452" r="6" /><circle className="black" cx="848" cy="444" r="6" />
+                    <circle className="red" cx={probeRedX} cy="454" r="5" /><circle className="red" cx="928" cy="449" r="5" />
+                    <circle className="black" cx={probeBlackX} cy="454" r="5" /><circle className="black" cx="839" cy="449" r="5" />
                   </g>
                 </svg>
                 <div className="mfl-connection-guide">
