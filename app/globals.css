@@ -26705,15 +26705,17 @@ footer > a {
   z-index: 11;
   width: 23%;
   height: 190px;
+  transform: rotate(0deg);
 }
 .mfl-solenoid.main { left: 31%; }
-.mfl-solenoid.second { left: var(--coil-left); z-index: 10; }
+.mfl-solenoid.second { bottom: 106px; left: var(--coil-left); z-index: 10; }
 .mfl-solenoid > img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center center;
   filter: drop-shadow(0 10px 8px rgba(37,28,21,.28));
   pointer-events: none;
 }
@@ -26736,6 +26738,8 @@ footer > a {
 .mfl-coil-terminal { bottom: 38px; z-index: 14; width: 11px; height: 11px; border-width: 2px; }
 .mfl-coil-terminal.red { left: 50%; }
 .mfl-coil-terminal.black { left: 60%; }
+.mfl-solenoid.second.opposite .mfl-coil-terminal.red { left: 60%; }
+.mfl-solenoid.second.opposite .mfl-coil-terminal.black { left: 50%; }
 .mfl-solenoid.second.opposite::after { top: 22px; left: 46%; z-index: 14; }
 
 .mfl-probe {
@@ -26842,9 +26846,11 @@ footer > a {
 }
 .mfl-cables-svg .mfl-cable.red { stroke: #d83d35; }
 .mfl-cables-svg .mfl-cable.black { stroke: #202b30; }
+.mfl-cables-svg .mfl-cable.amber { stroke: #e2a12c; }
 .mfl-plug-nodes circle { stroke: #efe9d6; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
 .mfl-plug-nodes circle.red { fill: #d83d35; }
 .mfl-plug-nodes circle.black { fill: #202b30; }
+.mfl-plug-nodes circle.amber { fill: #e2a12c; }
 
 .mfl-connection-guide {
   top: 18px;
@@ -26856,6 +26862,7 @@ footer > a {
   transform: none;
 }
 .mfl-connection-guide span { min-width: 175px; padding: 6px 8px; }
+.mfl-connection-guide span:first-child { min-width: 225px; }
 
 .mfl-field-visual {
   bottom: 186px;

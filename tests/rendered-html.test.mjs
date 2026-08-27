@@ -370,6 +370,10 @@ test("Elektrik alanı TYMM uyumlu manyetik alan deneyini sunar", async () => {
   assert.match(page, /mfl-coil-pole/);
   assert.match(page, /mfl-cable drive red/);
   assert.match(page, /mfl-cable measure red/);
+  assert.match(page, /mfl-cable bridge amber/);
+  assert.match(page, /Kaynak → ana bobin → ikinci bobin → kaynak/);
+  assert.match(page, /secondRedX/);
+  assert.match(page, /secondBlackX/);
   assert.match(page, /Manyetik alan – konum/);
   assert.match(page, /Gösterge gerilimi – akım/);
   assert.match(page, /Ölçümü kaydet/);

@@ -321,6 +321,9 @@ export default function MagneticFieldLab() {
   const inducedVoltage = tidy(Math.abs(field) * 0.36, 3);
   const probePercent = 22 + ((probePosition - DOMAIN_MIN) / (DOMAIN_MAX - DOMAIN_MIN)) * 58;
   const secondPercent = 50.5 + secondGap * 1.55;
+  const secondBaseX = secondPercent * 10;
+  const secondRedX = secondBaseX + (direction === "same" ? 115 : 138);
+  const secondBlackX = secondBaseX + (direction === "same" ? 138 : 115);
   const setupLabel = secondCoil
     ? `${secondGap} cm · ${direction === "same" ? "aynı yön" : "zıt yön"}`
     : "Tek bobin";
@@ -549,18 +552,31 @@ export default function MagneticFieldLab() {
               <>
                 <svg className="mfl-cables mfl-cables-svg" viewBox="0 0 1000 590" preserveAspectRatio="none" aria-hidden="true">
                   <path className="mfl-cable drive red" d="M 142 442 C 180 492, 360 492, 425 431" />
-                  <path className="mfl-cable drive black" d="M 123 448 C 190 520, 392 516, 449 438" />
+                  {secondCoil ? (
+                    <>
+                      <path className="mfl-cable drive black" d={`M 123 448 C 190 536, ${secondBlackX - 70} 536, ${secondBlackX} 438`} />
+                      <path className="mfl-cable bridge amber" d={`M 449 438 C 488 474, ${secondRedX - 42} 474, ${secondRedX} 431`} />
+                    </>
+                  ) : (
+                    <path className="mfl-cable drive black" d="M 123 448 C 190 520, 392 516, 449 438" />
+                  )}
                   <path className="mfl-cable measure red" d={`M ${probePercent * 10 - 9} 447 C ${probePercent * 10 + 58} 516, 866 512, 928 444`} />
                   <path className="mfl-cable measure black" d={`M ${probePercent * 10 + 9} 452 C ${probePercent * 10 + 68} 492, 800 493, 848 444`} />
                   <g className="mfl-plug-nodes">
                     <circle className="red" cx="142" cy="442" r="6" /><circle className="red" cx="425" cy="431" r="6" />
                     <circle className="black" cx="123" cy="448" r="6" /><circle className="black" cx="449" cy="438" r="6" />
+                    {secondCoil && (
+                      <>
+                        <circle className="amber" cx={secondRedX} cy="431" r="6" />
+                        <circle className="black" cx={secondBlackX} cy="438" r="6" />
+                      </>
+                    )}
                     <circle className="red" cx={probePercent * 10 - 9} cy="447" r="6" /><circle className="red" cx="928" cy="444" r="6" />
                     <circle className="black" cx={probePercent * 10 + 9} cy="452" r="6" /><circle className="black" cx="848" cy="444" r="6" />
                   </g>
                 </svg>
                 <div className="mfl-connection-guide">
-                  <span><i>1</i><b>Güç devresi</b> Kaynak → ana bobin</span>
+                  <span><i>1</i><b>Güç devresi</b> {secondCoil ? "Kaynak → ana bobin → ikinci bobin → kaynak" : "Kaynak → ana bobin → kaynak"}</span>
                   <span><i>2</i><b>Ölçüm devresi</b> Yoklama kangalı → AC voltmetre</span>
                 </div>
               </>
