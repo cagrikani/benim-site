@@ -26540,6 +26540,353 @@ footer > a {
 .mfl-ideal-note { display: flex; gap: 10px; align-items: center; margin-top: 14px; padding: 12px 14px; border-radius: 11px; background: #eef7f4; color: #58737a; font-size: 10px; }
 .mfl-ideal-note b { color: #14786e; font-size: 9px; letter-spacing: .09em; }
 
+/* Manyetik alan · gerçek laboratuvar görünümü */
+.mfl-equipment-list > button {
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  min-height: 78px;
+}
+
+.mfl-equipment-icon.has-photo {
+  width: 56px;
+  height: 56px;
+  border-color: #d4e0dd;
+  background: linear-gradient(145deg, #fff, #edf3f1);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.8), 0 5px 11px rgba(23,52,60,.1);
+}
+
+.mfl-equipment-icon.has-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 3px rgba(17,35,40,.18));
+}
+
+.mfl-equipment-icon.icon-main-coil img,
+.mfl-equipment-icon.icon-second-coil img { transform: scale(1.18); }
+.mfl-equipment-icon.icon-probe-coil img { transform: scale(1.08); }
+.mfl-equipment-icon.icon-power-supply img { transform: scale(1.12); }
+.mfl-equipment-icon.icon-cables img { transform: scale(1.08); }
+
+.mfl-stage {
+  height: 590px;
+  background: #e8ece8;
+  isolation: isolate;
+}
+
+.mfl-bench-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.mfl-lab-wall {
+  z-index: 1;
+  inset: 0;
+  border: 0;
+  background: linear-gradient(180deg, rgba(246,248,244,.06), rgba(246,248,244,0) 47%);
+}
+
+.mfl-lab-wall::before { display: none; }
+.mfl-lab-wall span {
+  top: 18px;
+  padding: 8px 11px;
+  border: 1px solid rgba(30,62,68,.13);
+  border-radius: 8px;
+  background: rgba(250,252,249,.76);
+  color: rgba(30,61,69,.67);
+  backdrop-filter: blur(4px);
+}
+
+.mfl-bench-back { display: none; }
+.mfl-bench-front {
+  z-index: 25;
+  height: 52px;
+  border-top: 1px solid rgba(67,45,28,.38);
+  background: linear-gradient(180deg, rgba(90,55,32,.3), rgba(64,38,23,.72));
+  box-shadow: inset 0 10px 20px rgba(41,24,13,.2);
+}
+.mfl-bench-front span { right: 18px; bottom: 17px; color: #fff2dd; text-shadow: 0 1px 2px rgba(29,18,11,.55); }
+
+.mfl-rail {
+  right: 17%;
+  bottom: 101px;
+  left: 18%;
+  z-index: 4;
+  height: 58px;
+  border: 1px solid #39484b;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #d7dddb 0 12%, #69797c 13% 25%, #1f3035 26% 34%, #9ca9aa 35% 58%, #526367 59% 68%, #c9d1cf 69% 82%, #5a6a6d 83%);
+  box-shadow: 0 13px 17px rgba(25,34,34,.28), inset 0 1px rgba(255,255,255,.9);
+}
+.mfl-rail::before {
+  inset: 6px 8px 19px;
+  border: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.64), transparent 22%, rgba(14,28,31,.25) 24% 35%, transparent 37%);
+}
+.mfl-rail-channel { height: 2px; background: rgba(21,36,40,.82); }
+.mfl-rail-channel.first { top: 18px; }
+.mfl-rail-channel.second { top: 29px; }
+.mfl-rail-foot { bottom: -25px; height: 24px; background: linear-gradient(180deg, #536469, #26383d); }
+.mfl-rail-scale { z-index: 2; right: 12px; bottom: 2px; left: 12px; color: #243f45; font-size: 8px; }
+.mfl-rail-scale::before { bottom: 12px; border-color: rgba(25,51,56,.65); }
+
+.mfl-power-supply {
+  bottom: 92px;
+  left: 2%;
+  z-index: 12;
+  width: 190px;
+  height: 160px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.mfl-power-supply > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 9px rgba(36,27,21,.3));
+}
+.mfl-power-supply > span {
+  top: 35px;
+  left: 37px;
+  z-index: 3;
+  color: #e9eee9;
+  font-size: 6px;
+  letter-spacing: .09em;
+}
+.mfl-power-supply > b {
+  top: 53px;
+  left: 49px;
+  z-index: 3;
+  min-width: 69px;
+  padding: 2px 5px;
+  border: 0;
+  background: transparent;
+  color: #9ef9c6;
+  font-size: 18px;
+  text-shadow: 0 0 7px rgba(74,255,152,.48);
+}
+.mfl-source-light {
+  position: absolute;
+  right: 24px;
+  bottom: 41px;
+  z-index: 4;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #52605a;
+}
+.mfl-source-light.on { background: #42d76e; box-shadow: 0 0 0 3px rgba(66,215,110,.18), 0 0 9px #42d76e; }
+.mfl-source-port,
+.mfl-meter-port {
+  z-index: 18;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(244,240,220,.94);
+  box-shadow: 0 2px 4px rgba(25,24,19,.3);
+}
+.mfl-source-port { bottom: 32px; }
+.mfl-source-port.black { right: 67px; }
+.mfl-source-port.red { right: 47px; }
+.mfl-device-tag { right: 37px; bottom: 15px; z-index: 3; padding: 2px 4px; border-radius: 3px; background: rgba(249,247,232,.8); color: #3d5254; font-size: 6px; }
+
+.mfl-solenoid {
+  bottom: 106px;
+  z-index: 11;
+  width: 23%;
+  height: 190px;
+}
+.mfl-solenoid.main { left: 31%; }
+.mfl-solenoid.second { left: var(--coil-left); z-index: 10; }
+.mfl-solenoid > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 8px rgba(37,28,21,.28));
+  pointer-events: none;
+}
+.mfl-solenoid.second.opposite > img { transform: scaleX(-1); }
+.mfl-solenoid small {
+  right: 2%;
+  bottom: 4px;
+  left: 2%;
+  z-index: 8;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: rgba(248,250,246,.87);
+  box-shadow: 0 3px 7px rgba(22,42,45,.12);
+  color: #173a43;
+  backdrop-filter: blur(3px);
+}
+.mfl-coil-pole { top: 55px; z-index: 13; width: 24px; height: 24px; font-size: 10px; }
+.mfl-coil-pole.left { left: 11%; }
+.mfl-coil-pole.right { right: 11%; }
+.mfl-coil-terminal { bottom: 38px; z-index: 14; width: 11px; height: 11px; border-width: 2px; }
+.mfl-coil-terminal.red { left: 50%; }
+.mfl-coil-terminal.black { left: 60%; }
+.mfl-solenoid.second.opposite::after { top: 22px; left: 46%; z-index: 14; }
+
+.mfl-probe {
+  bottom: 70px;
+  z-index: 15;
+  width: 120px;
+  height: 240px;
+}
+.mfl-probe > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 9px 6px rgba(35,29,23,.28));
+  pointer-events: none;
+}
+.mfl-probe::before {
+  position: absolute;
+  top: 45px;
+  left: 50%;
+  z-index: 18;
+  width: 62px;
+  height: 62px;
+  border: 1px dashed rgba(11,133,121,.6);
+  border-radius: 50%;
+  content: "";
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.mfl-probe-ports { top: 163px; bottom: auto; left: 46px; z-index: 19; gap: 13px; }
+.mfl-probe-ports i { width: 9px; height: 9px; border-width: 2px; }
+.mfl-probe small {
+  right: -18px;
+  bottom: -2px;
+  left: -18px;
+  z-index: 20;
+  padding: 5px 8px;
+  border: 1px solid rgba(31,66,72,.14);
+  border-radius: 999px;
+  background: rgba(250,252,248,.9);
+  color: #173f47;
+  box-shadow: 0 4px 9px rgba(25,45,47,.1);
+}
+.mfl-probe small b { color: #cb6038; font-size: 9px; }
+
+.mfl-multimeter {
+  right: 3%;
+  bottom: 83px;
+  z-index: 13;
+  width: 175px;
+  height: 195px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+.mfl-multimeter > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 8px rgba(38,28,21,.28));
+}
+.mfl-multimeter > span { top: 48px; left: 37px; z-index: 4; color: #cad8cb; font-size: 6px; letter-spacing: .08em; }
+.mfl-multimeter > b {
+  top: 66px;
+  left: 28px;
+  z-index: 4;
+  min-width: 119px;
+  padding: 2px 5px;
+  border: 0;
+  background: transparent;
+  color: #b9ffcf;
+  font-size: 21px;
+  text-shadow: 0 0 7px rgba(99,255,143,.35);
+}
+.mfl-multimeter > em { top: 109px; z-index: 4; padding: 3px 5px; border-radius: 4px; background: rgba(249,247,235,.88); color: #9b452e; font-size: 6px; }
+.mfl-meter-port { bottom: 41px; }
+.mfl-meter-port.black { left: 40px; }
+.mfl-meter-port.red { right: 30px; }
+
+.mfl-cables-svg {
+  position: absolute;
+  inset: 0;
+  z-index: 17;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.mfl-cables-svg .mfl-cable {
+  position: static;
+  display: initial;
+  fill: none;
+  border: 0;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 2px 1px rgba(25,26,22,.28));
+}
+.mfl-cables-svg .mfl-cable.red { stroke: #d83d35; }
+.mfl-cables-svg .mfl-cable.black { stroke: #202b30; }
+.mfl-plug-nodes circle { stroke: #efe9d6; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.mfl-plug-nodes circle.red { fill: #d83d35; }
+.mfl-plug-nodes circle.black { fill: #202b30; }
+
+.mfl-connection-guide {
+  top: 18px;
+  left: auto;
+  right: 18px;
+  z-index: 31;
+  gap: 5px;
+  padding: 5px;
+  transform: none;
+}
+.mfl-connection-guide span { min-width: 175px; padding: 6px 8px; }
+
+.mfl-field-visual {
+  bottom: 186px;
+  left: 27%;
+  z-index: auto;
+  height: 126px;
+  opacity: 1;
+  filter: drop-shadow(0 0 5px rgba(11,151,139,.24));
+  transition: right 220ms ease;
+}
+.mfl-field-visual.single { right: 42%; }
+.mfl-field-visual.dual { right: 18%; }
+.mfl-field-visual > i {
+  z-index: 7;
+  border-width: 1.6px;
+  background: rgba(116,232,214,.025);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.46), 0 0 8px rgba(11,151,139,.2);
+  opacity: var(--field-strength);
+}
+.mfl-field-visual > i::after { display: none; }
+.mfl-field-visual > i:first-child { top: 2px; right: 0; left: 0; height: 116px; transform: none; }
+.mfl-field-visual > i:nth-child(2) { top: 22px; right: 5%; left: 5%; height: 76px; transform: none; }
+.mfl-field-visual > i:nth-child(3) { top: 46px; right: 10%; left: 10%; height: 28px; transform: none; }
+.mfl-field-visual > i:nth-child(4),
+.mfl-field-visual > i:nth-child(5) { display: none; }
+.mfl-field-visual > b { top: -25px; z-index: 19; padding: 7px 12px; box-shadow: 0 5px 13px rgba(17,68,68,.13); }
+.mfl-axis-arrows { top: 55px; right: 16%; left: 16%; z-index: 8; font-size: 18px; opacity: var(--field-strength); }
+
+.mfl-drop-prompt { top: 80px; z-index: 35; }
+.mfl-drop-prompt .mfl-equipment-icon { width: 52px; height: 52px; }
+
 @media (max-width: 1220px) {
   .mfl-builder { grid-template-columns: 240px minmax(0, 1fr); }
   .mfl-stage-column { overflow-x: auto; }

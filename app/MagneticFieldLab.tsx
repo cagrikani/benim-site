@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import {
@@ -51,6 +52,16 @@ const EQUIPMENT: Array<{
 
 const CORE_SETUP = EQUIPMENT.slice(0, 6).map(({ kind }) => kind);
 
+const EQUIPMENT_IMAGES: Record<EquipmentKind, string> = {
+  rail: "./motion-equipment-air-track.webp",
+  "power-supply": "./ohm-power-supply-real-v2.webp",
+  "main-coil": "./magnetic-solenoid-real-v1.webp",
+  "probe-coil": "./magnetic-probe-coil-real-v1.webp",
+  multimeter: "./magnetic-ac-meter-real-v1.webp",
+  cables: "./ohm-cable-kit-real-v2.webp",
+  "second-coil": "./magnetic-solenoid-real-v1.webp",
+};
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -86,10 +97,8 @@ function fieldAt(
 
 function ApparatusIcon({ kind }: { kind: EquipmentKind }) {
   return (
-    <span className={`mfl-equipment-icon icon-${kind}`} aria-hidden="true">
-      <i />
-      <i />
-      <i />
+    <span className={`mfl-equipment-icon icon-${kind} has-photo`} aria-hidden="true">
+      <img src={EQUIPMENT_IMAGES[kind]} alt="" draggable={false} />
     </span>
   );
 }
@@ -457,16 +466,17 @@ export default function MagneticFieldLab() {
             onDragOver={(event) => event.preventDefault()}
             onDrop={onStageDrop}
           >
+            <img className="mfl-bench-photo" src="./ohm-lab-bench-real-v2.webp" alt="" draggable={false} />
             <div className="mfl-lab-wall"><span>FİZİK ATÖLYESİ · MANYETİK ALAN MASASI</span></div>
             <div className="mfl-bench-back" />
             {placed.includes("power-supply") && (
               <div className="mfl-power-supply">
+                <img src="./ohm-power-supply-real-v2.webp" alt="Alternatif akım güç kaynağı" draggable={false} />
                 <span>AC GÜÇ KAYNAĞI</span>
                 <b>{powerOn ? supplyVoltage.toFixed(1) : "0.0"}<small> V~</small></b>
-                <i className="mfl-source-switch" />
-                <i className="mfl-source-knob" />
-                <i className="mfl-source-port red" />
-                <i className="mfl-source-port black" />
+                <i className={`mfl-source-light ${powerOn ? "on" : ""}`} />
+                <i className="mfl-source-port red" aria-label="Kaynağın kırmızı çıkışı" />
+                <i className="mfl-source-port black" aria-label="Kaynağın siyah çıkışı" />
                 <em className="mfl-device-tag">AC ÇIKIŞ</em>
               </div>
             )}
@@ -481,10 +491,7 @@ export default function MagneticFieldLab() {
             )}
             {placed.includes("main-coil") && (
               <div className="mfl-solenoid main">
-                <span className="mfl-coil-end left" />
-                <span className="mfl-coil-winding" />
-                <span className="mfl-coil-bore" />
-                <span className="mfl-coil-end right" />
+                <img src="./magnetic-solenoid-real-v1.webp" alt="Ray üzerindeki büyük bakır ana bobin" draggable={false} />
                 <span className="mfl-coil-pole left">S</span>
                 <span className="mfl-coil-pole right">N</span>
                 <span className="mfl-coil-terminal red" />
@@ -500,17 +507,16 @@ export default function MagneticFieldLab() {
                 onPointerDown={(event) => beginDrag(event, "coil")}
                 aria-label="İkinci bobini ray üzerinde sürükle"
               >
-                <span className="mfl-coil-end left" />
-                <span className="mfl-coil-winding" />
-                <span className="mfl-coil-bore" />
-                <span className="mfl-coil-end right" />
+                <img src="./magnetic-solenoid-real-v1.webp" alt="Ray üzerindeki ikinci bakır bobin" draggable={false} />
                 <span className="mfl-coil-pole left">{direction === "same" ? "S" : "N"}</span>
                 <span className="mfl-coil-pole right">{direction === "same" ? "N" : "S"}</span>
+                <span className="mfl-coil-terminal red" />
+                <span className="mfl-coil-terminal black" />
                 <small>2. BOBİN · SÜRÜKLE</small>
               </button>
             )}
             {coreReady && powerOn && (
-              <div className={`mfl-field-visual ${direction}`} style={{ "--field-strength": `${clamp(Math.abs(field) / 2.6, 0.52, 1)}` } as CSSProperties} aria-hidden="true">
+              <div className={`mfl-field-visual ${direction} ${secondCoil ? "dual" : "single"}`} style={{ "--field-strength": `${clamp(Math.abs(field) / 2.6, 0.52, 1)}` } as CSSProperties} aria-hidden="true">
                 <i /><i /><i /><i /><i />
                 <b>{direction === "same" ? "B ALAN YÖNÜ  →" : "ALANLAR ZIT  →  ←"}</b>
                 <span className="mfl-axis-arrows"><em>→</em><em>→</em><em>→</em><em>→</em></span>
@@ -524,31 +530,35 @@ export default function MagneticFieldLab() {
                 onPointerDown={(event) => beginDrag(event, "probe")}
                 aria-label={`Yoklama kangalı, ${probePosition} santimetre; ray üzerinde sürükle`}
               >
-                <span className="mfl-probe-ring"><i /></span>
-                <span className="mfl-probe-stem" />
-                <span className="mfl-probe-carriage" />
+                <img src="./magnetic-probe-coil-real-v1.webp" alt="Ray üzerinde hareketli yoklama kangalı" draggable={false} />
                 <span className="mfl-probe-ports"><i /><i /></span>
-                <small>YOKLAMA KANGALI</small>
+                <small><b>{probePosition.toFixed(1)} cm</b> · YOKLAMA KANGALI</small>
               </button>
             )}
             {placed.includes("multimeter") && (
               <div className="mfl-multimeter">
+                <img src="./magnetic-ac-meter-real-v1.webp" alt="Dijital AC voltmetre" draggable={false} />
                 <span>AC VOLTMETRE</span>
                 <b>{inducedVoltage.toFixed(3)}<small> V~</small></b>
                 <em>YOKLAMA KANGALI ÖLÇÜMÜ</em>
-                <i className="mfl-meter-dial" />
                 <i className="mfl-meter-port red" />
                 <i className="mfl-meter-port black" />
               </div>
             )}
             {placed.includes("cables") && (
               <>
-                <div className="mfl-cables" style={{ "--probe-left": `${probePercent}%` } as CSSProperties} aria-hidden="true">
-                  <span className="mfl-cable drive red"><i /><b>1</b></span>
-                  <span className="mfl-cable drive black"><i /><b>1</b></span>
-                  <span className="mfl-cable measure red"><i /><b>2</b></span>
-                  <span className="mfl-cable measure black"><i /><b>2</b></span>
-                </div>
+                <svg className="mfl-cables mfl-cables-svg" viewBox="0 0 1000 590" preserveAspectRatio="none" aria-hidden="true">
+                  <path className="mfl-cable drive red" d="M 142 442 C 180 492, 360 492, 425 431" />
+                  <path className="mfl-cable drive black" d="M 123 448 C 190 520, 392 516, 449 438" />
+                  <path className="mfl-cable measure red" d={`M ${probePercent * 10 - 9} 447 C ${probePercent * 10 + 58} 516, 866 512, 928 444`} />
+                  <path className="mfl-cable measure black" d={`M ${probePercent * 10 + 9} 452 C ${probePercent * 10 + 68} 492, 800 493, 848 444`} />
+                  <g className="mfl-plug-nodes">
+                    <circle className="red" cx="142" cy="442" r="6" /><circle className="red" cx="425" cy="431" r="6" />
+                    <circle className="black" cx="123" cy="448" r="6" /><circle className="black" cx="449" cy="438" r="6" />
+                    <circle className="red" cx={probePercent * 10 - 9} cy="447" r="6" /><circle className="red" cx="928" cy="444" r="6" />
+                    <circle className="black" cx={probePercent * 10 + 9} cy="452" r="6" /><circle className="black" cx="848" cy="444" r="6" />
+                  </g>
+                </svg>
                 <div className="mfl-connection-guide">
                   <span><i>1</i><b>Güç devresi</b> Kaynak → ana bobin</span>
                   <span><i>2</i><b>Ölçüm devresi</b> Yoklama kangalı → AC voltmetre</span>

@@ -362,6 +362,11 @@ test("Elektrik alanı TYMM uyumlu manyetik alan deneyini sunar", async () => {
   assert.match(page, /Ölçüm devresi/);
   assert.match(page, /B ALAN YÖNÜ/);
   assert.match(page, /YOKLAMA KANGALI ÖLÇÜMÜ/);
+  assert.match(page, /magnetic-solenoid-real-v1\.webp/);
+  assert.match(page, /magnetic-probe-coil-real-v1\.webp/);
+  assert.match(page, /magnetic-ac-meter-real-v1\.webp/);
+  assert.match(page, /ohm-lab-bench-real-v2\.webp/);
+  assert.match(page, /mfl-cables-svg/);
   assert.match(page, /mfl-coil-pole/);
   assert.match(page, /mfl-cable drive red/);
   assert.match(page, /mfl-cable measure red/);
@@ -393,6 +398,8 @@ test("manyetik alan düzeneği gerçekçi ray, bobin, yoklama kangalı ve grafik
   assert.match(css, /\.mfl-coil-pole\s*\{/);
   assert.match(css, /\.mfl-axis-arrows\s*\{/);
   assert.match(css, /\.mfl-field-visual\s*\{/);
+  assert.match(css, /\.mfl-bench-photo\s*\{/);
+  assert.match(css, /\.mfl-equipment-icon\.has-photo/);
   assert.match(css, /\.mfl-control-grid\s*\{/);
   assert.match(css, /\.mfl-graph-grid\s*\{/);
   assert.match(css, /\.mfl-graph-canvas\s*\{/);
