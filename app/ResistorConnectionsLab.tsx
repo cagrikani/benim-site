@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import {
   type CSSProperties,
   type DragEvent as ReactDragEvent,
@@ -51,7 +53,8 @@ type Reading = {
 
 const MIME = "application/x-resistor-connections-equipment";
 const RESISTANCE_OPTIONS = [100, 220, 330, 470] as const;
-const WIRE_COLORS = ["#df4f44", "#264c5c", "#eaa52f", "#247b73", "#c65d46", "#315f84", "#8060a1", "#52727b"];
+const WIRE_COLORS = ["#dc3f38", "#202c31", "#d99824", "#26363c", "#c93834", "#26363c", "#bc4038", "#26363c"];
+const WIRE_ROUTE_LEVELS = [0.94, 0.72, 0.66, 0.61, 0.76, 0.81, 0.9, 0.86];
 
 const EQUIPMENT: Array<{
   kind: EquipmentKind;
@@ -67,22 +70,32 @@ const EQUIPMENT: Array<{
   { kind: "cables", name: "Kablo takımı", detail: "Uçlara dokunarak bağlanır" },
 ];
 
+const EQUIPMENT_IMAGES: Record<EquipmentKind, string> = {
+  "power-supply": "./ohm-power-supply-real-v2.webp",
+  ammeter: "./ohm-analog-meter-real-v2.webp",
+  voltmeter: "./ohm-analog-meter-real-v2.webp",
+  "resistor-a": "./resistor-module-real-v1.webp",
+  "resistor-b": "./resistor-module-real-v1.webp",
+  switch: "./ohm-knife-switch-real-v2.webp",
+  cables: "./ohm-cable-kit-real-v2.webp",
+};
+
 const TERMINALS: Record<
   TerminalId,
   { x: number; y: number; label: string; equipment: EquipmentKind; polarity: "red" | "black" }
 > = {
-  "source-positive": { x: 17, y: 31, label: "Kaynak +", equipment: "power-supply", polarity: "red" },
-  "source-negative": { x: 17, y: 45, label: "Kaynak −", equipment: "power-supply", polarity: "black" },
-  "ammeter-positive": { x: 31, y: 73, label: "Ampermetre +", equipment: "ammeter", polarity: "red" },
-  "ammeter-negative": { x: 43, y: 73, label: "Ampermetre −", equipment: "ammeter", polarity: "black" },
-  "voltmeter-positive": { x: 55, y: 73, label: "Voltmetre +", equipment: "voltmeter", polarity: "red" },
-  "voltmeter-negative": { x: 68, y: 73, label: "Voltmetre −", equipment: "voltmeter", polarity: "black" },
-  "resistor-a-left": { x: 38, y: 31, label: "A direnci sol", equipment: "resistor-a", polarity: "red" },
-  "resistor-a-right": { x: 50, y: 31, label: "A direnci sağ", equipment: "resistor-a", polarity: "black" },
-  "resistor-b-left": { x: 57, y: 31, label: "B direnci sol", equipment: "resistor-b", polarity: "red" },
-  "resistor-b-right": { x: 69, y: 31, label: "B direnci sağ", equipment: "resistor-b", polarity: "black" },
-  "switch-left": { x: 78, y: 37, label: "Anahtar giriş", equipment: "switch", polarity: "red" },
-  "switch-right": { x: 90, y: 37, label: "Anahtar çıkış", equipment: "switch", polarity: "black" },
+  "source-positive": { x: 11.6, y: 55.7, label: "Kaynak kırmızı giriş", equipment: "power-supply", polarity: "red" },
+  "source-negative": { x: 9.1, y: 55.7, label: "Kaynak siyah giriş", equipment: "power-supply", polarity: "black" },
+  "ammeter-positive": { x: 42, y: 88, label: "Ampermetre kırmızı giriş", equipment: "ammeter", polarity: "red" },
+  "ammeter-negative": { x: 29, y: 88, label: "Ampermetre siyah giriş", equipment: "ammeter", polarity: "black" },
+  "voltmeter-positive": { x: 70, y: 88, label: "Voltmetre kırmızı giriş", equipment: "voltmeter", polarity: "red" },
+  "voltmeter-negative": { x: 56, y: 88, label: "Voltmetre siyah giriş", equipment: "voltmeter", polarity: "black" },
+  "resistor-a-left": { x: 30.2, y: 50.5, label: "A direnci kırmızı giriş", equipment: "resistor-a", polarity: "red" },
+  "resistor-a-right": { x: 47.8, y: 50.5, label: "A direnci siyah giriş", equipment: "resistor-a", polarity: "black" },
+  "resistor-b-left": { x: 52.2, y: 50.5, label: "B direnci kırmızı giriş", equipment: "resistor-b", polarity: "red" },
+  "resistor-b-right": { x: 69.8, y: 50.5, label: "B direnci siyah giriş", equipment: "resistor-b", polarity: "black" },
+  "switch-left": { x: 78, y: 49.5, label: "Anahtar kırmızı giriş", equipment: "switch", polarity: "red" },
+  "switch-right": { x: 94.5, y: 49.5, label: "Anahtar siyah giriş", equipment: "switch", polarity: "black" },
 };
 
 const SERIES_STEPS: WiringStep[] = [
@@ -111,8 +124,11 @@ function connectionKey(first: TerminalId, second: TerminalId) {
 }
 
 function EquipmentIcon({ kind }: { kind: EquipmentKind }) {
-  const iconKind = kind === "resistor-a" || kind === "resistor-b" ? "resistor-board" : kind;
-  return <span className={`ohm-equipment-icon ohm-icon-${iconKind}`} aria-hidden="true"><i /><i /><i /></span>;
+  return (
+    <span className={`ohm-equipment-icon ohm-icon-${kind} has-photo`} aria-hidden="true">
+      <img src={EQUIPMENT_IMAGES[kind]} alt="" draggable={false} />
+    </span>
+  );
 }
 
 function WireCanvas({ connections }: { connections: Connection[] }) {
@@ -139,20 +155,32 @@ function WireCanvas({ connections }: { connections: Connection[] }) {
       const y1 = (from.y / 100) * height;
       const x2 = (to.x / 100) * width;
       const y2 = (to.y / 100) * height;
-      const bend = Math.max(y1, y2) + 22 + (index % 4) * 12;
+      const bend = Math.max(
+        Math.max(y1, y2) + 18,
+        WIRE_ROUTE_LEVELS[index % WIRE_ROUTE_LEVELS.length] * height,
+      );
+      const wireColor = WIRE_COLORS[index % WIRE_COLORS.length];
+      const traceCable = () => {
+        context.beginPath();
+        context.moveTo(x1, y1);
+        context.bezierCurveTo(x1, bend, x2, bend, x2, y2);
+      };
 
-      context.beginPath();
-      context.moveTo(x1, y1);
-      context.bezierCurveTo(x1, bend, x2, bend, x2, y2);
-      context.strokeStyle = "rgba(12, 33, 44, .2)";
-      context.lineWidth = 8;
+      traceCable();
+      context.strokeStyle = "rgba(18, 25, 27, 0.27)";
+      context.lineWidth = 7.5;
       context.lineCap = "round";
+      context.lineJoin = "round";
       context.stroke();
-      context.beginPath();
-      context.moveTo(x1, y1);
-      context.bezierCurveTo(x1, bend, x2, bend, x2, y2);
-      context.strokeStyle = WIRE_COLORS[index % WIRE_COLORS.length];
-      context.lineWidth = 4;
+
+      traceCable();
+      context.strokeStyle = wireColor;
+      context.lineWidth = 4.6;
+      context.stroke();
+
+      traceCable();
+      context.strokeStyle = "rgba(255, 255, 255, 0.34)";
+      context.lineWidth = 0.85;
       context.stroke();
     });
   }, [connections]);
@@ -174,10 +202,14 @@ function Meter({ kind, value, active }: { kind: "ammeter" | "voltmeter"; value: 
   const needle = -58 + Math.min(1, value / max) * 116;
   return (
     <div className={`ohm-meter ohm-${kind} ${active ? "active" : ""}`}>
-      <span className="ohm-meter-handle" />
+      <img
+        className="ohm-real-meter-photo"
+        src="./ohm-analog-meter-real-v2.webp"
+        alt={kind === "ammeter" ? "Gerçekçi analog doğru akım ampermetresi" : "Gerçekçi analog doğru akım voltmetresi"}
+        draggable={false}
+      />
       <div className="ohm-meter-face">
         <span>{kind === "ammeter" ? "DC mA" : "DC V"}</span>
-        <i className="ohm-meter-scale" />
         <i className="ohm-meter-needle" style={{ "--meter-needle": `${needle}deg` } as CSSProperties} />
         <b>{value.toFixed(kind === "ammeter" ? 1 : 2)}</b>
       </div>
@@ -189,8 +221,8 @@ function Meter({ kind, value, active }: { kind: "ammeter" | "voltmeter"; value: 
 function ResistorUnit({ label, value }: { label: "A" | "B"; value: number }) {
   return (
     <div className={`rcl-resistor-unit resistor-${label.toLowerCase()}`}>
+      <img className="rcl-real-resistor" src="./resistor-module-real-v1.webp" alt={`Gerçekçi ${label} direnç modülü`} draggable={false} />
       <small>{label} DİRENCİ</small>
-      <div className="rcl-real-resistor"><i /><span><b /><b /><b /><b /></span><i /></div>
       <strong>R<sub>{label}</sub> = {value} Ω</strong>
     </div>
   );
@@ -418,10 +450,10 @@ export default function ResistorConnectionsLab() {
         <div><span>1 · BAĞLANTI TÜRÜ</span><h2>Önce kuracağın devreyi seç.</h2><p>Tür değiştiğinde parçalar tezgâhta kalır, yalnız kablolar yeniden bağlanır.</p></div>
         <div className="rcl-mode-buttons">
           <button type="button" className={mode === "series" ? "active" : ""} onClick={() => selectMode("series")} aria-pressed={mode === "series"}>
-            <i className="series"><b /><b /></i><span><small>SERİ</small><strong>A — B</strong><em>Tek akım yolu</em></span>
+            <i className="series"><img src="./resistor-module-real-v1.webp" alt="" draggable={false} /><img src="./resistor-module-real-v1.webp" alt="" draggable={false} /></i><span><small>SERİ</small><strong>A — B</strong><em>Tek akım yolu</em></span>
           </button>
           <button type="button" className={mode === "parallel" ? "active" : ""} onClick={() => selectMode("parallel")} aria-pressed={mode === "parallel"}>
-            <i className="parallel"><b /><b /></i><span><small>PARALEL</small><strong>A ∥ B</strong><em>İki akım kolu</em></span>
+            <i className="parallel"><img src="./resistor-module-real-v1.webp" alt="" draggable={false} /><img src="./resistor-module-real-v1.webp" alt="" draggable={false} /></i><span><small>PARALEL</small><strong>A ∥ B</strong><em>İki akım kolu</em></span>
           </button>
         </div>
       </section>
@@ -481,17 +513,41 @@ export default function ResistorConnectionsLab() {
           </section>
 
           <div className="ohm-apparatus rcl-apparatus">
-            <div className="ohm-lab-wall" />
-            <div className="ohm-workbench"><i /><i /></div>
+            <img
+              className="ohm-real-bench-photo"
+              src="./ohm-lab-bench-real-v2.webp"
+              alt="Seri ve paralel direnç devrelerinin kurulduğu gerçekçi okul laboratuvarı tezgâhı"
+              draggable={false}
+            />
+            <div className={`rcl-stage-mode-badge ${mode}`}>
+              <small>SEÇİLİ DEVRE</small>
+              <b>{mode === "series" ? "SERİ BAĞLANTI" : "PARALEL BAĞLANTI"}</b>
+              <span>{mode === "series" ? "Tek akım yolu" : "İki akım kolu"}</span>
+            </div>
+            {circuitComplete && (
+              <div className={`ohm-operation-guide ${circuitActive ? "complete" : ""}`} role="status">
+                <span className={powerOn ? "done" : "active"}>
+                  <i>{powerOn ? "✓" : "1"}</i>
+                  <b>Güç kaynağını aç</b>
+                  <small>{powerOn ? "Güç açık" : "Önce güç düğmesine bas"}</small>
+                </span>
+                <em>→</em>
+                <span className={switchClosed ? "done" : powerOn ? "active" : "pending"}>
+                  <i>{switchClosed ? "✓" : "2"}</i>
+                  <b>Devre anahtarını kapat</b>
+                  <small>{switchClosed ? "Anahtar kapalı" : "Sonra metal kolu kapat"}</small>
+                </span>
+                {circuitActive && <strong>ÖLÇÜME HAZIR</strong>}
+              </div>
+            )}
             <WireCanvas connections={connections} />
 
             {installed.includes("power-supply") && (
               <div className={`ohm-power-supply ${powerOn ? "on" : ""}`}>
-                <span className="ohm-source-handle" />
-                <div className="ohm-source-display"><small>DC OUTPUT</small><b>{powerOn ? voltage.toFixed(1) : "0.0"}</b><em>V</em></div>
-                <span className="ohm-source-knob"><i /></span>
-                <strong>ALÇAK GERİLİM<br />GÜÇ KAYNAĞI</strong>
-                <button type="button" onClick={togglePower}>{powerOn ? "KAPAT" : "AÇ"}</button>
+                <img className="ohm-real-power-photo" src="./ohm-power-supply-real-v2.webp" alt="Gerçekçi alçak gerilim doğru akım güç kaynağı" draggable={false} />
+                <strong>DC GÜÇ KAYNAĞI</strong>
+                <div className="ohm-source-display"><b>{powerOn ? voltage.toFixed(1) : "0.0"}</b><em>V</em></div>
+                <button type="button" onClick={togglePower} aria-label={powerOn ? "Güç kaynağını kapat" : "Güç kaynağını aç"}><i /><span>{powerOn ? "GÜÇ AÇIK" : "GÜÇ"}</span></button>
               </div>
             )}
             {installed.includes("resistor-a") && <ResistorUnit label="A" value={resistorA} />}
@@ -500,6 +556,7 @@ export default function ResistorConnectionsLab() {
             {installed.includes("voltmeter") && <Meter kind="voltmeter" value={circuitActive ? voltage : 0} active={circuitActive} />}
             {installed.includes("switch") && (
               <button type="button" className={`ohm-circuit-switch ${switchClosed ? "closed" : ""}`} onClick={toggleSwitch} aria-label={switchClosed ? "Devre anahtarını aç" : "Devre anahtarını kapat"}>
+                <img className="ohm-real-switch-photo" src="./ohm-knife-switch-real-v2.webp" alt="Gerçekçi laboratuvar devre anahtarı" draggable={false} />
                 <span><i /></span><b>{switchClosed ? "KAPALI DEVRE" : "AÇIK DEVRE"}</b>
               </button>
             )}

@@ -284,6 +284,16 @@ test("Elektrik alanı dirençlerin seri ve paralel bağlanması deneyini sunar",
   assert.match(page, /resistor-b/);
   assert.match(page, /switch/);
   assert.match(page, /cables/);
+  assert.match(page, /ohm-lab-bench-real-v2\.webp/);
+  assert.match(page, /ohm-power-supply-real-v2\.webp/);
+  assert.match(page, /ohm-analog-meter-real-v2\.webp/);
+  assert.match(page, /ohm-knife-switch-real-v2\.webp/);
+  assert.match(page, /ohm-cable-kit-real-v2\.webp/);
+  assert.match(page, /resistor-module-real-v1\.webp/);
+  assert.match(page, /rcl-stage-mode-badge/);
+  assert.match(page, /Güç kaynağını aç/);
+  assert.match(page, /Devre anahtarını kapat/);
+  assert.match(page, /context\.lineWidth = 4\.6/);
   assert.match(page, /SERIES_STEPS/);
   assert.match(page, /PARALLEL_STEPS/);
   assert.match(page, /A ile B'yi art arda bağla/);
@@ -314,6 +324,7 @@ test("direnç bağlantıları düzeneği sürüklenebilir gerçek devre elemanla
   assert.match(css, /\.rcl-resistor-unit\.resistor-a\s*\{/);
   assert.match(css, /\.rcl-resistor-unit\.resistor-b\s*\{/);
   assert.match(css, /\.rcl-real-resistor\s*\{/);
+  assert.match(css, /\.rcl-stage-mode-badge\s*\{/);
   assert.match(css, /\.rcl-control-grid\s*\{/);
   assert.match(css, /\.rcl-live-readings\s*\{/);
   assert.match(css, /\.rcl-data-card\s*\{/);
