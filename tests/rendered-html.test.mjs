@@ -492,6 +492,7 @@ test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla s
   assert.match(hub, /Dalgalar - Optik deney setleri/);
   assert.match(hub, /Kırılma ve prizma/);
   assert.match(hub, /PrismLab/);
+  assert.doesNotMatch(hub, /RippleTankLab|Dalga leğeni|activeTopic === "waves"/);
   assert.match(page, /FİZ\.11\.4\.5/);
   assert.match(page, /FİZ\.11\.4\.8/);
   assert.match(page, /application\/x-optics-equipment/);
@@ -556,106 +557,6 @@ test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla s
   assert.match(css, /Kırılma ve prizma · gerçek laboratuvar donanımı/);
   assert.match(css, /\.optics-apparatus\.mode-deviation \.optics-screen/);
   assert.match(css, /\.optics-apparatus\.mode-total-reflection \.optics-screen:not\(\.return-screen\)/);
-});
-
-test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sunar", async () => {
-  const hub = await readFile(
-    new URL("app/OpticsLabHub.tsx", projectRoot),
-    "utf8",
-  );
-  const page = await readFile(
-    new URL("app/RippleTankLab.tsx", projectRoot),
-    "utf8",
-  );
-  assert.match(hub, /RippleTankLab/);
-  assert.match(hub, /Dalga leğeni/);
-  assert.match(hub, /activeTopic === "waves" && <RippleTankLab/);
-  assert.match(hub, /free-waves\.webp/);
-  assert.match(page, /RippleTankCanvas/);
-  assert.match(page, /RippleTankSetup/);
-  assert.match(page, /SETUP_ORDER/);
-  assert.match(page, /installedCount/);
-  assert.equal((page.match(/<RippleTankCanvas/g) ?? []).length, 1);
-  assert.match(page, /GERÇEK DALGA LEĞENİ/);
-  assert.match(page, /rt-inline-setup/);
-  assert.match(page, /Aynı masa üzerinde deneye başla/);
-  assert.match(page, /\["tank", "motor", "apparatus"\]/);
-  assert.match(page, /10\. SINIF/);
-  assert.match(page, /12\. SINIF/);
-  assert.match(page, /Yansıma/);
-  assert.match(page, /Dalgayı tanı/);
-  assert.match(page, /Kırınım/);
-  assert.match(page, /Kırılma/);
-  assert.match(page, /Girişim/);
-  assert.match(page, /Düz cetvel/);
-  assert.match(page, /Noktasal damlatıcı/);
-  assert.match(page, /Tek dokunuş/);
-  assert.match(page, /Açılar engelle değil, normalle ölçülür/);
-  assert.match(page, /Düz engelin yönü/);
-  assert.match(page, /YANSIMA AÇILARI/);
-  assert.match(page, /drawReflectionAngleGuide/);
-  assert.match(page, /calculateReflectionGeometry/);
-  assert.match(page, /duran dalga/);
-  assert.match(page, /TEMEL DALGA KAVRAMLARI/);
-  assert.match(page, /Kaynak genliği/);
-  assert.match(page, /mekanik bir yüzey dalgasıdır/);
-  assert.match(page, /Liman duvarı/);
-  assert.match(page, /Sığlaşan sahil/);
-  assert.match(page, /Liman girişi/);
-  assert.match(page, /Aynı anda düşen iki damla/);
-  assert.match(page, /Engel kenarı/);
-  assert.match(page, /Ayarlı yarık/);
-  assert.match(page, /DERİN BÖLGE/);
-  assert.match(page, /Sığ bölge/);
-  assert.match(page, /Leğendeki su derinliği/);
-  assert.match(page, /DERİNLİK ETKİSİ/);
-  assert.match(page, /CAM LEVHAYA GEÇİŞ/);
-  assert.match(page, /boundaryArrival/);
-  assert.match(page, /Kaynaklar arası uzaklık · d/);
-  assert.match(page, /Aydınlık saçağı seç/);
-  assert.match(page, /pathDifference/);
-  assert.match(page, /speedForDepth/);
-  assert.match(page, /refractionAngle/);
-  assert.match(page, /diffractionRatio/);
-  assert.match(page, /GELEN DALGA/);
-  assert.match(page, /YANSIYAN DALGA/);
-  assert.match(page, /KIRILAN DALGA/);
-  assert.match(page, /KIRINAN DALGA/);
-  assert.match(page, /İKİ NOKTASAL DALGA KAYNAĞI/);
-  assert.match(page, /WAVE_FIELD_WIDTH/);
-  assert.match(page, /function drawWaterSurface/);
-  assert.match(page, /function periodicWave/);
-  assert.match(page, /function frontEnvelope/);
-  assert.match(page, /function edgeDamping/);
-  assert.match(page, /DALGA SÖNÜMLEYİCİ/);
-  assert.match(page, /const sourceY = 450/);
-  assert.ok((page.match(/drawWaterSurface\(context/g) ?? []).length >= 5);
-  assert.match(page, /onPointerDown/);
-  assert.match(page, /setPointerCapture/);
-  assert.match(page, /İDEAL ÖLÇÜM TABLOSU/);
-  assert.match(page, /TYMM · DENEY RAPORU/);
-  assert.doesNotMatch(page, /stroboskop/i);
-  assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
-});
-
-test("dalga leğeni gerçekçi düzenek, güç kaynağı ve responsive deney panelleri içerir", async () => {
-  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
-  assert.match(css, /\.rt-lab\s*\{/);
-  assert.match(css, /\.rt-hero\s*\{/);
-  assert.match(css, /\.rt-inline-setup\s*\{/);
-  assert.match(css, /\.rt-inline-setup li\s*\{/);
-  assert.match(css, /\.rt-install-next\s*\{/);
-  assert.match(css, /\.rt-mode-switch\s*\{/);
-  assert.match(css, /\.rt-workspace\s*\{/);
-  assert.match(css, /\.rt-canvas\s*\{/);
-  assert.match(css, /\.rt-controls\s*\{/);
-  assert.match(css, /\.rt-real-life-card\s*\{/);
-  assert.match(css, /\.rt-depth-effect\s*\{/);
-  assert.match(css, /\.rt-result-box\s*\{/);
-  assert.match(css, /\.rt-live-badges\s*\{/);
-  assert.match(css, /\.rt-data-card\s*\{/);
-  assert.match(css, /\.rt-report-grid\s*\{/);
-  assert.match(css, /@media \(max-width: 1080px\)/);
 });
 
 test("optik düzeneği gerçekçi ray, lazer, açı tablası, ekran ve cam elemanları gösterir", async () => {

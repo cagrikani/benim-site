@@ -45,7 +45,7 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
   {
     key: "waves-optics",
     title: "Dalgalar · Optik",
-    description: "Dalga leğenini, prizmayı; düzlem, çukur ve tümsek aynalarda görüntü oluşumunu deneyle.",
+    description: "Prizmaları, mercekleri; düzlem, çukur ve tümsek aynalarda görüntü oluşumunu deneyle.",
     detail: "5 deney açık",
     visual: "./portal-optics.webp",
     available: true,
