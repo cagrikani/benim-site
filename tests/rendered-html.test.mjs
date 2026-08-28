@@ -480,6 +480,7 @@ test("mercek laboratuvarı gerçek optik ray, mercek, ekran ve özel ışın gö
 });
 
 test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla sunar", async () => {
+  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
   const hub = await readFile(
     new URL("app/OpticsLabHub.tsx", projectRoot),
     "utf8",
@@ -535,6 +536,9 @@ test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla s
   assert.match(page, /rayPolygonIntersection/);
   assert.match(page, /refractRay/);
   assert.match(page, /reflectRay/);
+  assert.match(page, /requestedRightPrismRotation/);
+  assert.match(page, /clamp\(requestedRightPrismRotation, -5\.5, 5\.5\)/);
+  assert.match(page, /distance > 0\.2/);
   assert.match(page, /TY \$\{reflectedCount\}/);
   assert.match(page, /--optics-sample-angle/);
   assert.match(page, /GERİ DÖNÜŞ EKRANI/);
@@ -542,6 +546,16 @@ test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla s
   assert.doesNotMatch(page, /n pleksiglas/);
   assert.match(page, /KISA DENEY RAPORU/);
   assert.match(page, /LAZER GÜVENLİĞİ/);
+  assert.match(css, /optics-laser-real-v1\.webp/);
+  assert.match(css, /optics-rail-real-v1\.webp/);
+  assert.match(css, /optics-rotary-table-real-v1\.webp/);
+  assert.match(css, /optics-screen-real-v2\.webp/);
+  assert.match(css, /optics-glass-slab-real-v1\.webp/);
+  assert.match(css, /optics-equilateral-prism-real-v1\.webp/);
+  assert.match(css, /optics-right-prism-real-v1\.webp/);
+  assert.match(css, /Kırılma ve prizma · gerçek laboratuvar donanımı/);
+  assert.match(css, /\.optics-apparatus\.mode-deviation \.optics-screen/);
+  assert.match(css, /\.optics-apparatus\.mode-total-reflection \.optics-screen:not\(\.return-screen\)/);
 });
 
 test("Dalgalar-Optik alanı PDF kapsamındaki TYMM dalga leğeni deneylerini sunar", async () => {

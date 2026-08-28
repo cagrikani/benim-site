@@ -23451,6 +23451,499 @@ footer > a {
   }
 }
 
+/* Kırılma ve prizma · gerçek laboratuvar donanımı */
+
+.optics-equipment-icon {
+  border-color: #c8d6d4;
+  background-color: #eef2ef;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72),
+    0 3px 8px rgba(26, 48, 52, 0.11);
+}
+
+.optics-equipment-icon i {
+  display: none;
+}
+
+.optics-icon-rail {
+  background-image: url("/optics-rail-real-v1.webp");
+  background-size: 98% auto;
+}
+
+.optics-icon-laser {
+  background-image: url("/optics-laser-real-v1.webp");
+  background-size: 94% auto;
+}
+
+.optics-icon-rotary-table {
+  background-image: url("/optics-rotary-table-real-v1.webp");
+  background-size: 94% auto;
+}
+
+.optics-icon-screen {
+  background-image: url("/optics-screen-real-v2.webp");
+  background-size: 92% auto;
+}
+
+.optics-icon-slab {
+  background-image: url("/optics-glass-slab-real-v1.webp");
+  background-size: 48% auto;
+}
+
+.optics-icon-equilateral-prism {
+  background-image: url("/optics-equilateral-prism-real-v1.webp");
+  background-size: 84% auto;
+}
+
+.optics-icon-right-prism {
+  background-image: url("/optics-right-prism-real-v1.webp");
+  background-size: 84% auto;
+}
+
+.optics-apparatus {
+  min-height: 590px;
+  background:
+    linear-gradient(180deg, rgba(250, 252, 250, 0.04), rgba(17, 32, 31, 0.05)),
+    url("/ohm-lab-bench-real-v2.webp") center / cover no-repeat;
+}
+
+.optics-apparatus::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 24%, transparent 76%, rgba(23, 37, 37, 0.08)),
+    linear-gradient(180deg, transparent 69%, rgba(44, 29, 17, 0.09));
+  content: "";
+  pointer-events: none;
+}
+
+.optics-wall-label {
+  z-index: 4;
+  padding: 6px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 999px;
+  background: rgba(244, 247, 243, 0.86);
+  color: #536667;
+  box-shadow: 0 4px 13px rgba(34, 45, 43, 0.1);
+  backdrop-filter: blur(4px);
+}
+
+.optics-bench {
+  display: none;
+}
+
+.optics-rail {
+  top: 336px;
+  right: 2.2%;
+  left: 2.2%;
+  z-index: 7;
+  height: 96px;
+  background: url("/optics-rail-real-v1.webp") center / 100% auto no-repeat;
+  filter: drop-shadow(0 12px 9px rgba(37, 28, 20, 0.25));
+}
+
+.optics-rail i {
+  display: none;
+}
+
+.optics-laser {
+  top: 160px;
+  left: 2.1%;
+  z-index: 16;
+  width: 220px;
+  height: 212px;
+  filter: drop-shadow(0 13px 10px rgba(30, 25, 21, 0.25));
+}
+
+.optics-laser .laser-housing {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: url("/optics-laser-real-v1.webp") center bottom / contain no-repeat;
+  box-shadow: none;
+}
+
+.optics-laser .laser-mount,
+.optics-laser .laser-switch {
+  display: none;
+}
+
+.optics-laser .laser-aperture {
+  top: 79px;
+  right: auto;
+  left: 171px;
+  width: 13px;
+  height: 13px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(9, 19, 21, 0.96);
+}
+
+.optics-laser.on .laser-aperture {
+  background: var(--optics-beam-color);
+  box-shadow:
+    0 0 0 3px rgba(19, 29, 31, 0.78),
+    4px 0 15px 4px var(--optics-beam-color);
+}
+
+.optics-laser > b {
+  top: 59px;
+  left: 63px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: rgba(58, 10, 9, 0.54);
+  color: #fff;
+  font-size: 7px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.optics-rotary-table {
+  top: 116px;
+  left: 55%;
+  z-index: 11;
+  width: 258px;
+  height: 258px;
+  filter: drop-shadow(0 15px 11px rgba(28, 24, 20, 0.28));
+}
+
+.optics-rotary-table .optics-degree-ring {
+  inset: 0;
+  border: 0;
+  background: url("/optics-rotary-table-real-v1.webp") center / contain no-repeat;
+  box-shadow: none;
+}
+
+.optics-rotary-table .optics-table-face {
+  inset: 25px;
+  border: 0;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(217, 224, 222, 0.8) 0 3px, transparent 4px),
+    radial-gradient(circle at 92% 50%, rgba(217, 224, 222, 0.8) 0 3px, transparent 4px),
+    radial-gradient(circle at 50% 92%, rgba(217, 224, 222, 0.8) 0 3px, transparent 4px),
+    radial-gradient(circle at 8% 50%, rgba(217, 224, 222, 0.8) 0 3px, transparent 4px);
+  box-shadow: none;
+}
+
+.optics-rotary-table .optics-zero-line {
+  top: 127px;
+  left: 22px;
+  width: 214px;
+  height: 2px;
+  background: #f15b4d;
+}
+
+.optics-rotary-table.calibrated .optics-zero-line {
+  background: #56e0c6;
+  box-shadow: 0 0 8px rgba(86, 224, 198, 0.8);
+}
+
+.optics-rotary-table > span,
+.optics-rotary-table > b {
+  z-index: 8;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: rgba(244, 247, 245, 0.86);
+  color: #263f45;
+  box-shadow: 0 2px 5px rgba(20, 31, 33, 0.18);
+}
+
+.degree-zero {
+  top: 123px;
+  right: 10px;
+}
+
+.degree-ninety {
+  top: 8px;
+  left: 119px;
+}
+
+.optics-rotary-table > b {
+  bottom: 9px;
+  left: 122px;
+  color: #176f74;
+}
+
+.optics-screen,
+.optics-screen.return-screen {
+  top: 176px;
+  z-index: 15;
+  width: 210px;
+  height: 210px;
+  filter: drop-shadow(0 13px 9px rgba(32, 27, 22, 0.27));
+}
+
+.optics-screen {
+  right: 1.2%;
+}
+
+.optics-screen.return-screen {
+  right: auto;
+  left: 24%;
+}
+
+.optics-apparatus.mode-deviation .optics-screen {
+  top: 276px;
+  right: 22.5%;
+}
+
+.optics-apparatus.mode-total-reflection .optics-screen:not(.return-screen) {
+  top: 130px;
+  right: 22.5%;
+}
+
+.optics-screen .screen-grid {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: url("/optics-screen-real-v2.webp") center / contain no-repeat;
+}
+
+.optics-screen .screen-face {
+  top: 9px;
+  left: 74px;
+  width: 62px;
+  height: 120px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.optics-screen .screen-post,
+.optics-screen .screen-base {
+  display: none;
+}
+
+.optics-screen > b {
+  top: auto;
+  right: 45px;
+  bottom: 1px;
+  left: 45px;
+  padding: 4px 5px;
+  border-radius: 5px;
+  background: rgba(244, 247, 245, 0.88);
+  color: #3e5559;
+  font-size: 6px;
+  box-shadow: 0 2px 5px rgba(20, 31, 33, 0.16);
+}
+
+.optics-slab,
+.optics-equilateral-prism,
+.optics-right-prism {
+  top: 181px;
+  left: 55%;
+  z-index: 17;
+}
+
+.optics-slab {
+  width: 34px;
+  height: 128px;
+}
+
+.optics-slab i,
+.optics-equilateral-prism i,
+.optics-right-prism i {
+  border: 0;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  box-shadow: none;
+  clip-path: none;
+  opacity: 0.84;
+  filter: drop-shadow(0 7px 7px rgba(21, 50, 56, 0.24));
+  mix-blend-mode: screen;
+}
+
+.optics-slab i {
+  background-image: url("/optics-glass-slab-real-v1.webp");
+}
+
+.optics-equilateral-prism {
+  top: 181px;
+  width: 132px;
+  height: 114px;
+}
+
+.optics-equilateral-prism i {
+  background-image: url("/optics-equilateral-prism-real-v1.webp");
+}
+
+.optics-right-prism {
+  top: 178px;
+  width: 132px;
+  height: 132px;
+}
+
+.optics-right-prism i {
+  background-image: url("/optics-right-prism-real-v1.webp");
+}
+
+.optics-slab > b,
+.optics-equilateral-prism > b,
+.optics-right-prism > b {
+  z-index: 3;
+  padding: 3px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 5px;
+  background: rgba(25, 67, 78, 0.78);
+  color: #fff;
+  box-shadow: 0 3px 7px rgba(21, 39, 42, 0.18);
+}
+
+.optics-slab > b {
+  top: 52px;
+  left: 37px;
+  width: max-content;
+}
+
+.optics-equilateral-prism > b {
+  top: 77px;
+  left: 52px;
+}
+
+.optics-right-prism > b {
+  top: 57px;
+  left: 45px;
+}
+
+.optics-apparatus.mode-total-reflection .optics-laser {
+  top: 160px;
+}
+
+.optics-sample-tray {
+  right: 4.5%;
+  bottom: 48px;
+  border: 1px solid rgba(62, 48, 37, 0.4);
+  background: rgba(45, 35, 29, 0.76);
+  box-shadow: 0 8px 18px rgba(37, 27, 20, 0.22);
+  backdrop-filter: blur(5px);
+}
+
+.optics-experiment-selector > button {
+  min-height: 118px;
+  grid-template-columns: 76px 1fr;
+}
+
+.optics-experiment-selector > button > span {
+  width: 70px;
+  height: 70px;
+  border: 1px solid #cbd8d6;
+  border-radius: 12px;
+  background-color: #e9efec;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.74),
+    0 5px 11px rgba(28, 49, 52, 0.12);
+  color: transparent;
+  font-size: 0;
+}
+
+.optics-experiment-selector > button:nth-child(1) > span {
+  background-image: url("/optics-glass-slab-real-v1.webp");
+  background-size: 38% auto;
+}
+
+.optics-experiment-selector > button:nth-child(2) > span {
+  background-image: url("/optics-equilateral-prism-real-v1.webp");
+  background-size: 78% auto;
+}
+
+.optics-experiment-selector > button:nth-child(3) > span {
+  background-image: url("/optics-right-prism-real-v1.webp");
+  background-size: 78% auto;
+}
+
+@media (max-width: 760px) {
+  .optics-apparatus {
+    min-height: 510px;
+    overflow-x: auto;
+  }
+
+  .optics-rail {
+    top: 305px;
+    right: -8%;
+    left: -8%;
+    height: 84px;
+    transform: none;
+  }
+
+  .optics-laser,
+  .optics-apparatus.mode-total-reflection .optics-laser {
+    top: 153px;
+    left: 0;
+    transform: scale(0.74);
+    transform-origin: top left;
+  }
+
+  .optics-rotary-table {
+    top: 87px;
+    left: 54%;
+    transform: translateX(-50%) scale(0.74);
+  }
+
+  .optics-screen,
+  .optics-screen.return-screen {
+    top: 157px;
+    transform: scale(0.74);
+  }
+
+  .optics-screen {
+    right: -8%;
+    transform-origin: top right;
+  }
+
+  .optics-screen.return-screen {
+    left: 23%;
+    transform-origin: top left;
+  }
+
+  .optics-apparatus.mode-deviation .optics-screen {
+    top: 290px;
+    right: 15%;
+  }
+
+  .optics-apparatus.mode-total-reflection .optics-screen:not(.return-screen) {
+    top: 120px;
+    right: 15%;
+  }
+
+  .optics-slab,
+  .optics-equilateral-prism,
+  .optics-right-prism {
+    left: 54%;
+    transform: translateX(-50%) scale(0.74);
+  }
+
+  .optics-slab {
+    top: 152px;
+  }
+
+  .optics-equilateral-prism {
+    top: 159px;
+  }
+
+  .optics-right-prism {
+    top: 150px;
+  }
+
+  .optics-experiment-selector > button {
+    grid-template-columns: 64px 1fr;
+  }
+
+  .optics-experiment-selector > button > span {
+    width: 58px;
+    height: 58px;
+  }
+}
+
 /* Fotoelektrik tezgâhı · açık yerleşim düzeltmesi */
 
 .pe-apparatus {

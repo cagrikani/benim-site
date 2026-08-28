@@ -243,7 +243,7 @@ function rayPolygonIntersection(
     const distance = crossPoint(fromOrigin, edge) / denominator;
     const edgePosition = crossPoint(fromOrigin, direction) / denominator;
     if (
-      distance > 0.8 &&
+      distance > 0.2 &&
       edgePosition >= -0.001 &&
       edgePosition <= 1.001 &&
       (!nearest || distance < nearest.distance)
@@ -483,7 +483,7 @@ function OpticsRayCanvas({
         );
         if (insideDirection) {
           rayDirection = insideDirection;
-          rayOrigin = addPoint(entryHit.point, scalePoint(rayDirection, 1.5));
+          rayOrigin = addPoint(entryHit.point, scalePoint(rayDirection, 0.35));
           for (let interaction = 0; interaction < 5; interaction += 1) {
             const nextHit = rayPolygonIntersection(
               rayOrigin,
@@ -525,7 +525,7 @@ function OpticsRayCanvas({
               labelOffset: reflectedCount % 2 === 0 ? -16 : 20,
             });
             rayDirection = reflectRay(rayDirection, outwardNormal);
-            rayOrigin = addPoint(nextHit.point, scalePoint(rayDirection, 1.5));
+            rayOrigin = addPoint(nextHit.point, scalePoint(rayDirection, 0.35));
           }
         }
       }
@@ -935,7 +935,7 @@ export default function PrismLab() {
       : mode === "deviation"
         ? "equilateral-prism"
         : "right-prism";
-  const rightPrismRotation = toDegrees(
+  const requestedRightPrismRotation = toDegrees(
     Math.asin(
       clamp(
         refractiveIndex * Math.sin(toRadians(internalAngle - 45)),
@@ -944,6 +944,11 @@ export default function PrismLab() {
       ),
     ),
   );
+  const rightPrismRotation = totalReflection
+    ? Math.abs(requestedRightPrismRotation) < 1
+      ? 1
+      : clamp(requestedRightPrismRotation, -5.5, 5.5)
+    : requestedRightPrismRotation;
   const sampleRotation =
     mode === "refraction"
       ? incidence
