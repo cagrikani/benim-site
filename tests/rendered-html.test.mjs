@@ -442,6 +442,14 @@ test("Dalgalar-Optik alanı ince ve kalın kenarlı mercek deneyini sunar", asyn
   assert.match(page, /screenDistance/);
   assert.match(page, /focusQuality/);
   assert.match(page, /screenMoveDirection/);
+  assert.match(page, /optics-lens-holder-real-v1\.webp/);
+  assert.match(page, /optics-convex-lens-cell-real-v1\.webp/);
+  assert.match(page, /optics-concave-lens-cell-real-v1\.webp/);
+  assert.match(page, /optics-arrow-object-real-v1\.webp/);
+  assert.match(page, /optics-screen-real-v2\.webp/);
+  assert.match(page, /lensAngle/);
+  assert.match(page, /Mercek yönü/);
+  assert.match(page, /Önce 0° hizala/);
   assert.match(page, /EKRAN ANALİZİ/);
   assert.match(page, /Tür · yön · boyut/);
   assert.match(page, /oll-screen-image.*defocused/);
@@ -467,7 +475,12 @@ test("mercek laboratuvarı gerçek optik ray, mercek, ekran ve özel ışın gö
   assert.match(css, /\.oll-lens-assembly\.converging/);
   assert.match(css, /\.oll-lens-assembly\.diverging/);
   assert.match(css, /\.oll-lens-lock\s*\{/);
+  assert.match(css, /\.oll-lens-holder-photo\s*\{/);
+  assert.match(css, /\.oll-lens-cell-photo\s*\{/);
+  assert.match(css, /\.oll-lens-contact\s*\{/);
+  assert.match(css, /\.oll-lens-alignment\s*\{/);
   assert.match(css, /\.oll-screen\s*\{/);
+  assert.match(css, /\.oll-screen-photo\s*\{/);
   assert.match(css, /\.oll-screen-info\s*\{/);
   assert.match(css, /\.oll-focus-meter\s*\{/);
   assert.match(css, /\.oll-screen-image\.defocused\s*\{/);

@@ -32,6 +32,23 @@ type Reading = {
 };
 
 const MIME = "application/x-lens-lab-equipment";
+const LAB_BENCH_ASSET = "./ohm-lab-bench-real-v2.webp";
+const OPTICAL_RAIL_ASSET = "./optics-rail-real-v1.webp";
+const ILLUMINATED_OBJECT_ASSET = "./optics-arrow-object-real-v1.webp";
+const LENS_HOLDER_ASSET = "./optics-lens-holder-real-v1.webp";
+const CONVEX_LENS_ASSET = "./optics-convex-lens-cell-real-v1.webp";
+const CONCAVE_LENS_ASSET = "./optics-concave-lens-cell-real-v1.webp";
+const SCREEN_ASSET = "./optics-screen-real-v2.webp";
+
+const EQUIPMENT_ASSETS: Partial<Record<EquipmentKind, string>> = {
+  rail: OPTICAL_RAIL_ASSET,
+  "ray-box": ILLUMINATED_OBJECT_ASSET,
+  object: ILLUMINATED_OBJECT_ASSET,
+  "lens-holder": LENS_HOLDER_ASSET,
+  "lens-set": CONVEX_LENS_ASSET,
+  screen: SCREEN_ASSET,
+  ruler: OPTICAL_RAIL_ASSET,
+};
 
 const EQUIPMENT: Array<{ kind: EquipmentKind; name: string; detail: string }> = [
   { kind: "rail", name: "Cetvelli optik ray", detail: "Tüm parçaları aynı asal eksende tutar" },
@@ -53,12 +70,18 @@ function tidy(value: number, digits = 2) {
 }
 
 function EquipmentIcon({ kind }: { kind: EquipmentKind }) {
-  return <span className={`oll-equipment-icon icon-${kind}`} aria-hidden="true"><i /><i /><i /></span>;
+  const asset = EQUIPMENT_ASSETS[kind];
+  return (
+    <span className={`oll-equipment-icon icon-${kind} ${asset ? "has-photo" : ""}`} aria-hidden="true">
+      {asset ? <img src={asset} alt="" draggable="false" /> : <><i /><i /><i /></>}
+    </span>
+  );
 }
 
 function RayDiagram({
   objectX,
   lensX,
+  screenX,
   focalLength,
   objectHeight,
   imageX,
@@ -71,6 +94,7 @@ function RayDiagram({
 }: {
   objectX: number;
   lensX: number;
+  screenX: number;
   focalLength: number;
   objectHeight: number;
   imageX: number;
@@ -98,12 +122,12 @@ function RayDiagram({
     context.clearRect(0, 0, width, height);
     if (!ready) return;
 
-    const axisY = 245;
+    const axisY = 225;
     const toX = (position: number) => width * (0.1 + position * 0.008);
     const objectPx = toX(objectX);
     const lensPx = toX(lensX);
-    const objectTipY = axisY - objectHeight * 16;
-    const rightEdge = width * 0.92;
+    const objectTipY = axisY - objectHeight * 9;
+    const rightEdge = Math.min(width * 0.92, toX(screenX));
     const leftEdge = width * 0.07;
 
     context.save();
@@ -150,7 +174,7 @@ function RayDiagram({
     const colors = { parallel: "#ff9f2f", center: "#13a6a1", focus: "#6c86e8" };
     const nearFocusX = toX(lensX - focalLength);
     const farFocusX = toX(lensX + focalLength);
-    const imageTipY = axisY - magnification * objectHeight * 16;
+    const imageTipY = axisY - magnification * objectHeight * 9;
 
     if (rays.parallel) {
       drawLine(objectPx, objectTipY, lensPx, objectTipY, colors.parallel);
@@ -215,7 +239,7 @@ function RayDiagram({
     context.textAlign = "center";
     context.fillText("ASAL EKSEN", width * 0.5, axisY + 18);
     context.restore();
-  }, [finiteImage, focalLength, imageX, lensType, lensX, lightOn, magnification, objectHeight, objectX, rays, ready]);
+  }, [finiteImage, focalLength, imageX, lensType, lensX, lightOn, magnification, objectHeight, objectX, rays, ready, screenX]);
 
   useEffect(() => {
     draw();
@@ -234,6 +258,7 @@ export default function LensLab() {
   const [screenX, setScreenX] = useState(65);
   const [focalLength, setFocalLength] = useState(10);
   const [objectHeight, setObjectHeight] = useState(4);
+  const [lensAngle, setLensAngle] = useState(0);
   const [lightOn, setLightOn] = useState(false);
   const [rays, setRays] = useState<Record<RayKind, boolean>>({ parallel: true, center: true, focus: true });
   const [readings, setReadings] = useState<Reading[]>([]);
@@ -255,11 +280,12 @@ export default function LensLab() {
   const imageOnRail = finiteImage && imageX >= 0 && imageX <= 100;
   const imageHeight = atInfinity ? Number.POSITIVE_INFINITY : Math.abs(magnification) * objectHeight;
   const screenDistance = realImage && imageOnRail ? Math.abs(screenX - imageX) : Number.POSITIVE_INFINITY;
-  const focusQuality = ready && lightOn && realImage && imageOnRail
+  const lensAligned = lensAngle === 0;
+  const focusQuality = ready && lightOn && lensAligned && realImage && imageOnRail
     ? clamp(Math.round(100 - screenDistance * 22), 0, 100)
     : 0;
   const screenAligned = focusQuality >= 88;
-  const screenCanProject = ready && lightOn && realImage && imageOnRail;
+  const screenCanProject = ready && lightOn && lensAligned && realImage && imageOnRail;
 
   let imageDescription = "Görüntü oluşumu bekleniyor";
   let situation = "Düzeneği kur";
@@ -304,6 +330,7 @@ export default function LensLab() {
 
   let screenMessage = "Düzenek tamamlanınca ekranı rayda hareket ettir.";
   if (ready && !lightOn) screenMessage = "Işığı aç ve ekranı görüntü konumuna taşı.";
+  if (ready && !lensAligned) screenMessage = "Mercek hücresini 0° işaretine getir; ışık yalnız hizalı düzende açılır.";
   if (ready && lightOn && atInfinity) screenMessage = "Işınlar paralel çıkıyor; görüntü bu ray üzerinde yakalanamaz.";
   if (ready && lightOn && !realImage) screenMessage = "Sanal görüntü ekrana düşmez; sağdan merceğe bakıldığında görülür.";
   if (ready && lightOn && realImage && !imageOnRail) screenMessage = "Gerçek görüntü rayın ölçüm alanının dışında oluşuyor.";
@@ -313,7 +340,7 @@ export default function LensLab() {
   const toPercent = (position: number) => 10 + position * 0.8;
   const focusPositions = [lensX - 2 * focalLength, lensX - focalLength, lensX + focalLength, lensX + 2 * focalLength]
     .filter((position) => position >= 0 && position <= 100);
-  const screenImageHeight = clamp(imageHeight * 14, 16, 145);
+  const screenImageHeight = clamp(imageHeight * 9, 10, 78);
   const screenBlur = screenCanProject ? clamp(screenDistance * 1.25, 0, 8) : 0;
   const screenImageOpacity = screenCanProject ? clamp(1 - screenDistance * 0.07, .22, 1) : 0;
 
@@ -361,6 +388,7 @@ export default function LensLab() {
 
   const changeLens = (type: LensType) => {
     setLensType(type);
+    setLensAngle(0);
     setLightOn(false);
     setReadings([]);
   };
@@ -390,6 +418,7 @@ export default function LensLab() {
     setScreenX(65);
     setFocalLength(10);
     setObjectHeight(4);
+    setLensAngle(0);
     setLightOn(false);
     setRays({ parallel: true, center: true, focus: true });
     setReadings([]);
@@ -454,11 +483,13 @@ export default function LensLab() {
             onDrop={onStageDrop}
           >
             <div className="oll-lab-wall"><span>FİZİK ATÖLYESİ · MERCEK DENEY MASASI</span></div>
+            <img className="oll-bench-photo" src={LAB_BENCH_ASSET} alt="" draggable="false" />
             <div className="oll-lab-fixtures" aria-hidden="true"><i /><i /><i /></div>
             <div className="oll-bench" />
             <RayDiagram
               objectX={objectX}
               lensX={lensX}
+              screenX={screenX}
               focalLength={focalLength}
               objectHeight={objectHeight}
               imageX={imageX}
@@ -471,29 +502,55 @@ export default function LensLab() {
             />
             {placed.includes("rail") && (
               <div className="oll-rail">
+                <img src={OPTICAL_RAIL_ASSET} alt="Gerçek cetvelli optik ray" draggable="false" />
                 <div>{[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((value) => <span key={value}>{value}</span>)}</div>
                 <i className="first" /><i className="second" /><i className="third" /><b className="left" /><b className="right" />
               </div>
             )}
-            {placed.includes("ray-box") && <div className={`oll-ray-box ${lightOn ? "on" : ""}`} style={{ "--object-left": `${toPercent(objectX) - 5}%` } as CSSProperties}><b>12 V</b><i /><em /><span>IŞIKLI CİSİM</span></div>}
+            {placed.includes("ray-box") && !placed.includes("object") && (
+              <div className="oll-ray-box" style={{ "--object-left": `${toPercent(objectX)}%` } as CSSProperties}>
+                <img src={ILLUMINATED_OBJECT_ASSET} alt="Işıklı ok cismi kutusu" draggable="false" />
+                <span>Ok maskesini yerleştir</span>
+              </div>
+            )}
             {placed.includes("object") && (
               <button
                 type="button"
-                className="oll-object"
-                style={{ "--object-left": `${toPercent(objectX)}%`, "--object-height": `${objectHeight * 16}px` } as CSSProperties}
+                className={`oll-object ${lightOn ? "on" : ""}`}
+                style={{ "--object-left": `${toPercent(objectX)}%`, "--object-height": `${objectHeight * 9}px` } as CSSProperties}
                 onPointerDown={(event) => beginMove(event, "object")}
                 aria-label={`Cisim ${objectX} santimetrede; ray üzerinde sürükle`}
-              ><span /><i /><b>CİSİM · {objectX} cm</b></button>
+              >
+                <img src={ILLUMINATED_OBJECT_ASSET} alt="Yukarı yönlü ışıklı ok cismi" draggable="false" />
+                <span className="oll-object-emitter"><i /></span>
+                <b>CİSİM · {objectX} cm</b>
+              </button>
             )}
             {placed.includes("lens-holder") && placed.includes("lens-set") && (
               <button
                 type="button"
-                className={`oll-lens-assembly ${lensType}`}
-                style={{ "--lens-left": `${toPercent(lensX)}%` } as CSSProperties}
+                className={`oll-lens-assembly ${lensType} ${lensAligned ? "aligned" : "misaligned"}`}
+                style={{
+                  "--lens-left": `${toPercent(lensX)}%`,
+                  "--lens-yaw": `${lensAngle}deg`,
+                  "--lens-yaw-scale": Math.max(.48, 1 - Math.abs(lensAngle) / 38),
+                  "--parallel-hit": `${57 - objectHeight * 9}px`,
+                } as CSSProperties}
                 onPointerDown={(event) => beginMove(event, "lens")}
                 aria-label={`${lensType === "converging" ? "İnce" : "Kalın"} kenarlı mercek ${lensX} santimetrede; ray üzerinde sürükle`}
               >
-                <span className="oll-lens-frame"><i className="oll-lens-glass"><span /></i><i className="oll-lens-lock" /><em>O</em></span>
+                <img className="oll-lens-holder-photo" src={LENS_HOLDER_ASSET} alt="Gerçek optik ray mercek taşıyıcısı" draggable="false" />
+                <span className="oll-lens-frame">
+                  <img
+                    className="oll-lens-cell-photo"
+                    src={lensType === "converging" ? CONVEX_LENS_ASSET : CONCAVE_LENS_ASSET}
+                    alt={lensType === "converging" ? "İnce kenarlı yakınsak mercek" : "Kalın kenarlı ıraksak mercek"}
+                    draggable="false"
+                  />
+                  <i className="oll-lens-glass"><span /></i><i className="oll-lens-lock" />
+                </span>
+                {lightOn && rays.parallel && <span className="oll-lens-contact parallel"><i />GİRİŞ</span>}
+                {lightOn && rays.center && <span className="oll-lens-contact center"><i />O</span>}
                 <span className="oll-lens-post" /><span className="oll-lens-carriage" />
                 <b>{lensType === "converging" ? "İNCE KENARLI" : "KALIN KENARLI"} · {lensX} cm</b>
               </button>
@@ -501,22 +558,23 @@ export default function LensLab() {
             {placed.includes("screen") && (
               <button
                 type="button"
-                className={`oll-screen ${screenAligned ? "sharp" : ""} ${screenCanProject ? "projecting" : ""}`}
+                className={`oll-screen ${screenAligned ? "sharp" : ""} ${screenCanProject ? "projecting" : ""} ${screenX > 76 ? "info-left" : ""}`}
                 style={{ "--screen-left": `${toPercent(screenX)}%`, "--focus-quality": `${focusQuality}%` } as CSSProperties}
                 onPointerDown={(event) => beginMove(event, "screen")}
                 aria-label={`Ekran ${screenX} santimetrede; ray üzerinde sürükle`}
               >
+                <img className="oll-screen-photo" src={SCREEN_ASSET} alt="Optik ray üzerindeki beyaz görüntü ekranı" draggable="false" />
                 <span className="oll-screen-face">
-                  <span className="oll-screen-surface-label">BEYAZ GÖRÜNTÜ EKRANI</span>
+                  <span className="oll-screen-surface-label">EKRAN</span>
                   {screenCanProject && <i className={`oll-screen-image ${screenAligned ? "focused" : "defocused"}`} style={{ "--image-height": `${screenImageHeight}px`, "--image-blur": `${screenBlur}px`, "--image-opacity": screenImageOpacity } as CSSProperties} />}
                   {lightOn && !screenCanProject && <i className="oll-no-projection">×</i>}
-                  <span className="oll-screen-info">
-                    <small>EKRAN ANALİZİ</small>
-                    <strong>{lightOn ? imageKind : "Işık bekleniyor"}</strong>
-                    <em>{lightOn ? `${imageOrientation} · ${imageSize}` : "Tür · yön · boyut"}</em>
-                    <span className="oll-focus-meter"><i /></span>
-                    <b>{screenCanProject ? `Netlik ${focusQuality}%` : lightOn ? "Ekrana düşmez" : "—"}</b>
-                  </span>
+                </span>
+                <span className="oll-screen-info">
+                  <small>EKRAN ANALİZİ</small>
+                  <strong>{lightOn ? imageKind : "Işık bekleniyor"}</strong>
+                  <em>{lightOn ? `${imageOrientation} · ${imageSize}` : "Tür · yön · boyut"}</em>
+                  <span className="oll-focus-meter"><i /></span>
+                  <b>{screenCanProject ? `Netlik ${focusQuality}%` : lightOn ? "Ekrana düşmez" : "—"}</b>
                 </span>
                 <span className="oll-screen-post" /><span className="oll-screen-carriage" />
                 <span className="oll-screen-move"><i />{lightOn ? screenMoveDirection : "Ekranı rayda sürükle"}</span>
@@ -537,16 +595,21 @@ export default function LensLab() {
           <div className={`oll-controls ${ready ? "enabled" : ""}`}>
             <div className="oll-control-heading"><div><span>3 · DENEYİ YÖNET</span><h2>Aynı rayda iki mercek</h2></div><p>Taşıyıcıları sahnede sürükleyebilir veya konum cetvellerini kullanabilirsin.</p></div>
             <div className="oll-lens-selector">
-              <button type="button" className={lensType === "converging" ? "active" : ""} onClick={() => changeLens("converging")} disabled={!ready}><i className="convex" /><span><b>İnce kenarlı mercek</b><small>Yakınsak · gerçek veya sanal görüntü</small></span></button>
-              <button type="button" className={lensType === "diverging" ? "active" : ""} onClick={() => changeLens("diverging")} disabled={!ready}><i className="concave" /><span><b>Kalın kenarlı mercek</b><small>Iraksak · sanal, düz ve küçük görüntü</small></span></button>
+              <button type="button" className={lensType === "converging" ? "active" : ""} onClick={() => changeLens("converging")} disabled={!ready}><img src={CONVEX_LENS_ASSET} alt="" draggable="false" /><span><b>İnce kenarlı mercek</b><small>Yakınsak · gerçek veya sanal görüntü</small></span></button>
+              <button type="button" className={lensType === "diverging" ? "active" : ""} onClick={() => changeLens("diverging")} disabled={!ready}><img src={CONCAVE_LENS_ASSET} alt="" draggable="false" /><span><b>Kalın kenarlı mercek</b><small>Iraksak · sanal, düz ve küçük görüntü</small></span></button>
             </div>
+            <label className={`oll-lens-alignment ${lensAligned ? "aligned" : ""}`}>
+              <span><small>MERCEK YÖNÜ</small><b>{lensAngle}°</b><em>{lensAligned ? "Asal eksene dik ve ölçüme hazır" : "Mercek hücresini 0° konumuna getir"}</em></span>
+              <input type="range" min="-20" max="20" step="5" value={lensAngle} onChange={(event) => { setLensAngle(Number(event.target.value)); setLightOn(false); }} disabled={!ready} aria-label="Mercek yönü" />
+              <button type="button" onClick={() => setLensAngle(0)} disabled={!ready || lensAligned}>0° hizala</button>
+            </label>
             <div className="oll-control-grid">
               <label><span>Odak uzaklığı <b>{focalLength} cm</b></span><input type="range" min="8" max="16" step="2" value={focalLength} onChange={(event) => setFocalLength(Number(event.target.value))} disabled={!ready} /><small>F ve 2F işaretleri rayda otomatik yer değiştirir.</small></label>
               <label><span>Cisim yüksekliği <b>{objectHeight} cm</b></span><input type="range" min="2" max="6" step="1" value={objectHeight} onChange={(event) => setObjectHeight(Number(event.target.value))} disabled={!ready} /><small>Görüntü büyüklüğünü karşılaştırmak için değiştir.</small></label>
               <div className="oll-ray-controls"><span>Özel ışınlar</span><button type="button" className={rays.parallel ? "active orange" : ""} onClick={() => toggleRay("parallel")} disabled={!ready}>Paralel → F</button><button type="button" className={rays.center ? "active teal" : ""} onClick={() => toggleRay("center")} disabled={!ready}>Optik merkez</button><button type="button" className={rays.focus ? "active blue" : ""} onClick={() => toggleRay("focus")} disabled={!ready}>F → paralel</button></div>
               <div className="oll-live-reading">
                 <span>CANLI SONUÇ</span><b>{imageDescription}</b><div><p><small>Cisim uzaklığı</small><strong>{objectDistance.toFixed(1)} cm</strong></p><p><small>Görüntü uzaklığı</small><strong>{atInfinity ? "Sonsuz" : `${imageDistance.toFixed(1)} cm`}</strong></p><p><small>Büyütme</small><strong>{atInfinity ? "—" : `${Math.abs(magnification).toFixed(2)}×`}</strong></p><p><small>Ekran netliği</small><strong>{screenCanProject ? `%${focusQuality}` : "Düşmez"}</strong></p></div>
-                <div><button type="button" className={lightOn ? "stop" : "start"} onClick={() => setLightOn((value) => !value)} disabled={!ready}>{lightOn ? "Işığı kapat" : "Işığı aç"}</button><button type="button" onClick={recordReading} disabled={!lightOn}>Ölçümü kaydet</button></div>
+                <div><button type="button" className={lightOn ? "stop" : "start"} onClick={() => setLightOn((value) => !value)} disabled={!ready || !lensAligned}>{lightOn ? "Işığı kapat" : lensAligned ? "Işığı aç" : "Önce 0° hizala"}</button><button type="button" onClick={recordReading} disabled={!lightOn}>Ölçümü kaydet</button></div>
               </div>
             </div>
           </div>
@@ -556,8 +619,8 @@ export default function LensLab() {
       <div className="oll-evidence">
         <div className="oll-evidence-heading"><div><span>4 · ÖZELLİKLERİ KARŞILAŞTIR</span><h2>Mercek değiştiğinde ne değişiyor?</h2></div><p>Mavi kesikli ok sanal, düz mavi ok gerçek görüntüyü gösterir. Sanal görüntü yalnızca gözle doğrudan bakıldığında görülür.</p></div>
         <div className="oll-property-grid">
-          <article className={lensType === "converging" ? "active" : ""}><i className="convex" /><div><span>İNCE KENARLI · YAKINSAK</span><b>Beş temel cisim konumu</b><p>2F dışı: küçük · 2F: aynı boy · F–2F: büyük · F: sonsuz · F içi: sanal ve büyük.</p></div></article>
-          <article className={lensType === "diverging" ? "active" : ""}><i className="concave" /><div><span>KALIN KENARLI · IRAKSAK</span><b>Her cisim konumunda aynı nitelik</b><p>Görüntü mercek ile F arasında; sanal, düz ve cisimden küçüktür. Ekrana düşürülemez.</p></div></article>
+          <article className={lensType === "converging" ? "active" : ""}><img src={CONVEX_LENS_ASSET} alt="İnce kenarlı mercek" draggable="false" /><div><span>İNCE KENARLI · YAKINSAK</span><b>Beş temel cisim konumu</b><p>2F dışı: küçük · 2F: aynı boy · F–2F: büyük · F: sonsuz · F içi: sanal ve büyük.</p></div></article>
+          <article className={lensType === "diverging" ? "active" : ""}><img src={CONCAVE_LENS_ASSET} alt="Kalın kenarlı mercek" draggable="false" /><div><span>KALIN KENARLI · IRAKSAK</span><b>Her cisim konumunda aynı nitelik</b><p>Görüntü mercek ile F arasında; sanal, düz ve cisimden küçüktür. Ekrana düşürülemez.</p></div></article>
           <article><i className="real-life" /><div><span>GÜNLÜK YAŞAM</span><b>Mercek seçimi amaca bağlıdır</b><p>İnce kenarlı: büyüteç, kamera, projektör. Kalın kenarlı: miyop gözlük ve kapı dürbünü.</p></div></article>
         </div>
         <div className="oll-data-card">
