@@ -107,17 +107,17 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
             </div>
             <div className="mirror-type-grid">
               <button className={activeMirror === "plane" ? "active" : ""} type="button" onClick={() => setActiveMirror("plane")}>
-                <span className="mirror-type-image"><img src="./optics-plane-mirror.webp" alt="" draggable="false" /></span>
+                <span className="mirror-type-image"><img src="./optics-plane-rotary-mirror-real-v1.webp" alt="" draggable="false" /></span>
                 <span><small>DENEY 01 · HAZIR</small><b>Düzlem ayna</b><em>Yansıma kanunları ve görüntü özellikleri</em></span>
                 <strong>{activeMirror === "plane" ? "Açık" : "Deneyi aç"} →</strong>
               </button>
               <button className={activeMirror === "concave" ? "active" : ""} type="button" onClick={() => setActiveMirror("concave")}>
-                <span className="mirror-type-image"><img src="./optics-concave-mirror.webp" alt="" draggable="false" /></span>
+                <span className="mirror-type-image"><img src="./optics-concave-mirror-real-v1.webp" alt="" draggable="false" /></span>
                 <span><small>DENEY 02 · HAZIR</small><b>Çukur ayna</b><em>Odak, ışınlar ve görüntü oluşumu</em></span>
                 <strong>{activeMirror === "concave" ? "Açık" : "Deneyi aç"} →</strong>
               </button>
               <button className={activeMirror === "convex" ? "active" : ""} type="button" onClick={() => setActiveMirror("convex")}>
-                <span className="mirror-type-image"><img src="./optics-convex-mirror.webp" alt="" draggable="false" /></span>
+                <span className="mirror-type-image"><img src="./optics-convex-mirror-real-v1.webp" alt="" draggable="false" /></span>
                 <span><small>DENEY 03 · HAZIR</small><b>Tümsek ayna</b><em>Dağılan ışınlar ve sanal görüntü</em></span>
                 <strong>{activeMirror === "convex" ? "Açık" : "Deneyi aç"} →</strong>
               </button>

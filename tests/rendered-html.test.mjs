@@ -599,9 +599,9 @@ test("Dalgalar-Optik alanı ayna seçimini ve ideal düzlem ayna deneyini sunar"
   assert.match(hub, /Tümsek ayna/);
   assert.match(hub, /PlaneMirrorLab/);
   assert.match(hub, /optics-mirrors\.webp/);
-  assert.match(hub, /optics-plane-mirror\.webp/);
-  assert.match(hub, /optics-concave-mirror\.webp/);
-  assert.match(hub, /optics-convex-mirror\.webp/);
+  assert.match(hub, /optics-plane-rotary-mirror-real-v1\.webp/);
+  assert.match(hub, /optics-concave-mirror-real-v1\.webp/);
+  assert.match(hub, /optics-convex-mirror-real-v1\.webp/);
   assert.match(page, /ReflectionCanvas/);
   assert.match(page, /DrawingMirrorCanvas/);
   assert.match(page, /FieldOfViewCanvas/);
@@ -638,6 +638,10 @@ test("Dalgalar-Optik alanı ayna seçimini ve ideal düzlem ayna deneyini sunar"
   assert.match(page, /Yanal terslik/);
   assert.doesNotMatch(page, /Beyaz ekran|Hareketli beyaz ekran|Ekranın aynaya/);
   assert.match(page, /TYMM · DENEY RAPORU/);
+  assert.match(page, /optics-plane-mirror-real-v1\.webp/);
+  assert.match(page, /optics-plane-rotary-mirror-real-v1\.webp/);
+  assert.match(page, /optics-empty-rotary-stage-real-v1\.webp/);
+  assert.match(page, /optics-laser-real-v1\.webp/);
   assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
 });
 
@@ -693,8 +697,10 @@ test("çukur ayna laboratuvarı döndürülebilir küresel ayna, lazer ve serbes
   assert.match(page, /Lazeri istediğin başlangıç noktasına sürükle/);
   assert.match(page, /Lazer yatay konumu/);
   assert.match(page, /Lazer dikey konumu/);
-  assert.match(page, /nearMirror \? "hit" : "laser"/);
+  assert.match(page, /nearMount \? "mirror" : "laser"/);
   assert.match(page, /Ayna dönüş açısı/);
+  assert.match(page, /Aynanın ray üzerindeki yeri/);
+  assert.match(page, /AYNA AYAĞINI RAYDA SÜRÜKLE/);
   assert.match(page, /Yüzey normali/);
   assert.match(page, /i = r/);
   assert.match(page, /Odak uzaklığı · f/);
@@ -712,6 +718,9 @@ test("çukur ayna laboratuvarı döndürülebilir küresel ayna, lazer ve serbes
   assert.match(page, /setPointerCapture/);
   assert.match(page, /Cetvel ölçümünü kaydet/);
   assert.match(page, /TYMM · DENEY RAPORU/);
+  assert.match(page, /optics-concave-mirror-real-v1\.webp/);
+  assert.match(page, /optics-convex-mirror-real-v1\.webp/);
+  assert.match(page, /optics-rail-real-v1\.webp/);
   assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
   assert.doesNotMatch(page, /Görüş alanı|saydam olmayan|saydam cisim/i);
 });

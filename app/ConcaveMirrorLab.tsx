@@ -42,12 +42,58 @@ const IMAGE_WIDTH = 900;
 const IMAGE_HEIGHT = 520;
 const RADIUS_OF_CURVATURE = 200;
 const PIXELS_PER_CM = 10;
+const LAB_BENCH_IMAGE = "./ohm-lab-bench-real-v2.webp";
+const REAL_LASER_IMAGE = "./optics-laser-real-v1.webp";
+const OPTICAL_RAIL_IMAGE = "./optics-rail-real-v1.webp";
+const ROTARY_MIRROR_IMAGE = "./optics-plane-rotary-mirror-real-v1.webp";
+const CONCAVE_MIRROR_IMAGE = "./optics-concave-mirror-real-v1.webp";
+const CONVEX_MIRROR_IMAGE = "./optics-convex-mirror-real-v1.webp";
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
 const toDegrees = (radians: number) => (radians * 180) / Math.PI;
+
+function useCanvasImage(source: string) {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const asset = new Image();
+    asset.onload = () => {
+      if (active) setImage(asset);
+    };
+    asset.src = source;
+    return () => {
+      active = false;
+    };
+  }, [source]);
+
+  return image;
+}
+
+function drawCoverImage(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const sourceWidth = width / scale;
+  const sourceHeight = height / scale;
+  context.drawImage(
+    image,
+    (image.naturalWidth - sourceWidth) / 2,
+    (image.naturalHeight - sourceHeight) / 2,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    width,
+    height,
+  );
+}
 
 function add(point: Point, vector: Vector, scale = 1): Point {
   return { x: point.x + vector.x * scale, y: point.y + vector.y * scale };
@@ -176,7 +222,18 @@ function pointerToLogical(
   };
 }
 
-function drawBench(context: CanvasRenderingContext2D, width: number, height: number) {
+function drawBench(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  benchImage?: HTMLImageElement | null,
+) {
+  if (benchImage) {
+    drawCoverImage(context, benchImage, width, height);
+    context.fillStyle = "rgba(245, 249, 247, 0.23)";
+    context.fillRect(0, 0, width, height * 0.66);
+    return;
+  }
   const background = context.createLinearGradient(0, 0, 0, height);
   background.addColorStop(0, "#edf5f3");
   background.addColorStop(0.64, "#dfe9e6");
@@ -201,6 +258,67 @@ function drawBench(context: CanvasRenderingContext2D, width: number, height: num
   }
   context.fillStyle = "rgba(255,255,255,0.38)";
   context.fillRect(0, height * 0.64, width, 5);
+}
+
+function drawOpticalRail(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement | null,
+  y: number,
+) {
+  if (!image) return;
+  context.save();
+  context.shadowColor = "rgba(15, 31, 34, 0.34)";
+  context.shadowBlur = 13;
+  context.drawImage(image, 42, y, 816, 88);
+  context.restore();
+}
+
+function drawMountedMirror(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement | null,
+  vertex: Point,
+  mirrorAngle: number,
+) {
+  if (!image) return false;
+  const sourceWidth = image.naturalWidth;
+  const sourceHeight = image.naturalHeight;
+  const headSourceHeight = sourceHeight * 0.43;
+  const standSourceY = sourceHeight * 0.34;
+  const standSourceHeight = sourceHeight - standSourceY;
+  const turnScale = Math.max(
+    0.72,
+    Math.cos(toRadians(Math.abs(mirrorAngle) * 2)),
+  );
+  const headWidth = 142 * turnScale;
+  const horizontalShift = mirrorAngle * 0.65;
+
+  context.save();
+  context.shadowColor = "rgba(15, 31, 34, 0.34)";
+  context.shadowBlur = 14;
+  context.drawImage(
+    image,
+    0,
+    standSourceY,
+    sourceWidth,
+    standSourceHeight,
+    vertex.x - 76,
+    vertex.y + 8,
+    152,
+    198,
+  );
+  context.drawImage(
+    image,
+    0,
+    0,
+    sourceWidth,
+    headSourceHeight,
+    vertex.x - headWidth / 2 + horizontalShift,
+    vertex.y - 59,
+    headWidth,
+    124,
+  );
+  context.restore();
+  return true;
 }
 
 function drawSphericalMirror(
@@ -307,25 +425,35 @@ function drawAxisAndMarkers(
 function ConcaveReflectionCanvas({
   mirrorKind,
   laserPosition,
+  mirrorX,
   mirrorAngle,
   hitOffset,
   laserOn,
   onLaserPositionChange,
+  onMirrorXChange,
   onHitOffsetChange,
 }: {
   mirrorKind: MirrorKind;
   laserPosition: Point;
+  mirrorX: number;
   mirrorAngle: number;
   hitOffset: number;
   laserOn: boolean;
   onLaserPositionChange: (position: Point) => void;
+  onMirrorXChange: (value: number) => void;
   onHitOffsetChange: (value: number) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const draggingRef = useRef<"laser" | "hit" | null>(null);
+  const draggingRef = useRef<"laser" | "hit" | "mirror" | null>(null);
+  const benchImage = useCanvasImage(LAB_BENCH_IMAGE);
+  const railImage = useCanvasImage(OPTICAL_RAIL_IMAGE);
+  const laserImage = useCanvasImage(REAL_LASER_IMAGE);
+  const mirrorImage = useCanvasImage(
+    mirrorKind === "concave" ? CONCAVE_MIRROR_IMAGE : CONVEX_MIRROR_IMAGE,
+  );
 
   const geometry = useMemo(() => {
-    const vertex = { x: 660, y: 205 };
+    const vertex = { x: mirrorX, y: 205 };
     const { axis, up } = mirrorAxes(mirrorAngle);
     const center = add(
       vertex,
@@ -363,7 +491,7 @@ function ConcaveReflectionCanvas({
       reflectedVector,
       incidenceAngle,
     };
-  }, [hitOffset, laserPosition, mirrorAngle, mirrorKind]);
+  }, [hitOffset, laserPosition, mirrorAngle, mirrorKind, mirrorX]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -383,7 +511,8 @@ function ConcaveReflectionCanvas({
         reflectedVector,
       } = geometry;
 
-      drawBench(context, REFLECTION_WIDTH, REFLECTION_HEIGHT);
+      drawBench(context, REFLECTION_WIDTH, REFLECTION_HEIGHT, benchImage);
+      drawOpticalRail(context, railImage, 346);
       drawAxisAndMarkers(
         context,
         vertex,
@@ -423,22 +552,24 @@ function ConcaveReflectionCanvas({
 
       context.save();
       context.translate(source.x, source.y);
-      context.rotate(Math.atan2(hit.y - source.y, hit.x - source.x));
-      context.shadowColor = "rgba(21, 40, 44, 0.32)";
-      context.shadowBlur = 12;
-      context.fillStyle = "#314a4f";
-      context.beginPath();
-      context.roundRect(-55, -18, 76, 36, 9);
-      context.fill();
-      context.shadowBlur = 0;
-      context.fillStyle = laserOn ? "#ef3340" : "#728486";
-      context.beginPath();
-      context.arc(22, 0, 8, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = "#d7e3e1";
-      context.beginPath();
-      context.roundRect(-45, -12, 28, 7, 3);
-      context.fill();
+      if (laserImage) {
+        context.shadowColor = "rgba(16, 31, 34, 0.34)";
+        context.shadowBlur = 12;
+        context.drawImage(laserImage, -95, -23, 122, 91);
+        context.shadowBlur = 0;
+        context.fillStyle = laserOn ? "#ef3340" : "#728486";
+        context.shadowColor = laserOn ? "#ef3340" : "transparent";
+        context.shadowBlur = laserOn ? 12 : 0;
+        context.beginPath();
+        context.arc(0, 0, 4, 0, Math.PI * 2);
+        context.fill();
+      } else {
+        context.rotate(Math.atan2(hit.y - source.y, hit.x - source.x));
+        context.fillStyle = "#314a4f";
+        context.beginPath();
+        context.roundRect(-55, -18, 76, 36, 9);
+        context.fill();
+      }
       context.restore();
 
       context.save();
@@ -455,29 +586,75 @@ function ConcaveReflectionCanvas({
       context.fillText("LAZERİ TAŞI", source.x, source.y + 49);
       context.restore();
 
-      drawSphericalMirror(
+      const photoMirrorDrawn = drawMountedMirror(
         context,
+        mirrorImage,
         vertex,
-        axis,
-        up,
-        RADIUS_OF_CURVATURE,
-        102,
-        mirrorKind,
+        mirrorAngle,
       );
-      context.fillStyle = "#ef9f28";
+      if (!photoMirrorDrawn) {
+        drawSphericalMirror(
+          context,
+          vertex,
+          axis,
+          up,
+          RADIUS_OF_CURVATURE,
+          102,
+          mirrorKind,
+        );
+      }
+      context.save();
+      context.strokeStyle = "rgba(221, 132, 30, 0.9)";
+      context.lineWidth = 2.5;
       context.beginPath();
-      context.arc(hit.x, hit.y, 7, 0, Math.PI * 2);
+      context.arc(
+        vertex.x,
+        vertex.y,
+        74,
+        -Math.PI / 2,
+        -Math.PI / 2 + toRadians(mirrorAngle),
+        mirrorAngle < 0,
+      );
+      context.stroke();
+      context.fillStyle = "#8b540f";
+      context.font = "950 10px Arial";
+      context.textAlign = "center";
+      context.fillText(`AYNA ${mirrorAngle > 0 ? "+" : ""}${mirrorAngle}°`, vertex.x, vertex.y - 82);
+      context.restore();
+      context.fillStyle = "rgba(255,255,255,0.96)";
+      context.shadowColor = "#ef6b32";
+      context.shadowBlur = 16;
+      context.beginPath();
+      context.arc(hit.x, hit.y, 10, 0, Math.PI * 2);
+      context.fill();
+      context.shadowBlur = 0;
+      context.strokeStyle = "#ef7f22";
+      context.lineWidth = 4;
+      context.beginPath();
+      context.arc(hit.x, hit.y, 15, 0, Math.PI * 2);
+      context.stroke();
+      context.fillStyle = "#ed3f35";
+      context.beginPath();
+      context.arc(hit.x, hit.y, 4, 0, Math.PI * 2);
       context.fill();
 
       const hitLabel = add(hit, up, hitOffset > 42 ? -22 : 24);
-      context.fillStyle = "#a96616";
-      context.font = "900 9px Arial";
+      context.fillStyle = "#7f4b0f";
+      context.font = "950 10px Arial";
       context.textAlign = "center";
-      context.fillText("ÇARPMA NOKTASI", hitLabel.x, hitLabel.y);
+      context.fillText("IŞININ ÇARPTIĞI NOKTA", hitLabel.x, hitLabel.y);
+
+      context.fillStyle = "rgba(24, 51, 55, 0.88)";
+      context.beginPath();
+      context.roundRect(vertex.x - 76, vertex.y + 152, 152, 24, 8);
+      context.fill();
+      context.fillStyle = "#fff";
+      context.font = "900 8px Arial";
+      context.fillText("AYNA AYAĞINI RAYDA SÜRÜKLE", vertex.x, vertex.y + 168);
 
       context.fillStyle = "rgba(255,255,255,0.92)";
       context.beginPath();
-      context.roundRect(24, 22, 330, 66, 12);
+      context.roundRect(24, 22, 350, 82, 12);
       context.fill();
       context.fillStyle = "#264e52";
       context.font = "900 13px Arial";
@@ -491,16 +668,21 @@ function ConcaveReflectionCanvas({
       context.font = "700 11px Arial";
       context.fillText("Lazeri istediğin başlangıç noktasına sürükle.", 40, 63);
       context.fillText("Turuncu noktayı ayna üzerinde ayrıca taşı.", 40, 79);
+      context.fillText("Ayna ayağını rayda sürükle; açıyla yalnız yüzey döner.", 40, 95);
     };
 
     draw();
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [geometry, hitOffset, laserOn, mirrorKind]);
+  }, [benchImage, geometry, hitOffset, laserImage, laserOn, mirrorAngle, mirrorImage, mirrorKind, railImage]);
 
   const updateInteraction = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const point = pointerToLogical(event, REFLECTION_WIDTH, REFLECTION_HEIGHT);
+    if (draggingRef.current === "mirror") {
+      onMirrorXChange(clamp(point.x, 610, 760));
+      return;
+    }
     if (draggingRef.current === "hit") {
       const local = worldToLocal(
         geometry.vertex,
@@ -508,7 +690,7 @@ function ConcaveReflectionCanvas({
         geometry.up,
         point,
       );
-      onHitOffsetChange(clamp(local.y, -75, 75));
+      onHitOffsetChange(clamp(local.y, -50, 50));
       return;
     }
     onLaserPositionChange({
@@ -524,14 +706,12 @@ function ConcaveReflectionCanvas({
       aria-label={`Lazerin serbestçe taşındığı, çarpma noktası ve küresel ${mirrorKind === "concave" ? "çukur" : "tümsek"} aynası ayarlanabilen düzenek`}
       onPointerDown={(event) => {
         const point = pointerToLogical(event, REFLECTION_WIDTH, REFLECTION_HEIGHT);
-        const local = worldToLocal(
-          geometry.vertex,
-          geometry.axis,
-          geometry.up,
-          point,
-        );
-        const nearMirror = Math.abs(local.x) < 55 && Math.abs(local.y) < 115;
-        draggingRef.current = nearMirror ? "hit" : "laser";
+        const nearHit = Math.hypot(point.x - geometry.hit.x, point.y - geometry.hit.y) < 28;
+        const nearMount =
+          Math.abs(point.x - geometry.vertex.x) < 76 &&
+          point.y > geometry.vertex.y + 64 &&
+          point.y < geometry.vertex.y + 205;
+        draggingRef.current = nearHit ? "hit" : nearMount ? "mirror" : "laser";
         event.currentTarget.setPointerCapture(event.pointerId);
         updateInteraction(event);
       }}
@@ -711,6 +891,11 @@ function ConcaveImageCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const activeStrokeRef = useRef<number | null>(null);
   const strokesRef = useRef(strokes);
+  const benchImage = useCanvasImage(LAB_BENCH_IMAGE);
+  const railImage = useCanvasImage(OPTICAL_RAIL_IMAGE);
+  const mirrorImage = useCanvasImage(
+    mirrorKind === "concave" ? CONCAVE_MIRROR_IMAGE : CONVEX_MIRROR_IMAGE,
+  );
   const solution = useMemo(
     () => solveImage(objectDistance, focalLength, mirrorKind),
     [focalLength, mirrorKind, objectDistance],
@@ -735,7 +920,8 @@ function ConcaveImageCanvas({
       if (!context) return;
       const { vertex, axis, up, objectCenter } = geometry;
 
-      drawBench(context, IMAGE_WIDTH, IMAGE_HEIGHT);
+      drawBench(context, IMAGE_WIDTH, IMAGE_HEIGHT, benchImage);
+      drawOpticalRail(context, railImage, 420);
       drawAxisAndMarkers(
         context,
         vertex,
@@ -888,15 +1074,23 @@ function ConcaveImageCanvas({
         context.restore();
       }
 
-      drawSphericalMirror(
+      const photoMirrorDrawn = drawMountedMirror(
         context,
+        mirrorImage,
         vertex,
-        axis,
-        up,
-        focalLength * PIXELS_PER_CM * 2,
-        115,
-        mirrorKind,
+        mirrorAngle,
       );
+      if (!photoMirrorDrawn) {
+        drawSphericalMirror(
+          context,
+          vertex,
+          axis,
+          up,
+          focalLength * PIXELS_PER_CM * 2,
+          115,
+          mirrorKind,
+        );
+      }
 
       context.fillStyle = "rgba(255,255,255,0.93)";
       context.beginPath();
@@ -942,7 +1136,7 @@ function ConcaveImageCanvas({
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [focalLength, geometry, mirrorKind, objectDistance, showRays, solution, strokes]);
+  }, [benchImage, focalLength, geometry, mirrorAngle, mirrorImage, mirrorKind, objectDistance, railImage, showRays, solution, strokes]);
 
   const appendPoint = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const pointer = pointerToLogical(event, IMAGE_WIDTH, IMAGE_HEIGHT);
@@ -1014,8 +1208,10 @@ export default function SphericalMirrorLab({
 }) {
   const isConvex = mirrorKind === "convex";
   const mirrorLabel = isConvex ? "Tümsek ayna" : "Çukur ayna";
+  const mirrorImageSource = isConvex ? CONVEX_MIRROR_IMAGE : CONCAVE_MIRROR_IMAGE;
   const [mode, setMode] = useState<ExperimentMode>("reflection");
   const [laserPosition, setLaserPosition] = useState<Point>({ x: 260, y: 205 });
+  const [reflectionMirrorX, setReflectionMirrorX] = useState(680);
   const [reflectionMirrorAngle, setReflectionMirrorAngle] = useState(0);
   const [hitOffset, setHitOffset] = useState(0);
   const [laserOn, setLaserOn] = useState(true);
@@ -1033,7 +1229,7 @@ export default function SphericalMirrorLab({
 
   const reflectionGeometry = useMemo(() => {
     const { axis, up } = mirrorAxes(reflectionMirrorAngle);
-    const vertex = { x: 660, y: 205 };
+    const vertex = { x: reflectionMirrorX, y: 205 };
     const center = add(
       vertex,
       axis,
@@ -1057,7 +1253,7 @@ export default function SphericalMirrorLab({
         Math.acos(clamp(dot(sourceDirection, normal), -1, 1)),
       ),
     };
-  }, [hitOffset, laserPosition, mirrorKind, reflectionMirrorAngle]);
+  }, [hitOffset, laserPosition, mirrorKind, reflectionMirrorAngle, reflectionMirrorX]);
 
   const imageResult = useMemo(
     () => solveImage(objectDistance, focalLength, mirrorKind),
@@ -1110,14 +1306,16 @@ export default function SphericalMirrorLab({
           </p>
         </div>
         <div className="cm-hero-badge" aria-label="İdeal küresel ayna modeli">
-          <i>F</i><i>C</i><b>İDEAL</b><small>KÜRESEL AYNA</small>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={mirrorImageSource} alt="" draggable="false" />
+          <b>İDEAL</b><small>KÜRESEL AYNA</small>
         </div>
       </div>
 
       <div className="cm-equipment-strip" aria-label="Deney araçları">
-        <span><i className="cm-tool-laser" /><b>Lazer</b><small>Döndürülebilir</small></span>
-        <span><i className="cm-tool-mirror" /><b>{mirrorLabel}</b><small>Küresel yüzey</small></span>
-        <span><i className="cm-tool-table" /><b>Döner tabla</b><small>Açı ayarlı</small></span>
+        <span><i className="cm-tool-laser" style={{ backgroundImage: `url(${REAL_LASER_IMAGE})` }} /><b>Lazer</b><small>Döndürülebilir</small></span>
+        <span><i className="cm-tool-mirror" style={{ backgroundImage: `url(${mirrorImageSource})` }} /><b>{mirrorLabel}</b><small>Küresel yüzey</small></span>
+        <span><i className="cm-tool-table" style={{ backgroundImage: `url(${ROTARY_MIRROR_IMAGE})` }} /><b>Döner tabla</b><small>Açı ayarlı</small></span>
         <span><i className="cm-tool-ruler" /><b>Cetvel</b><small>cm ölçekli</small></span>
         <span><i className="cm-tool-pen" /><b>Çizim kalemi</b><small>Serbest çizim</small></span>
       </div>
@@ -1151,10 +1349,12 @@ export default function SphericalMirrorLab({
               <ConcaveReflectionCanvas
                 mirrorKind={mirrorKind}
                 laserPosition={laserPosition}
+                mirrorX={reflectionMirrorX}
                 mirrorAngle={reflectionMirrorAngle}
                 hitOffset={hitOffset}
                 laserOn={laserOn}
                 onLaserPositionChange={setLaserPosition}
+                onMirrorXChange={setReflectionMirrorX}
                 onHitOffsetChange={setHitOffset}
               />
               <div className="cm-stage-legend">
@@ -1182,12 +1382,16 @@ export default function SphericalMirrorLab({
                 <input type="range" min="-20" max="20" value={reflectionMirrorAngle} onChange={(event) => setReflectionMirrorAngle(Number(event.target.value))} />
               </label>
               <label>
+                <span>Aynanın ray üzerindeki yeri <b>{formatNumber(reflectionMirrorX / 10)} cm</b></span>
+                <input type="range" min="610" max="760" value={reflectionMirrorX} onChange={(event) => setReflectionMirrorX(Number(event.target.value))} />
+              </label>
+              <label>
                 <span>Çarpma noktası <b>{hitOffset === 0 ? "merkez" : `${Math.abs(hitOffset)} px ${hitOffset > 0 ? "üst" : "alt"}`}</b></span>
-                <input type="range" min="-75" max="75" value={hitOffset} onChange={(event) => setHitOffset(Number(event.target.value))} />
+                <input type="range" min="-50" max="50" value={hitOffset} onChange={(event) => setHitOffset(Number(event.target.value))} />
               </label>
               <div className="cm-console-actions">
                 <button type="button" className={laserOn ? "active" : ""} onClick={() => setLaserOn((value) => !value)}>{laserOn ? "Lazeri kapat" : "Lazeri aç"}</button>
-                <button type="button" onClick={() => { setLaserPosition({ x: 260, y: 205 }); setReflectionMirrorAngle(0); setHitOffset(0); }}>Başlangıca dön</button>
+                <button type="button" onClick={() => { setLaserPosition({ x: 260, y: 205 }); setReflectionMirrorX(680); setReflectionMirrorAngle(0); setHitOffset(0); }}>Başlangıca dön</button>
               </div>
               <button className="cm-record-button" type="button" onClick={recordReflection}>Açı ölçümünü kaydet +</button>
             </aside>

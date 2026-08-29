@@ -56,11 +56,58 @@ const VISION_WIDTH = 900;
 const VISION_HEIGHT = 500;
 const VISION_MIRROR_Y = 190;
 const VISION_EYE_Y = 420;
+const LAB_BENCH_IMAGE = "./ohm-lab-bench-real-v2.webp";
+const REAL_LASER_IMAGE = "./optics-laser-real-v1.webp";
+const ROTARY_MIRROR_IMAGE = "./optics-plane-rotary-mirror-real-v1.webp";
+const EMPTY_ROTARY_STAGE_IMAGE = "./optics-empty-rotary-stage-real-v1.webp";
+const PLANE_MIRROR_IMAGE = "./optics-plane-mirror-real-v1.webp";
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
+
+function useCanvasImage(source: string) {
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const asset = new Image();
+    asset.onload = () => {
+      if (active) setImage(asset);
+    };
+    asset.src = source;
+    return () => {
+      active = false;
+    };
+  }, [source]);
+
+  return image;
+}
+
+function drawCoverImage(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const sourceWidth = width / scale;
+  const sourceHeight = height / scale;
+  const sourceX = (image.naturalWidth - sourceWidth) / 2;
+  const sourceY = (image.naturalHeight - sourceHeight) / 2;
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    width,
+    height,
+  );
+}
 
 function mirrorLine(angle: number) {
   const radian = toRadians(angle);
@@ -207,6 +254,9 @@ function ReflectionCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const draggingRef = useRef(false);
+  const benchImage = useCanvasImage(LAB_BENCH_IMAGE);
+  const laserImage = useCanvasImage(REAL_LASER_IMAGE);
+  const rotaryStageImage = useCanvasImage(EMPTY_ROTARY_STAGE_IMAGE);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -223,6 +273,20 @@ function ReflectionCanvas({
       if (!context) return;
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       context.clearRect(0, 0, width, height);
+
+      if (benchImage) {
+        drawCoverImage(context, benchImage, width, height);
+      } else {
+        const fallback = context.createLinearGradient(0, 0, 0, height);
+        fallback.addColorStop(0, "#e8efec");
+        fallback.addColorStop(0.63, "#d6e0dc");
+        fallback.addColorStop(0.64, "#b98255");
+        fallback.addColorStop(1, "#795034");
+        context.fillStyle = fallback;
+        context.fillRect(0, 0, width, height);
+      }
+      context.fillStyle = "rgba(245, 249, 247, 0.26)";
+      context.fillRect(0, 0, width, height * 0.68);
 
       const centerX = width * 0.5;
       const centerY = height * 0.73;
@@ -245,6 +309,15 @@ function ReflectionCanvas({
       const sourceY = centerY + sourceVector.y * radius;
       const reflectedX = centerX + reflectedVector.x * (radius + 22);
       const reflectedY = centerY + reflectedVector.y * (radius + 22);
+
+      if (rotaryStageImage) {
+        context.save();
+        context.translate(centerX, centerY);
+        context.shadowColor = "rgba(19, 34, 38, 0.34)";
+        context.shadowBlur = 18;
+        context.drawImage(rotaryStageImage, -116, -116, 232, 232);
+        context.restore();
+      }
 
       context.save();
       context.strokeStyle = "rgba(216, 234, 230, 0.22)";
@@ -313,6 +386,27 @@ function ReflectionCanvas({
         mirrorAngle < -laserAngle,
       );
       context.stroke();
+
+      context.save();
+      context.translate(centerX, centerY);
+      context.rotate(mirrorRadian);
+      context.shadowColor = "rgba(10, 23, 28, 0.48)";
+      context.shadowBlur = 10;
+      context.fillStyle = "#111b20";
+      context.beginPath();
+      context.roundRect(-108, 7, 216, 19, 6);
+      context.fill();
+      const activeMirrorGradient = context.createLinearGradient(0, -8, 0, 8);
+      activeMirrorGradient.addColorStop(0, "#fbffff");
+      activeMirrorGradient.addColorStop(0.28, "#aabdc0");
+      activeMirrorGradient.addColorStop(0.52, "#f7ffff");
+      activeMirrorGradient.addColorStop(1, "#536b70");
+      context.fillStyle = activeMirrorGradient;
+      context.fillRect(-101, -6, 202, 13);
+      context.fillStyle = "#202d32";
+      context.fillRect(-79, -10, 15, 23);
+      context.fillRect(64, -10, 15, 23);
+      context.restore();
       context.beginPath();
       context.arc(
         centerX,
@@ -361,52 +455,43 @@ function ReflectionCanvas({
         context.shadowColor = "#ff5145";
         context.shadowBlur = 20;
         context.beginPath();
-        context.arc(centerX, centerY, 5, 0, Math.PI * 2);
+        context.arc(centerX, centerY, 8, 0, Math.PI * 2);
         context.fill();
         context.shadowBlur = 0;
+        context.strokeStyle = "#ef9f28";
+        context.lineWidth = 3;
+        context.beginPath();
+        context.arc(centerX, centerY, 13, 0, Math.PI * 2);
+        context.stroke();
       }
 
       context.save();
       context.translate(sourceX, sourceY);
-      context.rotate(Math.atan2(incomingVector.y, incomingVector.x));
-      const laserGradient = context.createLinearGradient(-52, 0, 39, 0);
-      laserGradient.addColorStop(0, "#071116");
-      laserGradient.addColorStop(0.5, "#31474e");
-      laserGradient.addColorStop(1, "#0a151a");
-      context.fillStyle = laserGradient;
-      context.strokeStyle = "#61787e";
-      context.lineWidth = 2;
-      context.beginPath();
-      context.roundRect(-53, -18, 83, 36, 9);
-      context.fill();
-      context.stroke();
-      context.fillStyle = laserOn ? "#ff5547" : "#657276";
-      context.beginPath();
-      context.arc(31, 0, 8, 0, Math.PI * 2);
-      context.fill();
-      context.fillStyle = "#a9bdc0";
-      context.font = "800 7px Arial";
-      context.textAlign = "center";
-      context.fillText("LAZER", -13, 3);
-      context.restore();
-
-      context.save();
-      context.translate(centerX, centerY);
-      context.rotate(mirrorRadian);
-      const mirrorGradient = context.createLinearGradient(-112, 0, 112, 0);
-      mirrorGradient.addColorStop(0, "#70888d");
-      mirrorGradient.addColorStop(0.18, "#eff7f4");
-      mirrorGradient.addColorStop(0.5, "#9db1b4");
-      mirrorGradient.addColorStop(0.82, "#f4faf8");
-      mirrorGradient.addColorStop(1, "#5f777c");
-      context.fillStyle = "#112931";
-      context.fillRect(-122, 6, 244, 21);
-      context.fillStyle = mirrorGradient;
-      context.fillRect(-112, -1, 224, 10);
-      context.fillStyle = "#203b43";
-      context.beginPath();
-      context.roundRect(-58, 25, 116, 18, 5);
-      context.fill();
+      if (laserImage) {
+        context.shadowColor = "rgba(9, 20, 24, 0.38)";
+        context.shadowBlur = 13;
+        context.drawImage(laserImage, -87, -21, 112, 84);
+        context.shadowBlur = 0;
+        context.fillStyle = laserOn ? "#ff594d" : "#6d797b";
+        context.shadowColor = laserOn ? "#ff493d" : "transparent";
+        context.shadowBlur = laserOn ? 13 : 0;
+        context.beginPath();
+        context.arc(0, 0, 4.5, 0, Math.PI * 2);
+        context.fill();
+      } else {
+        context.rotate(Math.atan2(incomingVector.y, incomingVector.x));
+        const laserGradient = context.createLinearGradient(-52, 0, 39, 0);
+        laserGradient.addColorStop(0, "#071116");
+        laserGradient.addColorStop(0.5, "#31474e");
+        laserGradient.addColorStop(1, "#0a151a");
+        context.fillStyle = laserGradient;
+        context.strokeStyle = "#61787e";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.roundRect(-53, -18, 83, 36, 9);
+        context.fill();
+        context.stroke();
+      }
       context.restore();
 
       context.fillStyle = "rgba(238, 247, 244, 0.82)";
@@ -423,6 +508,20 @@ function ReflectionCanvas({
       context.fillText(`r = ${incidenceAngle}°`, centerX + 58, centerY - 48);
       context.fillStyle = "rgba(238, 247, 244, 0.7)";
       context.fillText(`AYNA ${mirrorAngle > 0 ? "+" : ""}${mirrorAngle}°`, centerX, centerY + 61);
+      const hitLabelLeft = Math.min(centerX + 51, width - 176);
+      context.strokeStyle = "#ef9f28";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(centerX + 11, centerY + 9);
+      context.lineTo(hitLabelLeft + 7, centerY + 42);
+      context.stroke();
+      context.fillStyle = "rgba(30, 53, 58, 0.9)";
+      context.beginPath();
+      context.roundRect(hitLabelLeft, centerY + 33, 166, 25, 8);
+      context.fill();
+      context.fillStyle = "#fff";
+      context.font = "900 8px Arial";
+      context.fillText("IŞININ ÇARPTIĞI NOKTA", hitLabelLeft + 83, centerY + 49);
       context.restore();
     };
 
@@ -430,7 +529,7 @@ function ReflectionCanvas({
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [incidenceAngle, laserAngle, laserOn, mirrorAngle]);
+  }, [benchImage, incidenceAngle, laserAngle, laserImage, laserOn, mirrorAngle, rotaryStageImage]);
 
   const updateAngle = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -565,6 +664,7 @@ function DrawingMirrorCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const activeStrokeId = useRef<number | null>(null);
+  const planeMirrorImage = useCanvasImage(PLANE_MIRROR_IMAGE);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -663,15 +763,22 @@ function DrawingMirrorCanvas({
     context.save();
     context.translate(DRAWING_MIRROR_X, DRAWING_MIRROR_Y);
     context.rotate(toRadians(mirrorAngle));
-    const mirrorGradient = context.createLinearGradient(-7, 0, 7, 0);
-    mirrorGradient.addColorStop(0, "#425d63");
-    mirrorGradient.addColorStop(0.35, "#eef9f7");
-    mirrorGradient.addColorStop(0.58, "#93aaae");
-    mirrorGradient.addColorStop(1, "#253f46");
-    context.fillStyle = mirrorGradient;
-    context.fillRect(-8, -190, 16, 380);
-    context.fillStyle = "#1a353d";
-    context.fillRect(-23, 183, 46, 9);
+    if (planeMirrorImage) {
+      context.shadowColor = "rgba(20, 45, 51, 0.28)";
+      context.shadowBlur = 10;
+      context.drawImage(planeMirrorImage, -56, -188, 112, 376);
+      context.shadowBlur = 0;
+      context.fillStyle = "rgba(255,255,255,0.65)";
+      context.fillRect(-4, -171, 6, 319);
+    } else {
+      const mirrorGradient = context.createLinearGradient(-7, 0, 7, 0);
+      mirrorGradient.addColorStop(0, "#425d63");
+      mirrorGradient.addColorStop(0.35, "#eef9f7");
+      mirrorGradient.addColorStop(0.58, "#93aaae");
+      mirrorGradient.addColorStop(1, "#253f46");
+      context.fillStyle = mirrorGradient;
+      context.fillRect(-8, -190, 16, 380);
+    }
     context.restore();
 
     context.strokeStyle = "rgba(23, 63, 89, 0.45)";
@@ -721,7 +828,7 @@ function DrawingMirrorCanvas({
     context.fillStyle = "#173f59";
     context.textAlign = "center";
     context.fillText("AYNA · 0", DRAWING_MIRROR_X, DRAWING_HEIGHT - 7);
-  }, [mirrorAngle, showMeasurements, strokes]);
+  }, [mirrorAngle, planeMirrorImage, showMeasurements, strokes]);
 
   const pointFromEvent = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -827,6 +934,7 @@ function FieldOfViewCanvas({
   const draggingRef = useRef<
     { type: "eye" } | { type: "object"; id: number } | null
   >(null);
+  const benchImage = useCanvasImage(LAB_BENCH_IMAGE);
   const analysis = useMemo(
     () => analyzeVisionObjects(objects, eyeX, mirrorWidth),
     [eyeX, mirrorWidth, objects],
@@ -855,12 +963,18 @@ function FieldOfViewCanvas({
     const leftTopX = eyeX + (mirrorLeft - eyeX) * extensionFactor;
     const rightTopX = eyeX + (mirrorRight - eyeX) * extensionFactor;
 
-    const background = context.createLinearGradient(0, 0, 0, height);
-    background.addColorStop(0, "#122f3a");
-    background.addColorStop(1, "#071d27");
-    context.fillStyle = background;
+    if (benchImage) {
+      drawCoverImage(context, benchImage, width, height);
+    } else {
+      const background = context.createLinearGradient(0, 0, 0, height);
+      background.addColorStop(0, "#c7d6d1");
+      background.addColorStop(1, "#8c5e3d");
+      context.fillStyle = background;
+      context.fillRect(0, 0, width, height);
+    }
+    context.fillStyle = "rgba(8, 37, 47, 0.76)";
     context.fillRect(0, 0, width, height);
-    context.strokeStyle = "rgba(218, 235, 232, 0.07)";
+    context.strokeStyle = "rgba(218, 235, 232, 0.06)";
     for (let x = 25; x < width; x += 25) {
       context.beginPath();
       context.moveTo(x, 0);
@@ -1047,7 +1161,7 @@ function FieldOfViewCanvas({
     context.fillText(`AYNA GENİŞLİĞİ · ${mirrorWidth} cm`, width / 2, mirrorY + 35);
     context.fillStyle = "#ffcf78";
     context.fillText("ÜSTTEN GÖZ · TUT VE YATAYDA SÜRÜKLE", eyeX, eyeY + 53);
-  }, [analysis, eyeX, mirrorWidth, objects, showField]);
+  }, [analysis, benchImage, eyeX, mirrorWidth, objects, showField]);
 
   const logicalPoint = (event: ReactPointerEvent<HTMLCanvasElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -1233,9 +1347,9 @@ export default function PlaneMirrorLab() {
       </div>
 
       <div className="pm-equipment-strip" aria-label="Deney malzemeleri">
-        <span><i className="pm-equipment-raybox" /><b>Kırmızı lazer</b></span>
-        <span><i className="pm-equipment-mirror" /><b>Düzlem ayna</b></span>
-        <span><i className="pm-equipment-disc" /><b>Açı tablası</b></span>
+        <span><i className="pm-equipment-raybox" style={{ backgroundImage: `url(${REAL_LASER_IMAGE})` }} /><b>Kırmızı lazer</b></span>
+        <span><i className="pm-equipment-mirror" style={{ backgroundImage: `url(${PLANE_MIRROR_IMAGE})` }} /><b>Düzlem ayna</b></span>
+        <span><i className="pm-equipment-disc" style={{ backgroundImage: `url(${ROTARY_MIRROR_IMAGE})` }} /><b>Açı tablası</b></span>
         <span><i className="pm-equipment-pencil" /><b>Çizim kalemi</b></span>
         <span><i className="pm-equipment-ruler" /><b>Santimetre cetveli</b></span>
         <span><i className="pm-equipment-eye" /><b>Üstten göz modeli</b></span>

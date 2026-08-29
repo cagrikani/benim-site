@@ -30586,7 +30586,9 @@ footer > a {
 }
 
 .mirror-type-image::after {
-  background: linear-gradient(180deg, transparent 55%, rgba(8, 31, 42, .36));
+  background:
+    linear-gradient(180deg, transparent 68%, rgba(8, 31, 42, .18)),
+    radial-gradient(circle at 50% 45%, transparent 40%, rgba(18, 53, 61, .08));
 }
 
 .optics-topic-image img,
@@ -30595,6 +30597,18 @@ footer > a {
   height: 100%;
   object-fit: cover;
   transition: transform .35s ease;
+}
+
+.mirror-type-image {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, .98), rgba(232, 239, 235, .9) 58%, rgba(174, 128, 88, .24)),
+    linear-gradient(#e9efec 0 67%, #9a6946 67% 100%);
+}
+
+.mirror-type-image img {
+  padding: 10px 22px 5px;
+  object-fit: contain;
+  filter: drop-shadow(0 13px 12px rgba(14, 38, 44, .25));
 }
 
 .optics-topic-grid > button:hover img,
@@ -33710,6 +33724,107 @@ footer > a {
 
   .cm-stage-legend {
     gap: 8px;
+  }
+}
+
+/* Aynalar · foto-gerçekçi laboratuvar ekipmanı */
+.pm-equipment-strip > span,
+.cm-equipment-strip > span {
+  background: linear-gradient(145deg, #fff, #f4f8f6);
+}
+
+.pm-equipment-strip i {
+  width: 64px;
+  height: 48px;
+  border: 0;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  box-shadow: none;
+  filter: drop-shadow(0 6px 5px rgba(21, 48, 53, .22));
+}
+
+.pm-equipment-raybox::after {
+  display: none;
+}
+
+.pm-equipment-mirror {
+  width: 48px !important;
+  height: 54px !important;
+}
+
+.pm-equipment-disc {
+  width: 58px !important;
+  height: 54px !important;
+}
+
+.pm-reflection-stage {
+  background: linear-gradient(155deg, #dce6e2, #b6c8c3 72%);
+}
+
+.pm-reflection-stage::after {
+  height: 25px;
+  border-top-color: #9c6a45;
+  background: linear-gradient(#b47d51, #755036);
+}
+
+.pm-reflection-canvas,
+.pm-drawing-canvas,
+.pm-vision-canvas {
+  border-radius: 18px;
+}
+
+.cm-hero-badge::before {
+  display: none;
+}
+
+.cm-hero-badge img {
+  position: absolute;
+  inset: 7px 32px 36px;
+  width: calc(100% - 64px);
+  height: calc(100% - 43px);
+  object-fit: contain;
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, .32));
+}
+
+.cm-equipment-strip i {
+  width: 48px;
+  height: 48px;
+  border-radius: 0;
+  background-color: transparent;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  filter: drop-shadow(0 5px 4px rgba(22, 48, 52, .22));
+}
+
+.cm-tool-laser::after,
+.cm-tool-mirror::after,
+.cm-tool-table::before,
+.cm-tool-table::after,
+.cm-convex-lab .cm-tool-mirror::after {
+  display: none;
+}
+
+.cm-stage {
+  background: linear-gradient(180deg, #eef4f1, #d7e2de);
+}
+
+.cm-canvas {
+  border-color: rgba(36, 74, 77, .28);
+  background: #dfe8e4;
+  box-shadow: 0 21px 38px rgba(24, 53, 56, .19);
+}
+
+@media (max-width: 760px) {
+  .mirror-type-image img {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .pm-equipment-strip i {
+    width: 50px;
   }
 }
 
