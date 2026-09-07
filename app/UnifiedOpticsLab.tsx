@@ -38,9 +38,9 @@ const BENCH_ASSET = "./ohm-lab-bench-real-v2.webp";
 const RAIL_ASSET = "./optics-rail-real-v1.webp";
 const LASER_ASSET = "./optics-unified-laser-real-v2.webp";
 const HOLDER_ASSET = "./optics-universal-holder-real-v2.webp";
-const PLANE_MIRROR_ASSET = "./optics-plane-mirror-insert-real-v2.webp";
-const CONCAVE_MIRROR_ASSET = "./optics-concave-mirror-insert-real-v2.webp";
-const CONVEX_MIRROR_ASSET = "./optics-convex-mirror-insert-real-v2.webp";
+const PLANE_MIRROR_ASSET = "./optics-plane-mirror-drawing-v3.svg";
+const CONCAVE_MIRROR_ASSET = "./optics-concave-mirror-drawing-v3.svg";
+const CONVEX_MIRROR_ASSET = "./optics-convex-mirror-drawing-v3.svg";
 const CONVEX_LENS_ASSET = "./optics-convex-lens-cell-real-v1.webp";
 const CONCAVE_LENS_ASSET = "./optics-concave-lens-cell-real-v1.webp";
 const OBJECT_ASSET = "./optics-arrow-object-real-v1.webp";
@@ -60,12 +60,24 @@ const ELEMENTS: Array<{
   { kind: "diverging", label: "Kalın kenarlı mercek", family: "MERCEK", summary: "Işınları dağıtır", asset: CONCAVE_LENS_ASSET },
 ];
 
-const EQUIPMENT: Array<{ kind: EquipmentKind; name: string; detail: string; asset: string }> = [
+type EquipmentItem = { kind: EquipmentKind; name: string; detail: string; asset: string };
+
+const COMMON_START: EquipmentItem[] = [
   { kind: "rail", name: "Cetvelli optik ray", detail: "Tüm parçaları aynı eksende tutar", asset: RAIL_ASSET },
   { kind: "source", name: "Işık kaynağı", detail: "Lazer veya ışıklı ok taşıyıcısı", asset: LASER_ASSET },
+];
+
+const CARRIER_EQUIPMENT: EquipmentItem[] = [
+  ...COMMON_START,
   { kind: "holder", name: "Üniversal taşıyıcı", detail: "Ayna ve merceklerin ortak ayağı", asset: HOLDER_ASSET },
   { kind: "element", name: "Seçtiğin optik eleman", detail: "Taşıyıcının boş yuvasına takılır", asset: PLANE_MIRROR_ASSET },
   { kind: "screen", name: "Beyaz görüntü ekranı", detail: "Gerçek görüntüyü yakalar", asset: SCREEN_ASSET },
+];
+
+const PLANE_EQUIPMENT: EquipmentItem[] = [
+  ...COMMON_START,
+  { kind: "element", name: "Ayaklı düzlem ayna", detail: "Kendi dik ayağıyla doğrudan raya takılır", asset: PLANE_MIRROR_ASSET },
+  { kind: "screen", name: "Beyaz görüntü ekranı", detail: "Görüntünün gerçek mi sanal mı olduğunu sınar", asset: SCREEN_ASSET },
 ];
 
 const isMirror = (kind: ElementKind) => kind === "plane" || kind === "concave" || kind === "convex";
@@ -424,8 +436,12 @@ export default function UnifiedOpticsLab() {
   const dragRef = useRef<DragKind | null>(null);
 
   const selected = ELEMENTS.find(({ kind }) => kind === selectedElement) ?? ELEMENTS[0];
-  const nextEquipment = EQUIPMENT[placed.length]?.kind;
-  const ready = ["rail", "source", "holder", "element"].every((kind) => placed.includes(kind as EquipmentKind));
+  const equipment = selectedElement === "plane" ? PLANE_EQUIPMENT : CARRIER_EQUIPMENT;
+  const nextEquipment = equipment[placed.length]?.kind;
+  const requiredEquipment: EquipmentKind[] = selectedElement === "plane"
+    ? ["rail", "source", "element"]
+    : ["rail", "source", "holder", "element"];
+  const ready = requiredEquipment.every((kind) => placed.includes(kind));
   const screenPlaced = placed.includes("screen");
   const imageResult = calculateImage(selectedElement, sourceX, elementX, focalLength);
   const imageOnRail = Number.isFinite(imageResult.position) && imageResult.position >= 0 && imageResult.position <= 100;
@@ -437,7 +453,7 @@ export default function UnifiedOpticsLab() {
   const objectDistance = elementX - sourceX;
 
   const stageMessage = !ready
-    ? `Sıradaki parça: ${EQUIPMENT[placed.length]?.name ?? "Düzenek hazır"}`
+    ? `Sıradaki parça: ${equipment[placed.length]?.name ?? "Düzenek hazır"}`
     : !lightOn
       ? "Işık kaynağını aç; ışının çıkış ve yüzeye çarpma noktalarını izle."
       : mode === "ray"
@@ -499,17 +515,26 @@ export default function UnifiedOpticsLab() {
   };
 
   const chooseElement = (kind: ElementKind) => {
+    if (kind === selectedElement) return;
+    setPlaced((items) => {
+      const reusable = kind !== "plane" && selectedElement !== "plane"
+        ? ["rail", "source", "holder"]
+        : ["rail", "source"];
+      return items.filter((item) => reusable.includes(item));
+    });
     setSelectedElement(kind);
     setElementAngle(0);
     setLightOn(false);
     const nextImage = calculateImage(kind, sourceX, elementX, focalLength);
-    if (nextImage.real && Number.isFinite(nextImage.position)) setScreenX(clamp(Math.round(nextImage.position * 2) / 2, 5, 95));
+    if (mode === "ray") setScreenX(84);
+    if (mode === "image" && nextImage.real && Number.isFinite(nextImage.position)) setScreenX(clamp(Math.round(nextImage.position * 2) / 2, 5, 95));
   };
 
   const changeMode = (nextMode: ExperimentMode) => {
     setMode(nextMode);
     setLightOn(false);
     setElementAngle(0);
+    if (nextMode === "ray") setScreenX(84);
     if (nextMode === "image" && imageResult.real && Number.isFinite(imageResult.position)) {
       setScreenX(clamp(Math.round(imageResult.position * 2) / 2, 5, 95));
     }
@@ -546,13 +571,13 @@ export default function UnifiedOpticsLab() {
         <div>
           <span>OPTİK DENEY SETİ · AYNALAR VE MERCEKLER</span>
           <h1 id="uol-title">Tek masa, beş optik eleman.</h1>
-          <p>Boş raydan başla. Işık kaynağını ve taşıyıcıyı kur; istediğin aynayı veya merceği aynı sisteme tak. Işığın nereden çıktığını, yüzeye nerede çarptığını ve hangi yöne gittiğini doğrudan izle.</p>
+          <p>Boş raydan başla. Işık kaynağını ve uygun ayağı kur; seçtiğin aynayı veya merceği sisteme yerleştir. Işığın nereden çıktığını, yüzeye nerede çarptığını ve hangi yöne gittiğini doğrudan izle.</p>
         </div>
         <aside><small>TYMM · LİSE OPTİK</small><b>Kur · değiştir · gözle · kanıtla</b><span>İdeal ışınlar ve kesin ölçümler</span></aside>
       </header>
 
       <section className="uol-element-picker" aria-label="Optik eleman seçimi">
-        <div><span>1 · OPTİK ELEMANINI SEÇ</span><h2>Aynı taşıyıcıya istediğini tak.</h2></div>
+        <div><span>1 · OPTİK ELEMANINI SEÇ</span><div><h2>Aynayı ya da merceği seç.</h2><p>Düzlem ayna kendi dik ayağıyla raya takılır; diğer elemanlar üniversal taşıyıcının boşluğuna tam oturur.</p></div></div>
         <div className="uol-element-grid">
           {ELEMENTS.map((item) => (
             <button type="button" key={item.kind} className={selectedElement === item.kind ? "active" : ""} onClick={() => chooseElement(item.kind)}>
@@ -568,7 +593,7 @@ export default function UnifiedOpticsLab() {
         <aside className="uol-tray">
           <div className="uol-panel-heading"><span>2 · DÜZENEĞİ KUR</span><h2>Malzeme tepsisi</h2><p>Sıradaki parçayı sürükleyip masaya bırak veya dokunarak ekle. Kurulu parçaya yeniden basarsan onu çıkarırsın.</p></div>
           <div className="uol-equipment-list">
-            {EQUIPMENT.map((item, index) => {
+            {equipment.map((item, index) => {
               const isPlaced = placed.includes(item.kind);
               const isNext = item.kind === nextEquipment;
               const shownAsset = item.kind === "element" ? selected.asset : mode === "image" && item.kind === "source" ? OBJECT_ASSET : item.asset;
@@ -583,7 +608,7 @@ export default function UnifiedOpticsLab() {
                   onClick={() => placeEquipment(item.kind)}
                 >
                   <span className="uol-equipment-photo"><img src={shownAsset} alt="" draggable="false" /></span>
-                  <span><small>{String(index + 1).padStart(2, "0")}</small><b>{item.kind === "element" ? selected.label : item.name}</b><em>{isPlaced ? "Masada · çıkarmak için dokun" : item.detail}</em></span>
+                  <span><small>{String(index + 1).padStart(2, "0")}</small><b>{item.kind === "element" && selectedElement !== "plane" ? selected.label : item.name}</b><em>{isPlaced ? "Masada · çıkarmak için dokun" : item.detail}</em></span>
                   <strong>{isPlaced ? "Çıkar" : isNext ? "Ekle" : "Kilitli"}</strong>
                 </button>
               );
@@ -632,11 +657,25 @@ export default function UnifiedOpticsLab() {
               </button>
             )}
 
-            {placed.includes("holder") && (
-              <button type="button" className="uol-holder" style={{ "--element-left": `${toPercent(elementX)}%`, "--element-angle": `${elementAngle}deg`, "--element-scale": angleScale } as CSSProperties} onPointerDown={(event) => beginMove(event, "element")} aria-label={`Üniversal taşıyıcı ${elementX} santimetrede; rayda sürükle`}>
+            {selectedElement === "plane" && placed.includes("element") && (
+              <button type="button" className="uol-plane-stand" style={{ "--element-left": `${toPercent(elementX)}%`, "--element-angle": `${elementAngle}deg`, "--element-scale": angleScale } as CSSProperties} onPointerDown={(event) => beginMove(event, "element")} aria-label={`Ayaklı düzlem ayna ${elementX} santimetrede; rayda sürükle`}>
+                <span className="uol-plane-surface"><img src={PLANE_MIRROR_ASSET} alt="Düz gümüş ayna yüzeyi" draggable="false" /></span>
+                <i className="uol-plane-clamp" />
+                <i className="uol-plane-post" />
+                <i className="uol-plane-collar" />
+                <i className="uol-plane-base" />
+                {mode === "ray" && <span className="uol-hit-target" style={{ "--hit-offset": `${hitOffset}px` } as CSSProperties}><i />ÇARPMA NOKTASI</span>}
+                <span className="uol-curvature-tag plane"><i /><small>DÜZ YÜZEY</small></span>
+                <b>DÜZLEM AYNA · {elementX} cm</b>
+              </button>
+            )}
+
+            {selectedElement !== "plane" && placed.includes("holder") && (
+              <button type="button" className={`uol-holder ${selectedElement === "concave" || selectedElement === "convex" ? "mirror-mounted" : ""}`} style={{ "--element-left": `${toPercent(elementX)}%`, "--element-angle": `${elementAngle}deg`, "--element-scale": angleScale } as CSSProperties} onPointerDown={(event) => beginMove(event, "element")} aria-label={`Üniversal taşıyıcı ${elementX} santimetrede; rayda sürükle`}>
                 {placed.includes("element") && <img className={`uol-insert ${selectedElement}`} src={selected.asset} alt={selected.label} draggable="false" />}
                 <img className="uol-holder-photo" src={HOLDER_ASSET} alt="Üniversal optik eleman taşıyıcısı" draggable="false" />
                 {placed.includes("element") && mode === "ray" && <span className="uol-hit-target" style={{ "--hit-offset": `${hitOffset}px` } as CSSProperties}><i />ÇARPMA NOKTASI</span>}
+                {placed.includes("element") && (selectedElement === "concave" || selectedElement === "convex") && <span className={`uol-curvature-tag ${selectedElement}`}><i /><small>{selectedElement === "concave" ? "İÇE KAVİSLİ" : "DIŞA TÜMSEK"}</small></span>}
                 <b>{placed.includes("element") ? selected.label.toLocaleUpperCase("tr-TR") : "BOŞ TAŞIYICI"} · {elementX} cm</b>
               </button>
             )}
@@ -653,7 +692,7 @@ export default function UnifiedOpticsLab() {
               </button>
             )}
 
-            {!ready && <div className="uol-drop-guide"><img src={EQUIPMENT[placed.length]?.asset ?? RAIL_ASSET} alt="" /><span><small>SIRADAKİ PARÇA</small><b>{EQUIPMENT[placed.length]?.name ?? "Düzenek hazır"}</b><em>Buraya sürükle veya tepsiden dokun</em></span></div>}
+            {!ready && <div className="uol-drop-guide"><img src={equipment[placed.length]?.asset ?? RAIL_ASSET} alt="" /><span><small>SIRADAKİ PARÇA</small><b>{equipment[placed.length]?.name ?? "Düzenek hazır"}</b><em>Buraya sürükle veya tepsiden dokun</em></span></div>}
 
             <div className="uol-stage-status"><b>{lightOn ? mode === "ray" ? "IŞIN YOLU" : "GÖRÜNTÜ" : ready ? "DÜZENEK HAZIR" : "KURULUM"}</b><span>{stageMessage}</span></div>
           </div>

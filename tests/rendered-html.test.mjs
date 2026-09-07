@@ -426,6 +426,13 @@ test("Dalgalar-Optik alanı aynaları ve mercekleri tek kurulabilir düzende bir
   assert.match(page, /Cetvelli optik ray/);
   assert.match(page, /Işık kaynağı/);
   assert.match(page, /Üniversal taşıyıcı/);
+  assert.match(page, /Ayaklı düzlem ayna/);
+  assert.match(page, /PLANE_EQUIPMENT/);
+  assert.match(page, /selectedElement === "plane" \? PLANE_EQUIPMENT : CARRIER_EQUIPMENT/);
+  assert.match(page, /Düzlem ayna kendi dik ayağıyla raya takılır/);
+  assert.match(page, /DÜZ YÜZEY/);
+  assert.match(page, /İÇE KAVİSLİ/);
+  assert.match(page, /DIŞA TÜMSEK/);
   assert.match(page, /Beyaz görüntü ekranı/);
   assert.match(page, /onDragStart/);
   assert.match(page, /onStageDrop/);
@@ -448,20 +455,23 @@ test("Dalgalar-Optik alanı aynaları ve mercekleri tek kurulabilir düzende bir
   assert.doesNotMatch(page, /Math\.random|NOISE|hata|belirsiz/i);
 });
 
-test("birleşik optik laboratuvarı gerçekçi cihazları ve sade responsive sahneyi içerir", async () => {
+test("birleşik optik laboratuvarı doğru oturan teknik ayna çizimleri ve responsive sahne içerir", async () => {
   const page = await readFile(new URL("app/UnifiedOpticsLab.tsx", projectRoot), "utf8");
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
   for (const asset of [
     "optics-unified-laser-real-v2.webp",
     "optics-universal-holder-real-v2.webp",
-    "optics-plane-mirror-insert-real-v2.webp",
-    "optics-concave-mirror-insert-real-v2.webp",
-    "optics-convex-mirror-insert-real-v2.webp",
+    "optics-plane-mirror-drawing-v3.svg",
+    "optics-concave-mirror-drawing-v3.svg",
+    "optics-convex-mirror-drawing-v3.svg",
     "optics-convex-lens-cell-real-v1.webp",
     "optics-concave-lens-cell-real-v1.webp",
     "optics-screen-real-v2.webp",
     "optics-rail-real-v1.webp",
-  ]) assert.match(page, new RegExp(asset.replace(".", "\\.")));
+  ]) {
+    assert.match(page, new RegExp(asset.replace(".", "\\.")));
+    await access(new URL(`public/${asset}`, projectRoot));
+  }
   assert.match(css, /\.uol-lab\s*\{/);
   assert.match(css, /\.uol-element-grid\s*\{/);
   assert.match(css, /\.uol-workspace\s*\{/);
@@ -471,6 +481,11 @@ test("birleşik optik laboratuvarı gerçekçi cihazları ve sade responsive sah
   assert.match(css, /\.uol-source\s*\{/);
   assert.match(css, /\.uol-holder\s*\{/);
   assert.match(css, /\.uol-insert\s*\{/);
+  assert.match(css, /\.uol-insert\.concave,/);
+  assert.match(css, /\.uol-plane-stand\s*\{/);
+  assert.match(css, /\.uol-plane-surface\s*\{/);
+  assert.match(css, /\.uol-plane-base\s*\{/);
+  assert.match(css, /\.uol-curvature-tag\s*\{/);
   assert.match(css, /\.uol-hit-target\s*\{/);
   assert.match(css, /\.uol-screen\s*\{/);
   assert.match(css, /\.uol-mode-switch\s*\{/);

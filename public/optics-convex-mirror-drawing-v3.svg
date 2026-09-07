@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-labelledby="title desc">
+  <title id="title">Tümsek ayna yüzeyi çizimi</title>
+  <desc id="desc">Ortası önde, kenarları geride görünen dışbükey gümüş ayna yüzeyi.</desc>
+  <defs>
+    <radialGradient id="dome" cx="42%" cy="36%" r="70%">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset="0.2" stop-color="#eef5f6"/>
+      <stop offset="0.48" stop-color="#bac9cc"/>
+      <stop offset="0.76" stop-color="#73888e"/>
+      <stop offset="1" stop-color="#304950"/>
+    </radialGradient>
+    <radialGradient id="bulge" cx="45%" cy="42%" r="55%">
+      <stop offset="0" stop-color="#fff" stop-opacity=".55"/>
+      <stop offset="0.45" stop-color="#fff" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#132b33" stop-opacity=".22"/>
+    </radialGradient>
+    <clipPath id="disc"><circle cx="110" cy="110" r="94"/></clipPath>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#10252c" flood-opacity=".32"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <circle cx="110" cy="110" r="99" fill="#17262c" stroke="#75888d" stroke-width="5"/>
+    <circle cx="110" cy="110" r="92" fill="url(#dome)" stroke="#dbe6e7" stroke-width="3"/>
+    <circle cx="110" cy="110" r="88" fill="url(#bulge)"/>
+    <g clip-path="url(#disc)" fill="none">
+      <ellipse cx="79" cy="69" rx="44" ry="18" stroke="#fff" stroke-width="12" opacity=".5" transform="rotate(-31 79 69)"/>
+      <path d="M30 158c36 43 111 50 157 8" stroke="#203a42" stroke-width="13" opacity=".26"/>
+      <path d="M54 39c39-27 103-17 130 24" stroke="#fff" stroke-width="5" opacity=".28"/>
+    </g>
+    <circle cx="92" cy="87" r="15" fill="#fff" opacity=".3"/>
+    <circle cx="110" cy="110" r="92" fill="none" stroke="#fff" stroke-width="3" opacity=".35"/>
+  </g>
+</svg>
