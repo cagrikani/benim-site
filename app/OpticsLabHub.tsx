@@ -3,42 +3,28 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState } from "react";
-import ConcaveMirrorLab from "./ConcaveMirrorLab";
-import ConvexMirrorLab from "./ConvexMirrorLab";
-import LensLab from "./LensLab";
-import PlaneMirrorLab from "./PlaneMirrorLab";
 import PrismLab from "./PrismLab";
+import UnifiedOpticsLab from "./UnifiedOpticsLab";
 
-type OpticsTopic = "prism" | "mirrors" | "lenses" | null;
-type MirrorType = "plane" | "concave" | "convex" | null;
+type OpticsTopic = "prism" | "optical-bench" | null;
 
 export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
   const [activeTopic, setActiveTopic] = useState<OpticsTopic>(null);
-  const [activeMirror, setActiveMirror] = useState<MirrorType>(null);
-  const experimentIsOpen =
-    activeTopic === "prism" ||
-    activeTopic === "lenses" ||
-    (activeTopic === "mirrors" && activeMirror !== null);
+  const experimentIsOpen = activeTopic !== null;
 
   const openTopic = (topic: Exclude<OpticsTopic, null>) => {
     setActiveTopic(topic);
-    if (topic !== "mirrors") setActiveMirror(null);
   };
 
   useEffect(() => {
     if (activeTopic !== null) {
       window.scrollTo({ top: 0, behavior: "auto" });
     }
-  }, [activeMirror, activeTopic]);
+  }, [activeTopic]);
 
   const goBack = () => {
-    if (activeTopic === "mirrors" && activeMirror !== null) {
-      setActiveMirror(null);
-      return;
-    }
     if (activeTopic !== null) {
       setActiveTopic(null);
-      setActiveMirror(null);
       return;
     }
     onBack();
@@ -51,7 +37,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
           className={`mechanics-back-button ${activeTopic ? "experiment-selection-back" : ""}`}
           type="button"
           onClick={goBack}
-          aria-label={experimentIsOpen ? "Deney seçimine dön" : activeTopic === "mirrors" ? "Optik alanlarına dön" : "Fizik deney setlerine dön"}
+          aria-label={experimentIsOpen ? "Deney seçimine dön" : "Fizik deney setlerine dön"}
         >
           <span aria-hidden="true">←</span>
           {activeTopic && <b>{experimentIsOpen ? "Deneylere dön" : "Alanlara dön"}</b>}
@@ -65,8 +51,7 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
         </a>
         {!activeTopic && <nav aria-label="Dalgalar ve Optik deneyleri">
           <button className={activeTopic === "prism" ? "active" : ""} type="button" onClick={() => openTopic("prism")}>Kırılma ve prizma</button>
-          <button className={activeTopic === "mirrors" ? "active" : ""} type="button" onClick={() => openTopic("mirrors")}>Aynalar</button>
-          <button className={activeTopic === "lenses" ? "active" : ""} type="button" onClick={() => openTopic("lenses")}>Mercekler</button>
+          <button className={activeTopic === "optical-bench" ? "active" : ""} type="button" onClick={() => openTopic("optical-bench")}>Aynalar ve mercekler</button>
         </nav>}
         <span className="curriculum-chip">TYMM · Lise</span>
       </header>
@@ -85,52 +70,17 @@ export default function OpticsLabHub({ onBack }: { onBack: () => void }) {
               <span><small>OPTİK ALANI 01</small><b>Kırılma ve prizma</b><em>Işın rengini, açıyı ve prizmayı değiştir.</em></span>
               <strong>{activeTopic === "prism" ? "Açık" : "Alanı aç"} →</strong>
             </button>
-            <button className={activeTopic === "mirrors" ? "active" : ""} type="button" onClick={() => openTopic("mirrors")}>
-              <span className="optics-topic-image"><img src="./optics-mirrors.webp" alt="" draggable="false" /></span>
-              <span><small>OPTİK ALANI 02</small><b>Aynalar</b><em>Düzlem, çukur ve tümsek aynaları deneyle.</em></span>
-              <strong>{activeTopic === "mirrors" ? "Açık" : "Alanı aç"} →</strong>
-            </button>
-            <button className={activeTopic === "lenses" ? "active" : ""} type="button" onClick={() => openTopic("lenses")}>
-              <span className="optics-topic-image"><img src="./optics-lenses.webp" alt="" draggable="false" /></span>
-              <span><small>OPTİK ALANI 03</small><b>Mercekler</b><em>İnce ve kalın kenarlı merceklerle görüntü oluştur.</em></span>
-              <strong>{activeTopic === "lenses" ? "Açık" : "Alanı aç"} →</strong>
+            <button className={activeTopic === "optical-bench" ? "active" : ""} type="button" onClick={() => openTopic("optical-bench")}>
+              <span className="optics-topic-image"><img src="./optics-universal-holder-real-v2.webp" alt="" draggable="false" /></span>
+              <span><small>OPTİK ALANI 02</small><b>Aynalar ve mercekler</b><em>Beş optik elemanı aynı gerçekçi düzeneğe kendin yerleştir.</em></span>
+              <strong>{activeTopic === "optical-bench" ? "Açık" : "Alanı aç"} →</strong>
             </button>
           </div>
         </section>}
 
-        {activeTopic === "mirrors" && activeMirror === null && (
-          <section className="mirror-type-launcher">
-            <div className="mirror-type-heading">
-              <span>AYNALAR</span>
-              <h2>Deney yapmak istediğin aynayı seç.</h2>
-              <p>Düzlem, çukur ve tümsek ayna deneyleri kullanıma hazırdır.</p>
-            </div>
-            <div className="mirror-type-grid">
-              <button className={activeMirror === "plane" ? "active" : ""} type="button" onClick={() => setActiveMirror("plane")}>
-                <span className="mirror-type-image"><img src="./optics-plane-rotary-mirror-real-v1.webp" alt="" draggable="false" /></span>
-                <span><small>DENEY 01 · HAZIR</small><b>Düzlem ayna</b><em>Yansıma kanunları ve görüntü özellikleri</em></span>
-                <strong>{activeMirror === "plane" ? "Açık" : "Deneyi aç"} →</strong>
-              </button>
-              <button className={activeMirror === "concave" ? "active" : ""} type="button" onClick={() => setActiveMirror("concave")}>
-                <span className="mirror-type-image"><img src="./optics-concave-mirror-real-v1.webp" alt="" draggable="false" /></span>
-                <span><small>DENEY 02 · HAZIR</small><b>Çukur ayna</b><em>Odak, ışınlar ve görüntü oluşumu</em></span>
-                <strong>{activeMirror === "concave" ? "Açık" : "Deneyi aç"} →</strong>
-              </button>
-              <button className={activeMirror === "convex" ? "active" : ""} type="button" onClick={() => setActiveMirror("convex")}>
-                <span className="mirror-type-image"><img src="./optics-convex-mirror-real-v1.webp" alt="" draggable="false" /></span>
-                <span><small>DENEY 03 · HAZIR</small><b>Tümsek ayna</b><em>Dağılan ışınlar ve sanal görüntü</em></span>
-                <strong>{activeMirror === "convex" ? "Açık" : "Deneyi aç"} →</strong>
-              </button>
-            </div>
-          </section>
-        )}
-
         <div id="optik-deney" className={experimentIsOpen ? "focused-experiment-view" : ""}>
           {activeTopic === "prism" && <PrismLab />}
-          {activeTopic === "lenses" && <LensLab />}
-          {activeTopic === "mirrors" && activeMirror === "plane" && <PlaneMirrorLab />}
-          {activeTopic === "mirrors" && activeMirror === "concave" && <ConcaveMirrorLab />}
-          {activeTopic === "mirrors" && activeMirror === "convex" && <ConvexMirrorLab />}
+          {activeTopic === "optical-bench" && <UnifiedOpticsLab />}
         </div>
       </div>
 

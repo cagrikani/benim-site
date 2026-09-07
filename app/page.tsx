@@ -37,24 +37,24 @@ const EXPERIMENT_MODULES: ModuleCard[] = [
   {
     key: "electricity",
     title: "Elektrik",
-    description: "Ohm yasasını ve dirençlerin seri-paralel bağlanmasını gerçek düzeneklerle incele.",
-    detail: "2 deney açık",
+    description: "Ohm yasasını, direnç bağlantılarını ve manyetik alanı gerçek düzeneklerle incele.",
+    detail: "3 deney açık",
     visual: "./portal-electricity.webp",
     available: true,
   },
   {
     key: "waves-optics",
     title: "Dalgalar · Optik",
-    description: "Prizmaları, mercekleri; düzlem, çukur ve tümsek aynalarda görüntü oluşumunu deneyle.",
-    detail: "5 deney açık",
+    description: "Prizmaları incele; aynaları ve mercekleri tek bir gerçekçi optik düzende birleştir.",
+    detail: "2 deney açık",
     visual: "./portal-optics.webp",
     available: true,
   },
   {
     key: "modern-physics",
     title: "Modern Fizik",
-    description: "Işık ve elektronların enerji alışverişini gerçek düzenekle keşfet.",
-    detail: "1 deney açık",
+    description: "Fotoelektrik etkiyi ve parçacık hızlandırıcıyı etkileşimli düzeneklerle keşfet.",
+    detail: "2 deney açık",
     visual: "./portal-modern.webp",
     available: true,
   },
@@ -229,7 +229,7 @@ function HomeView({
           </div>
           <div className="portal-hero-notes">
             <span>
-              <b>15</b>
+              <b>13</b>
               çalışan deney
             </span>
             <span>

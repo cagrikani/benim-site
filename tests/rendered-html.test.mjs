@@ -140,9 +140,8 @@ test("ana portal iki çalışma yolu ve bütün gelecek alanları sunar", async 
   assert.match(page, /module\.key === "electricity"/);
   assert.match(page, /onNavigate\("electricity"\)/);
   assert.match(page, /2 deney açık/);
-  assert.match(page, /5 deney açık/);
-  assert.match(page, /<b>15<\/b>\s*çalışan deney/);
-  assert.match(page, /1 deney açık/);
+  assert.match(page, /3 deney açık/);
+  assert.match(page, /<b>13<\/b>\s*çalışan deney/);
   assert.match(page, /fizik-atolyesi-hero\.png/);
   assert.match(page, /portal-guided-lab\.webp/);
   assert.match(page, /portal-free-simulation\.webp/);
@@ -410,86 +409,74 @@ test("manyetik alan düzeneği gerçekçi ray, bobin, yoklama kangalı ve grafik
   assert.match(css, /\.mfl-report\s*\{/);
 });
 
-test("Dalgalar-Optik alanı ince ve kalın kenarlı mercek deneyini sunar", async () => {
-  const hub = await readFile(
-    new URL("app/OpticsLabHub.tsx", projectRoot),
-    "utf8",
-  );
-  const page = await readFile(new URL("app/LensLab.tsx", projectRoot), "utf8");
-  assert.match(hub, /LensLab/);
-  assert.match(hub, /Mercekler/);
-  assert.match(hub, /optics-lenses\.webp/);
-  assert.match(hub, /activeTopic === "lenses" && <LensLab/);
-  assert.match(page, /application\/x-lens-lab-equipment/);
+test("Dalgalar-Optik alanı aynaları ve mercekleri tek kurulabilir düzende birleştirir", async () => {
+  const hub = await readFile(new URL("app/OpticsLabHub.tsx", projectRoot), "utf8");
+  const page = await readFile(new URL("app/UnifiedOpticsLab.tsx", projectRoot), "utf8");
+  assert.match(hub, /UnifiedOpticsLab/);
+  assert.match(hub, /Aynalar ve mercekler/);
+  assert.match(hub, /activeTopic === "optical-bench" && <UnifiedOpticsLab/);
+  assert.match(hub, /optics-universal-holder-real-v2\.webp/);
+  assert.doesNotMatch(hub, /PlaneMirrorLab|ConcaveMirrorLab|ConvexMirrorLab|LensLab|activeMirror/);
+  assert.match(page, /application\/x-unified-optics-equipment/);
+  assert.match(page, /Düzlem ayna/);
+  assert.match(page, /Çukur ayna/);
+  assert.match(page, /Tümsek ayna/);
+  assert.match(page, /İnce kenarlı mercek/);
+  assert.match(page, /Kalın kenarlı mercek/);
   assert.match(page, /Cetvelli optik ray/);
-  assert.match(page, /Işıklı cisim kutusu/);
-  assert.match(page, /İnce ve kalın kenarlı mercek/);
+  assert.match(page, /Işık kaynağı/);
+  assert.match(page, /Üniversal taşıyıcı/);
   assert.match(page, /Beyaz görüntü ekranı/);
-  assert.match(page, /onEquipmentDragStart/);
+  assert.match(page, /onDragStart/);
   assert.match(page, /onStageDrop/);
   assert.match(page, /moveFromPointer/);
-  assert.match(page, /RayDiagram/);
-  assert.match(page, /parallel: true/);
-  assert.match(page, /center: true/);
-  assert.match(page, /focus: true/);
+  assert.match(page, /Kurulu parçaya yeniden basarsan onu çıkarırsın/);
+  assert.match(page, /Tek ışının yolu/);
+  assert.match(page, /Görüntü oluşumu/);
+  assert.match(page, /GELEN IŞIN/);
+  assert.match(page, /YANSIYAN IŞIN/);
+  assert.match(page, /KIRILAN IŞIN/);
+  assert.match(page, /ÇARPMA NOKTASI/);
+  assert.match(page, /i = \$\{angle\}°/);
+  assert.match(page, /r = \$\{angle\}°/);
+  assert.match(page, /incoming\.x - 2 \* dot \* normal\.x/);
   assert.match(page, /1 \/ signedFocal - 1 \/ objectDistance/);
-  assert.match(page, /Cisim 2F'nin dışında/);
-  assert.match(page, /Cisim F ile 2F arasında/);
-  assert.match(page, /Cisim mercek ile F arasında/);
-  assert.match(page, /Sanal · düz · cisimden küçük/);
-  assert.match(page, /Sanal görüntü ekrana düşmez/);
-  assert.match(page, /Net gerçek görüntü ekranda oluştu/);
-  assert.match(page, /screenDistance/);
-  assert.match(page, /focusQuality/);
-  assert.match(page, /screenMoveDirection/);
-  assert.match(page, /optics-lens-holder-real-v1\.webp/);
-  assert.match(page, /optics-convex-lens-cell-real-v1\.webp/);
-  assert.match(page, /optics-concave-lens-cell-real-v1\.webp/);
-  assert.match(page, /optics-arrow-object-real-v1\.webp/);
-  assert.match(page, /optics-screen-real-v2\.webp/);
-  assert.match(page, /lensAngle/);
-  assert.match(page, /Mercek yönü/);
-  assert.match(page, /Önce 0° hizala/);
-  assert.match(page, /EKRAN ANALİZİ/);
-  assert.match(page, /Tür · yön · boyut/);
-  assert.match(page, /oll-screen-image.*defocused/);
-  assert.match(page, /Ekran netliği/);
-  assert.match(page, /Ölçümü kaydet/);
+  assert.match(page, /Gerçek görüntü beyaz ekranda net olarak yakalandı/);
+  assert.match(page, /Bu görüntü sanaldır; beyaz ekrana düşürülemez/);
   assert.match(page, /TYMM KISA DENEY RAPORU/);
   assert.match(page, /İDEAL SİSTEM/);
   assert.doesNotMatch(page, /Math\.random|NOISE|hata|belirsiz/i);
 });
 
-test("mercek laboratuvarı gerçek optik ray, mercek, ekran ve özel ışın görselleri içerir", async () => {
+test("birleşik optik laboratuvarı gerçekçi cihazları ve sade responsive sahneyi içerir", async () => {
+  const page = await readFile(new URL("app/UnifiedOpticsLab.tsx", projectRoot), "utf8");
   const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
-  assert.match(css, /\.optics-lens-lab\s*\{/);
-  assert.match(css, /\.oll-workspace\s*\{/);
-  assert.match(css, /\.oll-equipment-panel,/);
-  assert.match(css, /\.oll-stage\s*\{/);
-  assert.match(css, /\.oll-ray-canvas\s*\{/);
-  assert.match(css, /\.oll-lab-fixtures\s*\{/);
-  assert.match(css, /\.oll-rail\s*\{/);
-  assert.match(css, /\.oll-ray-box\s*\{/);
-  assert.match(css, /\.oll-object\s*\{/);
-  assert.match(css, /\.oll-lens-assembly\s*\{/);
-  assert.match(css, /\.oll-lens-assembly\.converging/);
-  assert.match(css, /\.oll-lens-assembly\.diverging/);
-  assert.match(css, /\.oll-lens-lock\s*\{/);
-  assert.match(css, /\.oll-lens-holder-photo\s*\{/);
-  assert.match(css, /\.oll-lens-cell-photo\s*\{/);
-  assert.match(css, /\.oll-lens-contact\s*\{/);
-  assert.match(css, /\.oll-lens-alignment\s*\{/);
-  assert.match(css, /\.oll-screen\s*\{/);
-  assert.match(css, /\.oll-screen-photo\s*\{/);
-  assert.match(css, /\.oll-screen-info\s*\{/);
-  assert.match(css, /\.oll-focus-meter\s*\{/);
-  assert.match(css, /\.oll-screen-image\.defocused\s*\{/);
-  assert.match(css, /\.oll-screen-move\s*\{/);
-  assert.match(css, /\.oll-focus-marker\s*\{/);
-  assert.match(css, /\.oll-eye\s*\{/);
-  assert.match(css, /\.oll-control-grid\s*\{/);
-  assert.match(css, /\.oll-property-grid\s*\{/);
-  assert.match(css, /\.oll-report\s*\{/);
+  for (const asset of [
+    "optics-unified-laser-real-v2.webp",
+    "optics-universal-holder-real-v2.webp",
+    "optics-plane-mirror-insert-real-v2.webp",
+    "optics-concave-mirror-insert-real-v2.webp",
+    "optics-convex-mirror-insert-real-v2.webp",
+    "optics-convex-lens-cell-real-v1.webp",
+    "optics-concave-lens-cell-real-v1.webp",
+    "optics-screen-real-v2.webp",
+    "optics-rail-real-v1.webp",
+  ]) assert.match(page, new RegExp(asset.replace(".", "\\.")));
+  assert.match(css, /\.uol-lab\s*\{/);
+  assert.match(css, /\.uol-element-grid\s*\{/);
+  assert.match(css, /\.uol-workspace\s*\{/);
+  assert.match(css, /\.uol-equipment-list\s*\{/);
+  assert.match(css, /\.uol-stage\s*\{/);
+  assert.match(css, /\.uol-ray-canvas\s*\{/);
+  assert.match(css, /\.uol-source\s*\{/);
+  assert.match(css, /\.uol-holder\s*\{/);
+  assert.match(css, /\.uol-insert\s*\{/);
+  assert.match(css, /\.uol-hit-target\s*\{/);
+  assert.match(css, /\.uol-screen\s*\{/);
+  assert.match(css, /\.uol-mode-switch\s*\{/);
+  assert.match(css, /\.uol-control-grid\s*\{/);
+  assert.match(css, /\.uol-report-grid\s*\{/);
+  assert.match(css, /@media \(max-width: 620px\)/);
 });
 
 test("Dalgalar-Optik alanı kırılma ve prizma deneyini TYMM çıktılarıyla sunar", async () => {
@@ -597,200 +584,15 @@ test("optik düzeneği gerçekçi ray, lazer, açı tablası, ekran ve cam elema
   assert.match(css, /\.optics-report\s*\{/);
 });
 
-test("Dalgalar-Optik alanı ayna seçimini ve ideal düzlem ayna deneyini sunar", async () => {
-  const hub = await readFile(
-    new URL("app/OpticsLabHub.tsx", projectRoot),
-    "utf8",
+test("eski ayrı ayna ve mercek sayfaları optik menüsünden kaldırılmıştır", async () => {
+  const hub = await readFile(new URL("app/OpticsLabHub.tsx", projectRoot), "utf8");
+  assert.match(hub, /Aynalar ve mercekler/);
+  assert.match(hub, /UnifiedOpticsLab/);
+  assert.match(hub, /activeTopic === "optical-bench"/);
+  assert.doesNotMatch(
+    hub,
+    /PlaneMirrorLab|ConcaveMirrorLab|ConvexMirrorLab|LensLab|activeMirror|mirror-type-launcher/,
   );
-  const page = await readFile(
-    new URL("app/PlaneMirrorLab.tsx", projectRoot),
-    "utf8",
-  );
-  assert.match(hub, /Aynalar/);
-  assert.match(hub, /Düzlem ayna/);
-  assert.match(hub, /Çukur ayna/);
-  assert.match(hub, /Tümsek ayna/);
-  assert.match(hub, /PlaneMirrorLab/);
-  assert.match(hub, /optics-mirrors\.webp/);
-  assert.match(hub, /optics-plane-rotary-mirror-real-v1\.webp/);
-  assert.match(hub, /optics-concave-mirror-real-v1\.webp/);
-  assert.match(hub, /optics-convex-mirror-real-v1\.webp/);
-  assert.match(page, /ReflectionCanvas/);
-  assert.match(page, /DrawingMirrorCanvas/);
-  assert.match(page, /FieldOfViewCanvas/);
-  assert.match(page, /onPointerDown/);
-  assert.match(page, /setPointerCapture/);
-  assert.match(page, /Lazerle yansıma kanunları/);
-  assert.match(page, /Çiz ve görüntüyü gör/);
-  assert.match(page, /Gelme açısı · i/);
-  assert.match(page, /Yansıma açısı · r/);
-  assert.match(page, /i = r/);
-  assert.match(page, /reflectionMirrorAngle/);
-  assert.match(page, /Ayna dönüş açısı/);
-  assert.match(page, /incomingVector\.x - 2 \* incomingDotNormal/);
-  assert.match(page, /CİSMİ BU ALANA ÇİZ/);
-  assert.match(page, /AYNADAKİ SANAL GÖRÜNTÜ/);
-  assert.match(page, /DRAWING_PIXELS_PER_CM/);
-  assert.match(page, /reflectPointAcrossMirror/);
-  assert.match(page, /imageMirrorAngle/);
-  assert.match(page, /Aynayı dik konuma getir/);
-  assert.match(page, /Cetvel ölçümünü kaydet/);
-  assert.match(page, /ÜSTTEN GÖZ VE GÖRÜŞ ALANI/);
-  assert.match(page, /Görüş alanını çiz/);
-  assert.match(page, /Ayna genişliği/);
-  assert.match(page, /analyzeVisionObjects/);
-  assert.match(page, /Saydam cisim ekle/);
-  assert.match(page, /Saydam olmayan cisim ekle/);
-  assert.match(page, /Aynada görülüyor/);
-  assert.match(page, /Saydam olmayan cisim engelliyor/);
-  assert.match(page, /Görüş alanının dışında/);
-  assert.match(page, /Eşit uzaklık/);
-  assert.match(page, /Aynı boy/);
-  assert.match(page, /Aynaya göre simetri/);
-  assert.match(page, /Sanal görüntü/);
-  assert.match(page, /Yanal terslik/);
-  assert.doesNotMatch(page, /Beyaz ekran|Hareketli beyaz ekran|Ekranın aynaya/);
-  assert.match(page, /TYMM · DENEY RAPORU/);
-  assert.match(page, /optics-plane-mirror-real-v1\.webp/);
-  assert.match(page, /optics-plane-rotary-mirror-real-v1\.webp/);
-  assert.match(page, /optics-empty-rotary-stage-real-v1\.webp/);
-  assert.match(page, /optics-laser-real-v1\.webp/);
-  assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
-});
-
-test("düzlem ayna laboratuvarı gerçekçi seçim kartları, düzenek ve responsive görünüm içerir", async () => {
-  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
-  assert.match(css, /\.optics-topic-grid\s*\{/);
-  assert.match(css, /\.mirror-type-grid\s*\{/);
-  assert.match(css, /\.optics-topic-image img,/);
-  assert.match(css, /\.mirror-type-image img\s*\{/);
-  assert.match(css, /\.pm-reflection-stage\s*\{/);
-  assert.match(css, /\.pm-reflection-canvas\s*\{/);
-  assert.match(css, /\.pm-control-console\s*\{/);
-  assert.match(css, /\.pm-angle-display\s*\{/);
-  assert.match(css, /\.pm-drawing-workspace,/);
-  assert.match(css, /\.pm-drawing-canvas,/);
-  assert.match(css, /\.pm-drawing-controls,/);
-  assert.match(css, /\.pm-color-tools\s*\{/);
-  assert.match(css, /\.pm-width-tools\s*\{/);
-  assert.match(css, /\.pm-drawing-readout\s*\{/);
-  assert.match(css, /\.pm-mirror-rotation-control\s*\{/);
-  assert.match(css, /\.pm-vision-canvas\s*\{/);
-  assert.match(css, /\.pm-vision-controls\s*\{/);
-  assert.match(css, /\.pm-vision-object-tools\s*\{/);
-  assert.match(css, /\.pm-vision-object-list\s*\{/);
-  assert.match(css, /\.pm-field-result\s*\{/);
-  assert.match(css, /\.pm-evidence-section\s*\{/);
-  assert.match(css, /@media \(max-width: 620px\)/);
-});
-
-test("çukur ayna laboratuvarı döndürülebilir küresel ayna, lazer ve serbest çizim sunar", async () => {
-  const hub = await readFile(
-    new URL("app/OpticsLabHub.tsx", projectRoot),
-    "utf8",
-  );
-  const page = await readFile(
-    new URL("app/ConcaveMirrorLab.tsx", projectRoot),
-    "utf8",
-  );
-  assert.match(hub, /ConcaveMirrorLab/);
-  assert.match(hub, /DENEY 02 · HAZIR/);
-  assert.match(hub, /activeMirror === "concave" && <ConcaveMirrorLab/);
-  assert.match(page, /ConcaveReflectionCanvas/);
-  assert.match(page, /ConcaveImageCanvas/);
-  assert.match(page, /RADIUS_OF_CURVATURE/);
-  assert.match(page, /reflectVector/);
-  assert.match(page, /incomingVector\.x - 2 \* incomingDotNormal/);
-  assert.match(page, /reflectionMirrorAngle/);
-  assert.match(page, /imageMirrorAngle/);
-  assert.match(page, /hitOffset/);
-  assert.match(page, /laserPosition/);
-  assert.match(page, /onLaserPositionChange/);
-  assert.match(page, /onHitOffsetChange/);
-  assert.match(page, /Lazeri istediğin başlangıç noktasına sürükle/);
-  assert.match(page, /Lazer yatay konumu/);
-  assert.match(page, /Lazer dikey konumu/);
-  assert.match(page, /nearMount \? "mirror" : "laser"/);
-  assert.match(page, /Ayna dönüş açısı/);
-  assert.match(page, /Aynanın ray üzerindeki yeri/);
-  assert.match(page, /AYNA AYAĞINI RAYDA SÜRÜKLE/);
-  assert.match(page, /Yüzey normali/);
-  assert.match(page, /i = r/);
-  assert.match(page, /Odak uzaklığı · f/);
-  assert.match(page, /objectDistance/);
-  assert.match(page, /focalLength/);
-  assert.match(page, /imageDistance/);
-  assert.match(page, /magnification/);
-  assert.match(page, /CİSMİ BU ALANA ÇİZ/);
-  assert.match(page, /Görüntü sonsuzda/);
-  assert.match(page, /Gerçek · ters · küçük/);
-  assert.match(page, /Gerçek · ters · büyük/);
-  assert.match(page, /Sanal görüntü · düz · büyük/);
-  assert.match(page, /F–C HARİTASI/);
-  assert.match(page, /onPointerDown/);
-  assert.match(page, /setPointerCapture/);
-  assert.match(page, /Cetvel ölçümünü kaydet/);
-  assert.match(page, /TYMM · DENEY RAPORU/);
-  assert.match(page, /optics-concave-mirror-real-v1\.webp/);
-  assert.match(page, /optics-convex-mirror-real-v1\.webp/);
-  assert.match(page, /optics-rail-real-v1\.webp/);
-  assert.doesNotMatch(page, /Math\.random|hata|belirsiz/i);
-  assert.doesNotMatch(page, /Görüş alanı|saydam olmayan|saydam cisim/i);
-});
-
-test("çukur ayna laboratuvarı gerçekçi düzenek, kontrol paneli ve responsive görünüm içerir", async () => {
-  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
-  assert.match(css, /\.cm-lab\s*\{/);
-  assert.match(css, /\.cm-hero\s*\{/);
-  assert.match(css, /\.cm-equipment-strip\s*\{/);
-  assert.match(css, /\.cm-mode-switch\s*\{/);
-  assert.match(css, /\.cm-workspace\s*\{/);
-  assert.match(css, /\.cm-canvas\s*\{/);
-  assert.match(css, /\.cm-reflection-canvas\s*\{/);
-  assert.match(css, /\.cm-image-canvas\s*\{/);
-  assert.match(css, /\.cm-control-console\s*\{/);
-  assert.match(css, /\.cm-digital-display\s*\{/);
-  assert.match(css, /\.cm-image-summary\s*\{/);
-  assert.match(css, /\.cm-drawing-tools\s*\{/);
-  assert.match(css, /\.cm-evidence-grid\s*\{/);
-  assert.match(css, /\.cm-report-grid\s*\{/);
-  assert.match(css, /@media \(max-width: 980px\)/);
-});
-
-test("tümsek ayna laboratuvarı serbest lazer ve ideal sanal görüntü deneyi sunar", async () => {
-  const hub = await readFile(
-    new URL("app/OpticsLabHub.tsx", projectRoot),
-    "utf8",
-  );
-  const wrapper = await readFile(
-    new URL("app/ConvexMirrorLab.tsx", projectRoot),
-    "utf8",
-  );
-  const sharedLab = await readFile(
-    new URL("app/ConcaveMirrorLab.tsx", projectRoot),
-    "utf8",
-  );
-  const css = await readFile(new URL("app/globals.css", projectRoot), "utf8");
-  assert.match(hub, /ConvexMirrorLab/);
-  assert.match(hub, /DENEY 03 · HAZIR/);
-  assert.match(hub, /activeMirror === "convex" && <ConvexMirrorLab/);
-  assert.match(wrapper, /SphericalMirrorLab/);
-  assert.match(wrapper, /mirrorKind="convex"/);
-  assert.match(sharedLab, /mirrorKind === "convex"/);
-  assert.match(sharedLab, /signedFocalLength = -focalLength/);
-  assert.match(sharedLab, /objectDistance - signedFocalLength/);
-  assert.match(sharedLab, /Sanal görüntü · düz · küçük/);
-  assert.match(sharedLab, /ayna ile F arasında oluşur/);
-  assert.match(sharedLab, /markerDirection/);
-  assert.match(sharedLab, /UZAKLIK HARİTASI/);
-  assert.match(sharedLab, /Yansıyan temel ışınların uzantıları/);
-  assert.match(sharedLab, /onLaserPositionChange/);
-  assert.match(sharedLab, /onHitOffsetChange/);
-  assert.match(sharedLab, /Temel ışınları göster/);
-  assert.match(sharedLab, /Cetvel ölçümünü kaydet/);
-  assert.match(sharedLab, /TYMM · DENEY RAPORU/);
-  assert.doesNotMatch(sharedLab, /Math\.random|hata|belirsiz/i);
-  assert.match(css, /\.cm-convex-lab \.cm-tool-mirror::after/);
 });
 
 test("Modern Fizik alanı gerçek fotoelektrik düzeneği ve TYMM deney akışını sunar", async () => {
@@ -1048,7 +850,7 @@ test("deney seçilince kart listesi kapanır ve yalnızca seçilen deney açıl�
   assert.match(electricity, /window\.scrollTo\(\{ top: 0, behavior: "auto" \}\)/);
 
   assert.match(optics, /!activeTopic && <section className="optics-topic-launcher"/);
-  assert.match(optics, /activeTopic === "mirrors" && activeMirror === null/);
+  assert.match(optics, /activeTopic === "optical-bench" && <UnifiedOpticsLab/);
   assert.match(optics, /const experimentIsOpen/);
   assert.match(optics, /const goBack/);
   assert.match(optics, /id="optik-deney"/);
@@ -1650,7 +1452,7 @@ test("tüm deney modülleri ideal ölçüm politikası uygular", async () => {
     "app/CernAcceleratorLab.tsx",
     "app/OhmLawLab.tsx",
     "app/ResistorConnectionsLab.tsx",
-    "app/LensLab.tsx",
+    "app/UnifiedOpticsLab.tsx",
   ];
   const pages = await Promise.all(
     labFiles.map((file) => readFile(new URL(file, projectRoot), "utf8")),
