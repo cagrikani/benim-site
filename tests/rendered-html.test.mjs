@@ -636,6 +636,10 @@ test("Modern Fizik alanı gerçek fotoelektrik düzeneği ve TYMM deney akışı
   assert.match(page, /h\/e KONTROL ÜNİTESİ/);
   assert.match(page, /YOĞUNLUK FİLTRESİ/);
   assert.match(page, /pe-cable-signal/);
+  assert.match(page, /pe-source-beam/);
+  assert.match(page, /pe-path-guide/);
+  assert.match(page, /pe-wiring/);
+  assert.match(page, /kind !== nextEquipment/);
   assert.match(page, /onEquipmentDragStart/);
   assert.match(page, /onStageDrop/);
   assert.match(page, /requestAnimationFrame/);
@@ -677,6 +681,9 @@ test("fotoelektrik tezgâhı gerçekçi cihaz, tayf, bağlantı ve ölçüm gör
   assert.match(css, /\.pe-battery-test\s*\{/);
   assert.match(css, /\.pe-multimeter\s*\{/);
   assert.match(css, /\.pe-cable\s*\{/);
+  assert.match(css, /\.pe-wiring\s*\{/);
+  assert.match(css, /\.pe-source-beam\s*\{/);
+  assert.match(css, /\.pe-filter-post\s*\{/);
   assert.match(css, /\.pe-electron-stream\s*\{/);
   assert.match(css, /@keyframes pe-electron-flight/);
   assert.match(css, /\.pe-graph-canvas\s*\{/);

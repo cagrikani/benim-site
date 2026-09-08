@@ -110,6 +110,16 @@ const APPARATUS: Array<{
     description: "Işığı renklerine ayıran optik eleman",
   },
   {
+    kind: "transmission-filter",
+    label: "Geçirgenlik filtresi",
+    description: "Işık şiddetini %20-%100 ayarlar",
+  },
+  {
+    kind: "color-filter",
+    label: "Renk filtresi",
+    description: "Seçilen spektrum çizgisini geçirir",
+  },
+  {
     kind: "he-apparatus",
     label: "h/e aparatı",
     description: "Yarık, fotodiyot ve boşaltma devresi",
@@ -118,16 +128,6 @@ const APPARATUS: Array<{
     kind: "multimeter",
     label: "Dijital multimetre",
     description: "DC durdurma gerilimini okur",
-  },
-  {
-    kind: "color-filter",
-    label: "Renk filtresi",
-    description: "Seçilen spektrum çizgisini geçirir",
-  },
-  {
-    kind: "transmission-filter",
-    label: "Geçirgenlik filtresi",
-    description: "Işık şiddetini %20-%100 ayarlar",
   },
 ];
 
@@ -397,6 +397,11 @@ export default function PhotoelectricLab() {
 
   const addEquipment = (kind: ApparatusKind) => {
     if (installed.includes(kind) || runState === "measuring") return;
+    if (kind !== nextEquipment) {
+      const expected = APPARATUS.find((item) => item.kind === nextEquipment);
+      setMessage(`Önce ${expected?.label ?? "sıradaki parçayı"} tezgâha yerleştir.`);
+      return;
+    }
     const nextInstalled = [...installed, kind];
     setInstalled(nextInstalled);
     const item = APPARATUS.find((candidate) => candidate.kind === kind);
@@ -593,22 +598,23 @@ export default function PhotoelectricLab() {
             <p>Parçayı sürükle veya dokun; kablolar ve optik eksen doğru konuma oturur.</p>
           </div>
           <div className="pe-equipment-list">
-            {APPARATUS.map((item) => {
+            {APPARATUS.map((item, index) => {
               const isInstalled = installed.includes(item.kind);
+              const isNext = item.kind === nextEquipment;
               return (
                 <button
                   key={item.kind}
                   type="button"
-                  draggable={!isInstalled}
-                  disabled={isInstalled || runState === "measuring"}
-                  className={isInstalled ? "installed" : ""}
+                  draggable={!isInstalled && isNext}
+                  disabled={isInstalled || !isNext || runState === "measuring"}
+                  className={`${isInstalled ? "installed" : ""} ${isNext ? "next" : ""}`}
                   onDragStart={(event) => onEquipmentDragStart(event, item.kind)}
                   onClick={() => addEquipment(item.kind)}
                 >
                   <EquipmentIcon kind={item.kind} />
                   <span>
-                    <b>{item.label}</b>
-                    <small>{isInstalled ? "Yerine oturdu" : item.description}</small>
+                    <b><i>{index + 1}</i>{item.label}</b>
+                    <small>{isInstalled ? "Yerine oturdu" : isNext ? item.description : "Sırası gelince açılır"}</small>
                   </span>
                 </button>
               );
@@ -668,11 +674,18 @@ export default function PhotoelectricLab() {
             <div className="pe-workbench"><i /><i /></div>
             <div className="pe-optical-rail" />
 
+            {setupComplete && (
+              <div className="pe-path-guide">
+                <span>IŞIK KAYNAĞI</span><i>→</i><span>KIRINIM AĞI</span><i>→</i><span>FİLTRELER</span><i>→</i><span>FOTODİYOT</span><i>→</i><span>ÖLÇÜM</span>
+              </div>
+            )}
+
             {installed.includes("mercury-lamp") && (
               <div className="pe-mercury-lamp">
                 <i className="pe-lamp-vent" />
                 <i className="pe-lamp-window" />
                 <i className="pe-lamp-knob" />
+                <i className="pe-lamp-handle" />
                 <i className="pe-lamp-foot" />
                 <b>CIVA IŞIK KAYNAĞI</b>
                 <span className="pe-lamp-indicator" />
@@ -686,6 +699,10 @@ export default function PhotoelectricLab() {
                 <i className="pe-grating-foot" />
                 <b>KIRINIM AĞI</b>
               </div>
+            )}
+
+            {lampState !== "off" && installed.includes("diffraction-grating") && (
+              <i className="pe-source-beam" />
             )}
 
             {lampState === "ready" && installed.includes("diffraction-grating") && (
@@ -719,6 +736,7 @@ export default function PhotoelectricLab() {
                   <i className="pe-mask-slit" />
                   <i className="pe-detector-post" />
                   <i className="pe-detector-foot" />
+                  <i className="pe-detector-socket" />
                   <b>FOTODİYOT</b>
                   <small>GİRİŞ YARIĞI</small>
                   {runState === "measuring" && (
@@ -735,16 +753,21 @@ export default function PhotoelectricLab() {
                   <i className="pe-battery-test" />
                   <i className="pe-he-switch" />
                   <i className="pe-he-terminals" />
+                  <i className="pe-he-signal-port" />
                   <b>h/e KONTROL ÜNİTESİ</b>
                   <span className="pe-he-caption">FOTODİYOT · DURDURMA GERİLİMİ</span>
                   <small className="pe-discharge-label">BOŞALT</small>
+                  <small className="pe-terminal-labels">COM&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;V</small>
+                  <small className="pe-signal-label">FOTODİYOT GİRİŞİ</small>
                 </div>
               </>
             )}
 
             {installed.includes("color-filter") && (
               <div className="pe-color-filter">
-                <i />
+                <i className="pe-color-glass" />
+                <i className="pe-filter-post" />
+                <i className="pe-filter-foot" />
                 <b>{light.label.toUpperCase()} FİLTRE</b>
               </div>
             )}
@@ -754,6 +777,8 @@ export default function PhotoelectricLab() {
                 {TRANSMISSIONS.map((value) => (
                   <i key={value} className={transmission === value ? "active" : ""} />
                 ))}
+                <span className="pe-transmission-post" />
+                <span className="pe-transmission-foot" />
                 <b>YOĞUNLUK FİLTRESİ</b>
               </div>
             )}
@@ -767,16 +792,24 @@ export default function PhotoelectricLab() {
                 <i className="pe-meter-knob" />
                 <i className="pe-meter-red-port" />
                 <i className="pe-meter-black-port" />
+                <em className="pe-meter-port-labels">COM&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;V</em>
                 <b>DİJİTAL MULTİMETRE</b>
+                <em className="pe-meter-purpose">DURDURMA GERİLİMİ</em>
               </div>
             )}
 
             {installed.includes("multimeter") && installed.includes("he-apparatus") && (
-              <>
-                <i className="pe-cable pe-cable-red" />
-                <i className="pe-cable pe-cable-black" />
-                <i className="pe-cable pe-cable-signal" />
-              </>
+              <svg className="pe-wiring" viewBox="0 0 900 620" preserveAspectRatio="none">
+                <path className="pe-wire-signal" data-cable="pe-cable-signal" d="M 656 288 C 680 316, 613 332, 640 386" />
+                <path className="pe-wire-black" d="M 407 486 C 470 541, 602 531, 663 478" />
+                <path className="pe-wire-red" d="M 481 486 C 545 517, 651 514, 714 478" />
+                <circle className="pe-plug-black" cx="407" cy="486" r="5" />
+                <circle className="pe-plug-black" cx="663" cy="478" r="5" />
+                <circle className="pe-plug-red" cx="481" cy="486" r="5" />
+                <circle className="pe-plug-red" cx="714" cy="478" r="5" />
+                <circle className="pe-plug-signal" cx="656" cy="308" r="5" />
+                <circle className="pe-plug-signal" cx="640" cy="386" r="5" />
+              </svg>
             )}
 
             {!setupComplete && (

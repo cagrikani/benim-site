@@ -83,6 +83,7 @@ const PLANE_EQUIPMENT: EquipmentItem[] = [
 const isMirror = (kind: ElementKind) => kind === "plane" || kind === "concave" || kind === "convex";
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 const toPercent = (position: number) => 8 + position * .84;
+const hitLimitFor = (kind: ElementKind) => kind === "plane" ? 56 : kind === "concave" || kind === "convex" ? 32 : 38;
 
 function calculateImage(
   kind: ElementKind,
@@ -141,6 +142,7 @@ function UnifiedRayCanvas({
   lightOn,
   ready,
   screenPlaced,
+  showExtensions,
   imageResult,
 }: {
   mode: ExperimentMode;
@@ -154,6 +156,7 @@ function UnifiedRayCanvas({
   lightOn: boolean;
   ready: boolean;
   screenPlaced: boolean;
+  showExtensions: boolean;
   imageResult: ImageResult;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -174,6 +177,7 @@ function UnifiedRayCanvas({
 
     const axisY = 220;
     const toX = (position: number) => width * (.08 + position * .0084);
+    const fromX = (x: number) => (x / width - .08) / .0084;
     const source = { x: toX(sourceX), y: axisY };
     const element = { x: toX(elementX), y: axisY };
     const screen = { x: toX(screenX), y: axisY };
@@ -254,6 +258,89 @@ function UnifiedRayCanvas({
       return { x: start.x + direction.x * distance, y: start.y + direction.y * distance };
     };
 
+    const axisMarker = (
+      point: { x: number; y: number },
+      symbol: string,
+      detail: string,
+      color: string,
+      virtual = false,
+      above = false,
+    ) => {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = virtual ? "rgba(248,251,249,.94)" : color;
+      ctx.lineWidth = 2;
+      if (virtual) ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      const labelY = clamp(point.y + (above ? -25 : 29), top + 14, bottom - 14);
+      label(`${symbol} · ${detail}`, clamp(point.x, left + 58, right - 58), labelY, color);
+    };
+
+    const dimension = (fromXValue: number, toXValue: number, y: number, text: string, color = "#355e67") => {
+      const x1 = clamp(fromXValue, left, right);
+      const x2 = clamp(toXValue, left, right);
+      if (Math.abs(x2 - x1) < 16) return;
+      ctx.save();
+      ctx.strokeStyle = "rgba(48,84,92,.66)";
+      ctx.fillStyle = color;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x1, y);
+      ctx.lineTo(x2, y);
+      ctx.moveTo(x1, y - 5);
+      ctx.lineTo(x1, y + 5);
+      ctx.moveTo(x2, y - 5);
+      ctx.lineTo(x2, y + 5);
+      ctx.stroke();
+      ctx.restore();
+      label(text, (x1 + x2) / 2, y + 16, color);
+    };
+
+    const markAxisCrossing = (
+      start: { x: number; y: number },
+      direction: { x: number; y: number },
+      color: string,
+    ) => {
+      if (Math.abs(direction.y) < .0001) {
+        label("ASAL EKSENE PARALEL", clamp(start.x + direction.x * 125, left + 80, right - 80), axisY - 25, color);
+        return;
+      }
+      const travel = (axisY - start.y) / direction.y;
+      const crossing = { x: start.x + direction.x * travel, y: axisY };
+      const actual = travel >= 0;
+      const inside = crossing.x >= left && crossing.x <= right;
+
+      if (!actual && showExtensions) {
+        const reverse = normalize({ x: -direction.x, y: -direction.y });
+        line(start, inside ? crossing : boundaryPoint(start, reverse), `${color}88`, true, 1.8);
+      }
+      if (!inside || (!actual && !showExtensions)) return;
+
+      const railPosition = fromX(crossing.x);
+      const distance = Math.abs(railPosition - elementX);
+      ctx.save();
+      ctx.fillStyle = actual ? color : "#fff";
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.2;
+      if (!actual) ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.arc(crossing.x, crossing.y, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+      label(
+        `${actual ? "IŞIN" : "UZANTI"} EKSENİ KESTİ · ${railPosition.toFixed(1)} cm`,
+        clamp(crossing.x, left + 96, right - 96),
+        axisY - 25,
+        color,
+      );
+      dimension(element.x, crossing.x, axisY + 71, `${actual ? "Eleman → kesişim" : "Eleman → uzantı kesişimi"} · ${distance.toFixed(1)} cm`, color);
+    };
+
     ctx.save();
     ctx.strokeStyle = "rgba(39,75,82,.5)";
     ctx.lineWidth = 1.4;
@@ -270,20 +357,33 @@ function UnifiedRayCanvas({
 
     if (!ready) return;
 
-    if (elementKind !== "plane") {
-      const leftFocus = toX(elementX - focalLength);
-      const rightFocus = toX(elementX + focalLength);
-      [leftFocus, rightFocus].forEach((x, index) => {
-        ctx.save();
-        ctx.fillStyle = "#d9783d";
-        ctx.beginPath();
-        ctx.arc(x, axisY, 4.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.font = "950 9px system-ui";
-        ctx.textAlign = "center";
-        ctx.fillText("F", x, axisY + 31 + index * 0);
-        ctx.restore();
-      });
+    const focalPixels = Math.abs(toX(elementX + focalLength) - element.x);
+    const mirrorRadians = elementAngle * Math.PI / 180;
+    const mirrorFront = { x: -Math.cos(mirrorRadians), y: -Math.sin(mirrorRadians) };
+    const mirrorReferenceSide = elementKind === "concave" ? 1 : -1;
+    const mirrorFocus = {
+      x: element.x + mirrorFront.x * focalPixels * mirrorReferenceSide,
+      y: element.y + mirrorFront.y * focalPixels * mirrorReferenceSide,
+    };
+    const mirrorCenter = {
+      x: element.x + mirrorFront.x * focalPixels * 2 * mirrorReferenceSide,
+      y: element.y + mirrorFront.y * focalPixels * 2 * mirrorReferenceSide,
+    };
+
+    if (elementKind === "plane") {
+      axisMarker(element, "T", `${elementX.toFixed(0)} cm · ayna yüzeyi`, "#b96637", false, true);
+    } else if (elementKind === "concave" || elementKind === "convex") {
+      if (Math.abs(elementAngle) > .1) {
+        line(boundaryPoint(element, mirrorFront), boundaryPoint(element, { x: -mirrorFront.x, y: -mirrorFront.y }), "rgba(207,111,58,.58)", true, 1.4);
+        label("AYNANIN ASAL EKSENİ", clamp(mirrorFocus.x, left + 90, right - 90), clamp(mirrorFocus.y - 23, top + 14, bottom - 14), "#a65c34");
+      }
+      const virtualReference = elementKind === "convex";
+      axisMarker(mirrorFocus, "F", `odak · ${focalLength} cm`, "#d36c34", virtualReference, false);
+      axisMarker(mirrorCenter, "C", `merkez · ${focalLength * 2} cm`, "#99603d", virtualReference, true);
+    } else {
+      axisMarker({ x: toX(elementX - focalLength), y: axisY }, "F₁", `${(elementX - focalLength).toFixed(0)} cm`, "#d36c34", false, false);
+      axisMarker(element, "O", `${elementX.toFixed(0)} cm · optik merkez`, "#168596", false, true);
+      axisMarker({ x: toX(elementX + focalLength), y: axisY }, "F₂", `${(elementX + focalLength).toFixed(0)} cm`, "#d36c34", false, false);
     }
 
     if (!lightOn) return;
@@ -295,10 +395,12 @@ function UnifiedRayCanvas({
       arrow(source, hit, "#ff3e35");
       label("GELEN IŞIN", (source.x + hit.x) / 2, (source.y + hit.y) / 2 - 17, "#b82d27");
 
+      dimension(source.x, element.x, axisY + 112, `Kaynak → eleman · ${Math.abs(elementX - sourceX).toFixed(1)} cm`);
+
       if (isMirror(elementKind)) {
-        const curve = elementKind === "concave" ? hitOffset * .12 : elementKind === "convex" ? -hitOffset * .12 : 0;
-        const normalAngle = Math.PI + (elementAngle + curve) * Math.PI / 180;
-        const normal = { x: Math.cos(normalAngle), y: Math.sin(normalAngle) };
+        const normal = elementKind === "plane"
+          ? mirrorFront
+          : normalize({ x: mirrorCenter.x - hit.x, y: mirrorCenter.y - hit.y });
         const dot = incoming.x * normal.x + incoming.y * normal.y;
         const reflected = normalize({ x: incoming.x - 2 * dot * normal.x, y: incoming.y - 2 * dot * normal.y });
         const end = boundaryPoint(hit, reflected);
@@ -312,8 +414,8 @@ function UnifiedRayCanvas({
         label(`i = ${angle}°`, hit.x - incoming.x * 94, hit.y - incoming.y * 94 - 19, "#b82d27");
         label(`r = ${angle}°`, hit.x + reflected.x * 94, hit.y + reflected.y * 94 + (reflected.y < 0 ? -13 : 13), "#087b8d");
         label("NORMAL", normalStart.x, normalStart.y - 13, "#34565e");
+        markAxisCrossing(hit, reflected, "#087b8d");
       } else {
-        const focalPixels = Math.abs(toX(elementX + focalLength) - element.x);
         const incomingSlope = (hit.y - source.y) / Math.max(1, hit.x - source.x);
         const heightFromAxis = hit.y - axisY;
         const outgoingSlope = elementKind === "converging"
@@ -324,10 +426,7 @@ function UnifiedRayCanvas({
         line(hit, end, "#20b884", false, 4.2);
         arrow(hit, end, "#20b884");
         label("KIRILAN IŞIN", (hit.x + end.x) / 2, (hit.y + end.y) / 2 - 17, "#117c5c");
-        if (elementKind === "diverging") {
-          const virtual = boundaryPoint(hit, normalize({ x: -refracted.x, y: -refracted.y }));
-          line(hit, virtual, "rgba(32,184,132,.58)", true, 1.7);
-        }
+        markAxisCrossing(hit, refracted, "#117c5c");
       }
       return;
     }
@@ -347,7 +446,7 @@ function UnifiedRayCanvas({
         const end = boundaryPoint(hit, reflected);
         line(objectTip, hit, index ? "#ff7656" : "#ff3e35", false, 3.2);
         line(hit, end, "#18abc1", false, 3.2);
-        line(hit, imageTip, "rgba(24,171,193,.55)", true, 1.7);
+        if (showExtensions) line(hit, imageTip, "rgba(24,171,193,.55)", true, 1.7);
       });
     } else if (elementKind === "converging" || elementKind === "diverging") {
       const parallelHit = { x: element.x, y: objectTip.y };
@@ -360,7 +459,7 @@ function UnifiedRayCanvas({
       const centerEnd = boundaryPoint({ x: element.x, y: axisY }, centerDirection);
       line(objectTip, { x: element.x, y: axisY }, "#ef8c36", false, 3.2);
       line({ x: element.x, y: axisY }, centerEnd, "#ef8c36", false, 3.2);
-      if (!imageResult.real) {
+      if (!imageResult.real && showExtensions) {
         line(parallelHit, imageTip, "rgba(32,184,132,.55)", true, 1.7);
         line({ x: element.x, y: axisY }, imageTip, "rgba(239,140,54,.55)", true, 1.7);
       }
@@ -377,7 +476,7 @@ function UnifiedRayCanvas({
       const reflected = normalize({ x: -incoming.x, y: incoming.y });
       line(objectTip, vertex, "#ef8c36", false, 3.2);
       line(vertex, boundaryPoint(vertex, reflected), "#ef8c36", false, 3.2);
-      if (!imageResult.real) {
+      if (!imageResult.real && showExtensions) {
         line(parallelHit, imageTip, "rgba(24,171,193,.55)", true, 1.7);
         line(vertex, imageTip, "rgba(239,140,54,.55)", true, 1.7);
       }
@@ -408,7 +507,12 @@ function UnifiedRayCanvas({
     if (screenPlaced && imageResult.real && Number.isFinite(imageResult.position)) {
       line({ x: screen.x, y: axisY - 74 }, { x: screen.x, y: axisY + 74 }, "rgba(41,169,137,.72)", true, 1.5);
     }
-  }, [elementAngle, elementKind, elementX, focalLength, hitOffset, imageResult, lightOn, mode, ready, screenPlaced, screenX, sourceX]);
+
+    dimension(source.x, element.x, axisY + 112, `Cisim → eleman · ${Math.abs(elementX - sourceX).toFixed(1)} cm`);
+    if (Number.isFinite(imageResult.position) && imageResult.position >= 0 && imageResult.position <= 100) {
+      dimension(element.x, imageTip.x, axisY + 79, `Eleman → görüntü · ${Math.abs(imageResult.distance).toFixed(1)} cm`, "#315fa7");
+    }
+  }, [elementAngle, elementKind, elementX, focalLength, hitOffset, imageResult, lightOn, mode, ready, screenPlaced, screenX, showExtensions, sourceX]);
 
   useEffect(() => {
     draw();
@@ -427,9 +531,10 @@ export default function UnifiedOpticsLab() {
   const [elementX, setElementX] = useState(60);
   const [screenX, setScreenX] = useState(84);
   const [elementAngle, setElementAngle] = useState(0);
-  const [hitOffset, setHitOffset] = useState(-28);
+  const [hitOffset, setHitOffset] = useState(-24);
   const [focalLength, setFocalLength] = useState(14);
   const [lightOn, setLightOn] = useState(false);
+  const [showExtensions, setShowExtensions] = useState(false);
   const [readings, setReadings] = useState<Reading[]>([]);
   const [report, setReport] = useState({ path: "", image: "", compare: "" });
   const stageRef = useRef<HTMLDivElement>(null);
@@ -451,6 +556,8 @@ export default function UnifiedOpticsLab() {
   const screenSharp = focusQuality >= 90;
   const angleScale = Math.max(.42, 1 - Math.abs(elementAngle) / 48);
   const objectDistance = elementX - sourceX;
+  const hitLimit = hitLimitFor(selectedElement);
+  const safeHitOffset = clamp(hitOffset, -hitLimit, hitLimit);
 
   const stageMessage = !ready
     ? `Sıradaki parça: ${equipment[placed.length]?.name ?? "Düzenek hazır"}`
@@ -458,8 +565,8 @@ export default function UnifiedOpticsLab() {
       ? "Işık kaynağını aç; ışının çıkış ve yüzeye çarpma noktalarını izle."
       : mode === "ray"
         ? isMirror(selectedElement)
-          ? "Kırmızı gelen ışın, turkuaz yansıyan ışın; kesikli çizgi yüzey normalidir."
-          : "Kırmızı gelen ışın, yeşil kırılan ışın; ışın mercek yüzeyinde yön değiştirir."
+          ? `Kırmızı gelen ışın ve turkuaz yansıyan ışın ölçülüyor.${showExtensions ? " Kesikli çizgi, sanal ışın uzantısını gösterir." : " Sanal kesişim için ışın uzantılarını açabilirsin."}`
+          : `Kırmızı gelen ışın ve yeşil kırılan ışın ölçülüyor.${showExtensions ? " Kesikli çizgi, sanal ışın uzantısını gösterir." : " Sanal kesişim için ışın uzantılarını açabilirsin."}`
         : screenSharp
           ? "Gerçek görüntü beyaz ekranda net olarak yakalandı."
           : imageResult.real
@@ -524,6 +631,8 @@ export default function UnifiedOpticsLab() {
     });
     setSelectedElement(kind);
     setElementAngle(0);
+    setHitOffset((value) => clamp(value, -hitLimitFor(kind), hitLimitFor(kind)));
+    setShowExtensions(false);
     setLightOn(false);
     const nextImage = calculateImage(kind, sourceX, elementX, focalLength);
     if (mode === "ray") setScreenX(84);
@@ -533,6 +642,7 @@ export default function UnifiedOpticsLab() {
   const changeMode = (nextMode: ExperimentMode) => {
     setMode(nextMode);
     setLightOn(false);
+    setShowExtensions(false);
     setElementAngle(0);
     if (nextMode === "ray") setScreenX(84);
     if (nextMode === "image" && imageResult.real && Number.isFinite(imageResult.position)) {
@@ -559,9 +669,10 @@ export default function UnifiedOpticsLab() {
     setElementX(60);
     setScreenX(84);
     setElementAngle(0);
-    setHitOffset(-28);
+    setHitOffset(-24);
     setFocalLength(14);
     setLightOn(false);
+    setShowExtensions(false);
     setReadings([]);
   };
 
@@ -632,12 +743,13 @@ export default function UnifiedOpticsLab() {
               sourceX={sourceX}
               elementX={elementX}
               screenX={screenX}
-              hitOffset={hitOffset}
+              hitOffset={safeHitOffset}
               elementAngle={elementAngle}
               focalLength={focalLength}
               lightOn={lightOn}
               ready={ready}
               screenPlaced={screenPlaced}
+              showExtensions={showExtensions}
               imageResult={imageResult}
             />
 
@@ -664,7 +776,7 @@ export default function UnifiedOpticsLab() {
                 <i className="uol-plane-post" />
                 <i className="uol-plane-collar" />
                 <i className="uol-plane-base" />
-                {mode === "ray" && <span className="uol-hit-target" style={{ "--hit-offset": `${hitOffset}px` } as CSSProperties}><i />ÇARPMA NOKTASI</span>}
+                {mode === "ray" && <span className="uol-hit-target" style={{ "--hit-offset": `${safeHitOffset}px` } as CSSProperties}><i />ÇARPMA NOKTASI</span>}
                 <span className="uol-curvature-tag plane"><i /><small>DÜZ YÜZEY</small></span>
                 <b>DÜZLEM AYNA · {elementX} cm</b>
               </button>
@@ -674,7 +786,7 @@ export default function UnifiedOpticsLab() {
               <button type="button" className={`uol-holder ${selectedElement === "concave" || selectedElement === "convex" ? "mirror-mounted" : ""}`} style={{ "--element-left": `${toPercent(elementX)}%`, "--element-angle": `${elementAngle}deg`, "--element-scale": angleScale } as CSSProperties} onPointerDown={(event) => beginMove(event, "element")} aria-label={`Üniversal taşıyıcı ${elementX} santimetrede; rayda sürükle`}>
                 {placed.includes("element") && <img className={`uol-insert ${selectedElement}`} src={selected.asset} alt={selected.label} draggable="false" />}
                 <img className="uol-holder-photo" src={HOLDER_ASSET} alt="Üniversal optik eleman taşıyıcısı" draggable="false" />
-                {placed.includes("element") && mode === "ray" && <span className="uol-hit-target" style={{ "--hit-offset": `${hitOffset}px` } as CSSProperties}><i />ÇARPMA NOKTASI</span>}
+                {placed.includes("element") && mode === "ray" && <span className="uol-hit-target" style={{ "--hit-offset": `${safeHitOffset}px` } as CSSProperties}><i />ÇARPMA NOKTASI</span>}
                 {placed.includes("element") && (selectedElement === "concave" || selectedElement === "convex") && <span className={`uol-curvature-tag ${selectedElement}`}><i /><small>{selectedElement === "concave" ? "İÇE KAVİSLİ" : "DIŞA TÜMSEK"}</small></span>}
                 <b>{placed.includes("element") ? selected.label.toLocaleUpperCase("tr-TR") : "BOŞ TAŞIYICI"} · {elementX} cm</b>
               </button>
@@ -706,11 +818,12 @@ export default function UnifiedOpticsLab() {
             <div className="uol-control-grid">
               <label><span>Işık kaynağı <b>{sourceX} cm</b></span><input type="range" min="5" max={elementX - 14} step="1" value={sourceX} onInput={(event) => setSourceX(Number(event.currentTarget.value))} disabled={!ready} /><small>Lazeri veya ışıklı cismi rayda taşır.</small></label>
               <label><span>Optik eleman <b>{elementX} cm</b></span><input type="range" min={sourceX + 14} max="90" step="1" value={elementX} onInput={(event) => setElementX(Number(event.currentTarget.value))} disabled={!ready} /><small>Taşıyıcı ayağı ray üzerinde hareket eder.</small></label>
-              {mode === "ray" ? <label><span>Yüzeydeki hedef <b>{hitOffset} px</b></span><input type="range" min="-52" max="52" step="4" value={hitOffset} onInput={(event) => setHitOffset(Number(event.currentTarget.value))} disabled={!ready} /><small>Işının aynaya veya merceğe çarpma yerini değiştirir.</small></label> : <label><span>Ekran konumu <b>{screenX.toFixed(1)} cm</b></span><input type="range" min="5" max="95" step=".5" value={screenX} onInput={(event) => setScreenX(Number(event.currentTarget.value))} disabled={!ready || !screenPlaced} /><small>Gerçek görüntüyü bulmak için ekranı rayda taşı.</small></label>}
+              {mode === "ray" ? <label><span>Yüzeydeki hedef <b>{(safeHitOffset / 8.2).toFixed(1)} cm</b></span><input type="range" min={-hitLimit} max={hitLimit} step="2" value={safeHitOffset} onInput={(event) => setHitOffset(Number(event.currentTarget.value))} disabled={!ready} /><small>Hedef, seçilen elemanın kullanılabilir yüzeyi içinde kalır.</small></label> : <label><span>Ekran konumu <b>{screenX.toFixed(1)} cm</b></span><input type="range" min="5" max="95" step=".5" value={screenX} onInput={(event) => setScreenX(Number(event.currentTarget.value))} disabled={!ready || !screenPlaced} /><small>Gerçek görüntüyü bulmak için ekranı rayda taşı.</small></label>}
               {isMirror(selectedElement) ? <label><span>Ayna yönü <b>{elementAngle}°</b></span><input type="range" min="-30" max="30" step="5" value={elementAngle} onInput={(event) => setElementAngle(Number(event.currentTarget.value))} disabled={!ready || mode === "image"} /><small>{mode === "image" ? "Görüntü deneyinde ayna asal eksene dik tutulur." : "Yalnız ayna hücresi döner; taşıyıcı ayağı sabit kalır."}</small></label> : <label><span>Odak uzaklığı <b>{focalLength} cm</b></span><input type="range" min="10" max="20" step="2" value={focalLength} onInput={(event) => setFocalLength(Number(event.currentTarget.value))} disabled={!ready} /><small>F işaretleri ve ışınların yönü birlikte değişir.</small></label>}
             </div>
             <div className="uol-live-panel">
-              <div><small>CANLI GÖZLEM</small><b>{mode === "ray" ? selected.summary : imageResult.description}</b><span>{mode === "ray" ? isMirror(selectedElement) ? "Gelen ışın · normal · yansıyan ışın" : "Gelen ışın · mercek · kırılan ışın" : `Cisim uzaklığı ${objectDistance.toFixed(1)} cm${Number.isFinite(imageResult.distance) ? ` · görüntü uzaklığı ${Math.abs(imageResult.distance).toFixed(1)} cm` : ""}`}</span></div>
+              <div><small>CANLI GÖZLEM</small><b>{mode === "ray" ? selected.summary : imageResult.description}</b><span>{mode === "ray" ? `Kaynak–eleman ${objectDistance.toFixed(1)} cm · ${isMirror(selectedElement) ? "yansıyan ışın" : "kırılan ışın"} kesişimi sahnede işaretli` : `Cisim uzaklığı ${objectDistance.toFixed(1)} cm${Number.isFinite(imageResult.distance) ? ` · görüntü uzaklığı ${Math.abs(imageResult.distance).toFixed(1)} cm` : ""}`}</span></div>
+              <button type="button" className={showExtensions ? "extensions-on" : ""} onClick={() => setShowExtensions((value) => !value)} disabled={!ready || !lightOn}>{showExtensions ? "Uzantıları gizle" : "Işın uzantıları"}</button>
               <button type="button" className={lightOn ? "stop" : "start"} onClick={() => setLightOn((value) => !value)} disabled={!ready}>{lightOn ? "Işığı kapat" : "Işığı aç"}</button>
               <button type="button" onClick={record} disabled={!lightOn}>Gözlemi kaydet</button>
             </div>

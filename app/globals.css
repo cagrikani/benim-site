@@ -24373,6 +24373,319 @@ footer > a {
   }
 }
 
+/* Fotoelektrik tezgâhı · gerçekçi optik yol ve kesin bağlantılar */
+
+.pe-equipment-list > button.next {
+  border-color: #8b75b3;
+  background: #f7f3fc;
+  box-shadow: 0 7px 17px rgba(66, 58, 105, 0.11);
+}
+
+.pe-equipment-list > button:disabled:not(.installed) {
+  opacity: 0.44;
+}
+
+.pe-equipment-list > button > span:last-child > b {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pe-equipment-list > button > span:last-child > b > i {
+  display: grid;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #ece7f4;
+  color: #684d93;
+  font-size: 6px;
+  font-style: normal;
+}
+
+.pe-equipment-list > button.installed > span:last-child > b > i {
+  background: #cfe9e2;
+  color: #25776d;
+}
+
+.pe-apparatus {
+  min-width: 960px;
+  min-height: 640px;
+  background: #e8ece8;
+}
+
+.pe-lab-wall {
+  inset: 0;
+  background:
+    linear-gradient(rgba(255,255,255,.08), rgba(28,42,43,.03)),
+    url("/ohm-lab-bench-real-v2.webp") center / cover no-repeat;
+  filter: saturate(.84) contrast(.98);
+}
+
+.pe-lab-wall::after {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 47% 32%, rgba(255,255,255,.32), transparent 42%);
+  content: "";
+}
+
+.pe-workbench {
+  height: 120px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pe-workbench i { display: none; }
+
+.pe-path-guide {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  left: 22px;
+  z-index: 20;
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 7px 12px;
+  border: 1px solid rgba(59,83,88,.18);
+  border-radius: 999px;
+  background: rgba(250,252,251,.9);
+  box-shadow: 0 8px 20px rgba(31,50,54,.08);
+  color: #3e5b62;
+}
+
+.pe-path-guide span {
+  font-size: 6px;
+  font-weight: 950;
+  letter-spacing: .08em;
+}
+
+.pe-path-guide i {
+  color: #775ba1;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.pe-lamp-handle {
+  position: absolute;
+  top: -26px;
+  left: 48px;
+  width: 112px;
+  height: 42px;
+  border: 8px solid #303f46;
+  border-bottom: 0;
+  border-radius: 18px 18px 0 0;
+  box-shadow: inset 0 3px rgba(255,255,255,.14);
+}
+
+.pe-source-beam {
+  position: absolute;
+  top: 299px;
+  left: 26.9%;
+  z-index: 8;
+  display: block;
+  width: 12.8%;
+  height: 3px;
+  border-radius: 999px;
+  background: #c8f5ff;
+  box-shadow: 0 0 7px #9eeeff, 0 0 17px rgba(116,220,241,.55);
+  opacity: .92;
+}
+
+.pe-grating { width: 72px; }
+.pe-grating-glass { left: 11px; width: 48px; }
+.pe-grating-post { left: 32px; }
+.pe-grating-foot { left: 5px; width: 64px; }
+
+.pe-detector-head { left: 61%; }
+
+.pe-detector-socket {
+  position: absolute;
+  top: calc(130px + var(--pe-apparatus-shift));
+  left: 94px;
+  z-index: 5;
+  width: 14px;
+  height: 14px;
+  border: 3px solid #334a50;
+  border-radius: 50%;
+  background: #6b858b;
+  box-shadow: 0 2px 4px rgba(25,43,47,.25);
+  transition: top 280ms ease;
+}
+
+.pe-color-filter {
+  width: 48px;
+  height: 188px;
+}
+
+.pe-color-filter .pe-color-glass {
+  position: absolute;
+  inset: 0 3px auto;
+  height: 43px;
+  border: 5px solid #40565c;
+  border-radius: 50%;
+  background: var(--pe-line-color);
+  box-shadow: inset 0 0 0 4px rgba(255,255,255,.45), 0 0 13px var(--pe-line-glow);
+  opacity: .84;
+}
+
+.pe-color-filter .pe-filter-post {
+  position: absolute;
+  top: 44px;
+  bottom: 15px;
+  left: 21px;
+  width: 7px;
+  border: 1px solid #536b70;
+  background: linear-gradient(90deg, #435b60, #bdc9c7 50%, #435a60);
+}
+
+.pe-color-filter .pe-filter-foot {
+  position: absolute;
+  right: -5px;
+  bottom: 0;
+  left: -5px;
+  height: 17px;
+  border: 3px solid #3d545a;
+  border-radius: 50%;
+  background: linear-gradient(#849697, #465e63);
+}
+
+.pe-color-filter b {
+  right: -21px;
+  bottom: 66px;
+  left: -21px;
+  width: 90px;
+  padding: 4px 0;
+  border-radius: 5px;
+  background: rgba(248,251,250,.92);
+  color: #3e5b61;
+  font-size: 5px;
+  font-weight: 950;
+}
+
+.pe-transmission-filter {
+  height: 44px;
+  overflow: visible;
+}
+
+.pe-transmission-post {
+  position: absolute;
+  top: 38px;
+  left: 41px;
+  width: 7px;
+  height: 139px;
+  border: 1px solid #536b70;
+  background: linear-gradient(90deg, #435b60, #bdc9c7 50%, #435a60);
+}
+
+.pe-transmission-foot {
+  position: absolute;
+  top: 168px;
+  left: 8px;
+  width: 73px;
+  height: 17px;
+  border: 3px solid #3d545a;
+  border-radius: 50%;
+  background: linear-gradient(#849697, #465e63);
+}
+
+.pe-transmission-filter b {
+  right: -7px;
+  bottom: -27px;
+  left: -7px;
+  z-index: 3;
+}
+
+.pe-he-signal-port {
+  position: absolute;
+  top: 21px;
+  left: 5px;
+  width: 15px;
+  height: 15px;
+  border: 3px solid #31484e;
+  border-radius: 50%;
+  background: #718b90;
+}
+
+.pe-he-apparatus > .pe-terminal-labels,
+.pe-he-apparatus > .pe-signal-label {
+  position: absolute;
+  color: #486168;
+  font-size: 5px;
+  font-weight: 950;
+  letter-spacing: .05em;
+}
+
+.pe-he-apparatus > .pe-terminal-labels {
+  top: 117px;
+  left: 23px;
+}
+
+.pe-he-apparatus > .pe-signal-label {
+  top: 10px;
+  left: 2px;
+  width: 80px;
+}
+
+.pe-meter-port-labels,
+.pe-meter-purpose {
+  position: absolute;
+  z-index: 4;
+  color: #324b50;
+  font-size: 5px;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: .05em;
+}
+
+.pe-meter-port-labels {
+  right: 18px;
+  bottom: 32px;
+  left: 19px;
+  text-align: center;
+}
+
+.pe-meter-purpose {
+  top: 59px;
+  right: 10px;
+  left: 10px;
+  text-align: center;
+}
+
+.pe-wiring {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pe-wiring path {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 1px rgba(22,34,36,.2));
+}
+
+.pe-wire-red { stroke: #d9453d; }
+.pe-wire-black { stroke: #252f33; }
+.pe-wire-signal { stroke: #55777e; stroke-width: 4.5px !important; }
+.pe-plug-red { fill: #e14a42; stroke: #7c2b28; stroke-width: 2; }
+.pe-plug-black { fill: #293438; stroke: #11191c; stroke-width: 2; }
+.pe-plug-signal { fill: #6e9299; stroke: #334d53; stroke-width: 2; }
+
+@media (max-width: 1080px) {
+  .pe-apparatus { min-width: 960px; }
+}
+
 /* Elektrik deney seti · Ohm yasası */
 .electricity-hub-shell {
   --electric-navy: #102f42;
@@ -39099,19 +39412,19 @@ footer > a {
 .uol-object .uol-aperture { top: 8px; right: 50%; width: 14px; height: 14px; transform: translateX(50%); }
 .uol-object > b { right: -5px; bottom: 3px; }
 
-.uol-holder { top: 173px; left: var(--element-left); z-index: 13; width: 154px; height: 270px; transform: translateX(-50%); }
+.uol-holder { top: 161px; left: var(--element-left); z-index: 13; width: 184px; height: 300px; transform: translateX(-50%); }
 .uol-holder-photo { position: absolute; inset: 0; z-index: 4; display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 9px 8px rgba(22,34,36,.28)); pointer-events: none; user-select: none; }
-.uol-insert { position: absolute; top: 5px; left: 29px; z-index: 3; display: block; width: 98px; height: 98px; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(18,34,37,.24)); pointer-events: none; user-select: none; transform: rotate(calc(var(--element-angle) * .35)) scaleX(var(--element-scale)); transition: transform .18s ease; }
+.uol-insert { position: absolute; top: 6px; left: 34px; z-index: 3; display: block; width: 116px; height: 116px; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(18,34,37,.24)); pointer-events: none; user-select: none; transform: rotate(calc(var(--element-angle) * .35)) scaleX(var(--element-scale)); transition: transform .18s ease; }
 .uol-insert.concave,
-.uol-insert.convex { top: 10px; left: 37px; width: 80px; height: 80px; }
+.uol-insert.convex { top: 12px; left: 44px; width: 96px; height: 96px; }
 .uol-holder > b { right: 0; bottom: 2px; left: 0; text-align: center; }
 
 .uol-plane-stand {
-  top: 155px;
+  top: 137px;
   left: var(--element-left);
   z-index: 13;
-  width: 176px;
-  height: 286px;
+  width: 190px;
+  height: 304px;
   transform: translateX(-50%);
 }
 
@@ -39121,19 +39434,19 @@ footer > a {
   left: 50px;
   z-index: 5;
   display: block;
-  width: 76px;
-  height: 145px;
+  width: 90px;
+  height: 172px;
   transform: rotate(calc(var(--element-angle) * .35)) scaleX(var(--element-scale));
   transform-origin: 50% 80%;
   transition: transform .18s ease;
 }
 
 .uol-plane-surface > img { display: block; width: 100%; height: 100%; object-fit: fill; filter: drop-shadow(0 6px 6px rgba(18,34,37,.28)); pointer-events: none; user-select: none; }
-.uol-plane-clamp { position: absolute; top: 130px; left: 70px; z-index: 4; display: block; width: 36px; height: 24px; border: 2px solid #263a40; border-radius: 5px; background: linear-gradient(90deg, #17282e, #6e7c7f 48%, #16272d); box-shadow: 0 4px 5px rgba(19,34,37,.28); }
+.uol-plane-clamp { position: absolute; top: 157px; left: 77px; z-index: 4; display: block; width: 36px; height: 24px; border: 2px solid #263a40; border-radius: 5px; background: linear-gradient(90deg, #17282e, #6e7c7f 48%, #16272d); box-shadow: 0 4px 5px rgba(19,34,37,.28); }
 .uol-plane-clamp::after { position: absolute; top: 6px; right: -13px; width: 15px; height: 9px; border: 2px solid #263a40; border-radius: 0 5px 5px 0; background: #738286; content: ""; }
-.uol-plane-post { position: absolute; top: 147px; left: 82px; z-index: 3; display: block; width: 12px; height: 94px; border: 1px solid #5c6d71; border-radius: 4px; background: linear-gradient(90deg, #45585e, #f0f5f4 43%, #8b9a9d 64%, #344a50); box-shadow: 2px 3px 5px rgba(19,36,40,.2); }
-.uol-plane-collar { position: absolute; top: 222px; left: 69px; z-index: 4; display: block; width: 38px; height: 30px; border: 2px solid #1c3036; border-radius: 6px; background: linear-gradient(#66777a, #182a30 48%, #0d1b20); box-shadow: 0 5px 6px rgba(16,31,35,.28); }
-.uol-plane-base { position: absolute; top: 243px; left: 22px; z-index: 4; display: block; width: 132px; height: 34px; border: 2px solid #15272d; border-radius: 7px; background: linear-gradient(#6d7b7e 0 12%, #24373d 14% 55%, #0f2026 57%); box-shadow: 0 8px 8px rgba(17,31,34,.32); }
+.uol-plane-post { position: absolute; top: 174px; left: 89px; z-index: 3; display: block; width: 12px; height: 94px; border: 1px solid #5c6d71; border-radius: 4px; background: linear-gradient(90deg, #45585e, #f0f5f4 43%, #8b9a9d 64%, #344a50); box-shadow: 2px 3px 5px rgba(19,36,40,.2); }
+.uol-plane-collar { position: absolute; top: 246px; left: 76px; z-index: 4; display: block; width: 38px; height: 30px; border: 2px solid #1c3036; border-radius: 6px; background: linear-gradient(#66777a, #182a30 48%, #0d1b20); box-shadow: 0 5px 6px rgba(16,31,35,.28); }
+.uol-plane-base { position: absolute; top: 261px; left: 29px; z-index: 4; display: block; width: 132px; height: 34px; border: 2px solid #15272d; border-radius: 7px; background: linear-gradient(#6d7b7e 0 12%, #24373d 14% 55%, #0f2026 57%); box-shadow: 0 8px 8px rgba(17,31,34,.32); }
 .uol-plane-base::before,
 .uol-plane-base::after { position: absolute; top: 7px; width: 17px; height: 17px; border: 2px solid #192d33; border-radius: 50%; background: radial-gradient(circle, #aeb9b8 0 18%, #34484d 22% 54%, #111f24 58%); content: ""; }
 .uol-plane-base::before { left: 10px; }
@@ -39148,9 +39461,9 @@ footer > a {
 .uol-curvature-tag.plane { top: -35px; }
 .uol-curvature-tag.plane > i { width: 4px; height: 22px; border: 0; border-radius: 3px; background: linear-gradient(90deg, #627b82, #eef7f8 55%, #526a71); }
 
-.uol-hit-target { position: absolute; top: calc(49px + var(--hit-offset)); left: 77px; z-index: 9; display: grid; grid-template-columns: 14px auto; gap: 5px; align-items: center; color: #843a2d; font-size: 6px; font-weight: 950; white-space: nowrap; pointer-events: none; transform: translate(-7px, -50%); }
+.uol-hit-target { position: absolute; top: calc(59px + var(--hit-offset)); left: 92px; z-index: 9; display: grid; grid-template-columns: 14px auto; gap: 5px; align-items: center; color: #843a2d; font-size: 6px; font-weight: 950; white-space: nowrap; pointer-events: none; transform: translate(-7px, -50%); }
 .uol-hit-target > i { display: block; width: 14px; height: 14px; border: 2px solid #fff; border-radius: 50%; background: #ff3e35; box-shadow: 0 0 0 4px rgba(255,62,53,.25), 0 0 13px #ff3e35; }
-.uol-plane-stand .uol-hit-target { top: calc(65px + var(--hit-offset)); left: 88px; }
+.uol-plane-stand .uol-hit-target { top: calc(83px + var(--hit-offset)); left: 95px; }
 
 .uol-screen { top: 158px; left: var(--screen-left); z-index: 12; width: 190px; height: 268px; transform: translateX(-50%); }
 .uol-screen > img { position: absolute; top: 0; left: 0; display: block; width: 190px; height: 210px; object-fit: contain; filter: drop-shadow(0 9px 8px rgba(22,34,36,.26)); pointer-events: none; user-select: none; }
@@ -39198,7 +39511,7 @@ footer > a {
 .uol-control-grid input { width: 100%; margin: 24px 0 14px; accent-color: #168596; }
 .uol-control-grid label small { display: block; color: #71868a; font-size: 7px; line-height: 1.4; }
 
-.uol-live-panel { display: grid; grid-template-columns: minmax(0, 1fr) 132px 132px; gap: 8px; align-items: stretch; margin-top: 9px; padding: 11px; border-radius: 12px; background: #153e49; color: white; }
+.uol-live-panel { display: grid; grid-template-columns: minmax(0, 1fr) 132px 132px 132px; gap: 8px; align-items: stretch; margin-top: 9px; padding: 11px; border-radius: 12px; background: #153e49; color: white; }
 .uol-live-panel > div { display: grid; align-content: center; }
 .uol-live-panel small { color: #f0a26c; font-size: 7px; font-weight: 950; letter-spacing: .1em; }
 .uol-live-panel b { margin: 3px 0; font-size: 11px; }
@@ -39206,6 +39519,7 @@ footer > a {
 .uol-live-panel > button { border: 0; border-radius: 9px; background: white; color: #173f49; cursor: pointer; font-size: 8px; font-weight: 950; }
 .uol-live-panel > button.start { background: #eaa064; color: #50301d; }
 .uol-live-panel > button.stop { background: #d95d4f; color: white; }
+.uol-live-panel > button.extensions-on { background: #1ea783; color: white; box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
 .uol-live-panel > button:disabled { opacity: .4; cursor: not-allowed; }
 
 .uol-evidence,
