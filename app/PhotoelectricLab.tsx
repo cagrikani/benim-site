@@ -55,40 +55,40 @@ const LIGHTS: Record<
     wavelength: 578,
     color: "#ffd43b",
     glow: "rgba(255, 212, 59, 0.72)",
-    stageAngle: -8,
-    shift: -29,
+    stageAngle: -5,
+    shift: -12,
   },
   green: {
     label: "Yeşil",
     wavelength: 546.074,
     color: "#53e58d",
     glow: "rgba(83, 229, 141, 0.68)",
-    stageAngle: -4,
-    shift: -15,
+    stageAngle: -2.5,
+    shift: -6,
   },
   blue: {
     label: "Mavi",
     wavelength: 435.835,
     color: "#4f8dff",
     glow: "rgba(79, 141, 255, 0.68)",
-    stageAngle: 1,
-    shift: 4,
+    stageAngle: 0,
+    shift: 0,
   },
   violet: {
     label: "Mor",
     wavelength: 404.656,
     color: "#a875ff",
     glow: "rgba(168, 117, 255, 0.68)",
-    stageAngle: 6,
-    shift: 22,
+    stageAngle: 2.5,
+    shift: 6,
   },
   ultraviolet: {
     label: "Morötesi",
     wavelength: 365.483,
     color: "#d68cff",
     glow: "rgba(214, 140, 255, 0.72)",
-    stageAngle: 10,
-    shift: 37,
+    stageAngle: 5,
+    shift: 12,
   },
 };
 
@@ -387,11 +387,14 @@ export default function PhotoelectricLab() {
   const frequencyReadings = uniqueColorReadings(readings);
   const nextEquipment =
     SETUP_ORDER.find((kind) => !installed.includes(kind)) ?? null;
+  const detectorAligned = alignedLight === selectedLight;
   const stageStyle = {
     "--pe-line-color": light.color,
     "--pe-line-glow": light.glow,
     "--pe-beam-angle": `${light.stageAngle}deg`,
-    "--pe-apparatus-shift": `${light.shift}px`,
+    "--pe-apparatus-shift": "0px",
+    "--pe-detector-shift": `${detectorAligned ? light.shift : 0}px`,
+    "--pe-detector-dial": `${detectorAligned ? light.stageAngle * 7 : 0}deg`,
     "--pe-transmission": transmission / 100,
   } as CSSProperties;
 
@@ -464,7 +467,9 @@ export default function PhotoelectricLab() {
     setDisplayVoltage(0);
     setDisplayCurrent(0);
     setRunState("idle");
-    setMessage(`${LIGHTS[kind].label} tayf çizgisi seçildi. h/e aparatını bu çizgiye hizala.`);
+    setMessage(
+      `${LIGHTS[kind].label} tayf çizgisi seçildi. Fotodiyot standındaki HİZALA vidasına bas.`,
+    );
   };
 
   const alignSelectedLight = () => {
@@ -474,7 +479,7 @@ export default function PhotoelectricLab() {
     setDisplayVoltage(0);
     setDisplayCurrent(0);
     setMessage(
-      `${light.label} çizgi fotodiyot yarığına hizalandı. Filtreyi ayarla ve fototüpü boşalt.`,
+      `${light.label} çizgi fotodiyot yarığına hizalandı. Şimdi h/e ünitesindeki kırmızı BOŞALT düğmesine bas.`,
     );
   };
 
@@ -669,7 +674,11 @@ export default function PhotoelectricLab() {
             </div>
           </div>
 
-          <div className={`pe-apparatus ${lampState}`} aria-hidden="true">
+          <div
+            className={`pe-apparatus ${lampState}`}
+            role="group"
+            aria-label="Etkileşimli fotoelektrik deney düzeneği"
+          >
             <div className="pe-lab-wall" />
             <div className="pe-workbench"><i /><i /></div>
             <div className="pe-optical-rail" />
@@ -743,6 +752,15 @@ export default function PhotoelectricLab() {
                   <i className="pe-detector-socket" />
                   <b>FOTODİYOT</b>
                   <small>GİRİŞ YARIĞI</small>
+                  <button
+                    type="button"
+                    className={`pe-detector-align-knob ${detectorAligned ? "active" : ""}`}
+                    onClick={alignSelectedLight}
+                    disabled={lampState !== "ready" || runState === "measuring"}
+                    aria-label={`Fotodiyotu ${light.label} çizgiye hizala`}
+                  >
+                    <span>HİZALA</span>
+                  </button>
                   {runState === "measuring" && (
                     <span className="pe-electron-stream">
                       <i /><i /><i /><i /><i />
@@ -761,9 +779,17 @@ export default function PhotoelectricLab() {
                   <i className="pe-he-signal-port" />
                   <b>h/e KONTROL ÜNİTESİ</b>
                   <span className="pe-he-caption">FOTODİYOT · DURDURMA GERİLİMİ</span>
-                  <small className="pe-discharge-label">BOŞALT</small>
                   <small className="pe-terminal-labels">COM&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;V</small>
                   <small className="pe-signal-label">FOTODİYOT GİRİŞİ</small>
+                  <button
+                    type="button"
+                    className={`pe-apparatus-discharge-button ${discharged ? "active" : ""}`}
+                    onClick={dischargeTube}
+                    disabled={!detectorAligned || runState === "measuring"}
+                    aria-label="Fototüpü boşalt"
+                  >
+                    <span>BOŞALT</span>
+                  </button>
                 </div>
               </>
             )}
@@ -906,26 +932,18 @@ export default function PhotoelectricLab() {
                 ? `Lamba ısınıyor · %${Math.round(warmProgress * 100)}`
                 : "Lambayı kapat"}
           </button>
-          <button
-            type="button"
-            onClick={alignSelectedLight}
-            disabled={lampState !== "ready" || runState === "measuring"}
-            className={alignedLight === selectedLight ? "ready" : ""}
-          >
+          <div className={`pe-procedure-hint ${detectorAligned ? "ready" : ""}`}>
             <i>2</i>
-            {alignedLight === selectedLight
+            <span>{detectorAligned
               ? `${light.label} çizgi hizalı`
-              : "Seçili çizgiyi yarığa hizala"}
-          </button>
-          <button
-            type="button"
-            onClick={dischargeTube}
-            disabled={alignedLight !== selectedLight || runState === "measuring"}
-            className={discharged ? "ready" : ""}
-          >
+              : "Fotodiyot üzerindeki HİZALA vidasına bas"}</span>
+          </div>
+          <div className={`pe-procedure-hint ${discharged ? "ready" : ""}`}>
             <i>3</i>
-            {discharged ? "Fototüp boşaltıldı" : "BOŞALT düğmesine bas"}
-          </button>
+            <span>{discharged
+              ? "Fototüp boşaltıldı"
+              : "h/e ünitesindeki kırmızı BOŞALT düğmesine bas"}</span>
+          </div>
           <button
             type="button"
             onClick={measure}

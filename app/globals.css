@@ -24886,6 +24886,8 @@ footer > a {
   z-index: 12;
   width: 200px;
   height: 346px;
+  transform: translateY(var(--pe-detector-shift));
+  transition: transform 320ms ease;
 }
 
 .pe-detector-body,
@@ -24897,7 +24899,7 @@ footer > a {
 }
 
 .pe-detector-head .pe-mask-slit {
-  top: calc(69px + var(--pe-apparatus-shift));
+  top: 69px;
   left: 31px;
   z-index: 4;
   width: 5px;
@@ -24924,7 +24926,7 @@ footer > a {
 }
 
 .pe-detector-head > small {
-  top: calc(130px + var(--pe-apparatus-shift));
+  top: 130px;
   left: 7px;
   z-index: 4;
   width: 54px;
@@ -24934,11 +24936,67 @@ footer > a {
 }
 
 .pe-detector-head .pe-electron-stream {
-  top: calc(74px + var(--pe-apparatus-shift));
+  top: 74px;
   left: 76px;
   z-index: 4;
   width: 59px;
   height: 47px;
+}
+
+.pe-detector-align-knob,
+.pe-apparatus-discharge-button {
+  position: absolute;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.pe-detector-align-knob {
+  top: 139px;
+  left: 121px;
+  width: 31px;
+  height: 31px;
+  border: 4px solid #26383d;
+  border-radius: 50%;
+  background:
+    linear-gradient(var(--pe-detector-dial), transparent 44%, #e7eceb 45% 54%, transparent 55%),
+    radial-gradient(circle at 35% 28%, #74878b, #26363b 68%);
+  box-shadow: 0 4px 7px rgba(22, 35, 38, .31);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.pe-detector-align-knob:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.pe-detector-align-knob.active {
+  box-shadow: 0 0 0 3px rgba(87, 207, 151, .32), 0 4px 7px rgba(22, 35, 38, .31);
+}
+
+.pe-detector-align-knob:disabled,
+.pe-apparatus-discharge-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(.8);
+  opacity: .62;
+}
+
+.pe-detector-align-knob > span,
+.pe-apparatus-discharge-button > span {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(250, 252, 251, .94);
+  box-shadow: 0 3px 7px rgba(27, 43, 46, .12);
+  color: #3b555b;
+  font-size: 5px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  transform: translateX(-50%);
 }
 
 .pe-he-apparatus {
@@ -25000,6 +25058,28 @@ footer > a {
   left: 13px;
   z-index: 4;
   width: 70px;
+}
+
+.pe-apparatus-discharge-button {
+  top: 47px;
+  right: 27px;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  outline: 2px solid transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pe-apparatus-discharge-button:hover:not(:disabled) {
+  outline-color: rgba(255, 255, 255, .9);
+  box-shadow: 0 0 0 4px rgba(217, 68, 58, .2);
+}
+
+.pe-apparatus-discharge-button.active {
+  outline-color: #63d2a8;
+  box-shadow: 0 0 0 4px rgba(73, 190, 145, .24);
 }
 
 .pe-multimeter {
@@ -25085,6 +25165,40 @@ footer > a {
 
 .pe-wire-signal {
   stroke-width: 3.5px !important;
+}
+
+.pe-procedure-hint {
+  display: flex;
+  min-height: 41px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  border: 1px dashed #c7d5d2;
+  border-radius: 9px;
+  background: #f5f8f7;
+  color: #657b7f;
+  font-size: 7px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.pe-procedure-hint > i {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8edf1;
+  color: #7256a2;
+  font-style: normal;
+}
+
+.pe-procedure-hint.ready {
+  border-style: solid;
+  border-color: #abd6cd;
+  background: #e9f5f1;
+  color: #287c71;
 }
 
 @media (max-width: 1080px) {

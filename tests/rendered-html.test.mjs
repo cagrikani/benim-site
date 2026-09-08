@@ -644,6 +644,11 @@ test("Modern Fizik alanı gerçek fotoelektrik düzeneği ve TYMM deney akışı
   assert.match(page, /photoelectric-he-unit-v2\.webp/);
   assert.match(page, /photoelectric-multimeter-v2\.webp/);
   assert.match(page, /pe-zone-measurement/);
+  assert.match(page, /pe-detector-align-knob/);
+  assert.match(page, /pe-apparatus-discharge-button/);
+  assert.match(page, /--pe-detector-shift/);
+  assert.match(page, /shift: 12/);
+  assert.doesNotMatch(page, /shift: 37/);
   assert.match(page, /kind !== nextEquipment/);
   assert.match(page, /onEquipmentDragStart/);
   assert.match(page, /onStageDrop/);
@@ -691,6 +696,9 @@ test("fotoelektrik tezgâhı gerçekçi cihaz, tayf, bağlantı ve ölçüm gör
   assert.match(css, /\.pe-filter-post\s*\{/);
   assert.match(css, /\.pe-zone-label\s*\{/);
   assert.match(css, /\.pe-mercury-lamp > img/);
+  assert.match(css, /\.pe-detector-align-knob/);
+  assert.match(css, /\.pe-apparatus-discharge-button/);
+  assert.match(css, /translateY\(var\(--pe-detector-shift\)\)/);
   assert.match(css, /\.pe-electron-stream\s*\{/);
   assert.match(css, /@keyframes pe-electron-flight/);
   assert.match(css, /\.pe-graph-canvas\s*\{/);
