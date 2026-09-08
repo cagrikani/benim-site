@@ -752,7 +752,12 @@ test("Modern Fizik alanı sade CERN hızlandırıcı ve büyütülmüş ATLAS de
   assert.match(page, /İzler en az kıvrılır/);
   assert.match(page, /ATLAS’IN İÇİNDE/);
   assert.match(page, /Büyütülmüş çarpışma görüntüsü/);
-  assert.match(page, /Üç basit bölge/);
+  assert.match(page, /Gerçek dedektör katmanları/);
+  assert.match(page, /Bir katmana dokun/);
+  assert.match(page, /highlightedLayer/);
+  assert.match(page, /Hızlandırıcı çalışma durumu/);
+  assert.match(page, /Yüksek vakum/);
+  assert.match(page, /1,9 K/);
   assert.match(page, /İz sensörü/);
   assert.match(page, /Enerji sensörü/);
   assert.match(page, /Dış sensör/);
@@ -811,6 +816,11 @@ test("CERN laboratuvarı sade halka, büyüyen ATLAS ekranı ve responsive düze
   assert.match(css, /\.cern-detected-particles\s*,/);
   assert.match(css, /\.cern-standard-card\s*\{/);
   assert.match(css, /\.cern-detector-answer\s*\{/);
+  assert.match(css, /cern-lhc-tunnel-real-v2\.webp/);
+  assert.match(css, /cern-atlas-detector-real-v2\.webp/);
+  assert.match(css, /\.cern-machine-readouts\s*\{/);
+  assert.match(css, /\.cern-detector-guide button\s*\{/);
+  assert.match(css, /\.cern-layer-instruction\s*\{/);
   assert.match(css, /@media \(max-width: 600px\)/);
 });
 

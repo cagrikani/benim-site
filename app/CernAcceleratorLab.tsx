@@ -406,8 +406,8 @@ function CernAcceleratorCanvas({
       if (!context) return;
       const time = (now - startedAt) / 1000;
       const background = context.createLinearGradient(0, 0, ACCELERATOR_WIDTH, ACCELERATOR_HEIGHT);
-      background.addColorStop(0, "#071b2b");
-      background.addColorStop(1, "#0b3047");
+      background.addColorStop(0, "rgba(3, 16, 26, 0.4)");
+      background.addColorStop(1, "rgba(4, 24, 35, 0.58)");
       context.fillStyle = background;
       context.fillRect(0, 0, ACCELERATOR_WIDTH, ACCELERATOR_HEIGHT);
 
@@ -477,14 +477,14 @@ function CernAcceleratorCanvas({
       });
 
       const ringReady = installedCount >= 4;
-      roundedPanel(context, 35, 215, 970, 305, "rgba(3,17,28,0.68)", "rgba(104,177,202,0.25)", 24);
+      roundedPanel(context, 35, 215, 970, 305, "rgba(3,17,28,0.2)", "rgba(166,220,234,0.32)", 24);
       context.fillStyle = "#84b8ca";
       context.font = "900 12px Arial";
       context.textAlign = "left";
       context.fillText("LHC HALKASI · ÜSTTEN GÖRÜNÜM", 62, 249);
 
       context.strokeStyle = ringReady ? "#3c7da0" : "rgba(104,156,180,0.24)";
-      context.lineWidth = ringReady ? 34 : 4;
+      context.lineWidth = ringReady ? 20 : 4;
       context.setLineDash(ringReady ? [] : [14, 12]);
       context.beginPath();
       context.ellipse(500, 378, 350, 102, 0, 0, Math.PI * 2);
@@ -492,7 +492,7 @@ function CernAcceleratorCanvas({
       context.setLineDash([]);
       if (ringReady) {
         context.strokeStyle = "#0b2437";
-        context.lineWidth = 20;
+        context.lineWidth = 11;
         context.beginPath();
         context.ellipse(500, 378, 350, 102, 0, 0, Math.PI * 2);
         context.stroke();
@@ -587,8 +587,12 @@ function drawTag(
   name: string,
   color: string,
 ) {
-  context.font = "900 14px Arial";
-  const width = Math.max(144, context.measureText(name).width + 60);
+  context.font = "900 20px Georgia";
+  const symbolWidth = context.measureText(symbol).width;
+  context.font = "900 12px Arial";
+  const nameWidth = context.measureText(name).width;
+  const symbolColumn = Math.max(52, symbolWidth + 22);
+  const width = Math.max(170, nameWidth + symbolColumn + 28);
   context.fillStyle = "rgba(6,22,35,0.94)";
   context.strokeStyle = color;
   context.lineWidth = 2;
@@ -602,7 +606,7 @@ function drawTag(
   context.fillText(symbol, x - width / 2 + 13, y + 7);
   context.fillStyle = "#ecf9fd";
   context.font = "900 12px Arial";
-  context.fillText(name, x - width / 2 + 51, y + 5);
+  context.fillText(name, x - width / 2 + symbolColumn, y + 5);
 }
 
 function drawParticleMarker(
@@ -634,11 +638,13 @@ function CernAtlasCanvas({
   phase,
   energyKind,
   selectedParticleId,
+  highlightedLayer,
   onSelectParticle,
 }: {
   phase: "colliding" | "result";
   energyKind: EnergyKind;
   selectedParticleId: string;
+  highlightedLayer: DetectorLayer | null;
   onSelectParticle: (id: string) => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -658,25 +664,29 @@ function CernAtlasCanvas({
       const elapsed = (now - startedAt) / 1000;
       const center = { x: 380, y: 300 };
       const background = context.createRadialGradient(center.x, center.y, 30, center.x, center.y, 430);
-      background.addColorStop(0, "#173e56");
-      background.addColorStop(1, "#061421");
+      background.addColorStop(0, "rgba(13, 48, 67, 0.2)");
+      background.addColorStop(1, "rgba(2, 12, 20, 0.62)");
       context.fillStyle = background;
       context.fillRect(0, 0, ATLAS_WIDTH, ATLAS_HEIGHT);
 
       const layers = [
-        { radius: 102, color: "#62d7bf", width: 24 },
-        { radius: 184, color: "#f3c45f", width: 42 },
-        { radius: 256, color: "#72a6ea", width: 18 },
+        { key: "track" as DetectorLayer, radius: 102, color: "#62d7bf", width: 24 },
+        { key: "energy" as DetectorLayer, radius: 184, color: "#f3c45f", width: 42 },
+        { key: "outer" as DetectorLayer, radius: 256, color: "#72a6ea", width: 18 },
       ];
       layers.forEach((layer) => {
-        context.globalAlpha = 0.28;
+        const isFocused = highlightedLayer === layer.key;
+        context.globalAlpha = highlightedLayer ? (isFocused ? 0.72 : 0.1) : 0.22;
         context.strokeStyle = layer.color;
         context.lineWidth = layer.width;
+        context.shadowColor = isFocused ? layer.color : "transparent";
+        context.shadowBlur = isFocused ? 24 : 0;
         context.beginPath();
         context.arc(center.x, center.y, layer.radius, 0, Math.PI * 2);
         context.stroke();
-        context.globalAlpha = 0.92;
-        context.lineWidth = 2;
+        context.shadowBlur = 0;
+        context.globalAlpha = isFocused ? 1 : 0.68;
+        context.lineWidth = isFocused ? 4 : 2;
         context.beginPath();
         context.arc(center.x, center.y, layer.radius, 0, Math.PI * 2);
         context.stroke();
@@ -904,7 +914,7 @@ function CernAtlasCanvas({
       observer.disconnect();
       cancelAnimationFrame(frame);
     };
-  }, [energy, energyIndex, phase, selectedParticleId, visibleParticles]);
+  }, [energy, energyIndex, highlightedLayer, phase, selectedParticleId, visibleParticles]);
 
   const handleCanvasClick = (eventObject: ReactMouseEvent<HTMLCanvasElement>) => {
     if (phase !== "result") return;
@@ -950,6 +960,7 @@ function CernAtlasZoom({
   onSelectParticle: (id: string) => void;
   onBack: () => void;
 }) {
+  const [highlightedLayer, setHighlightedLayer] = useState<DetectorLayer | null>(null);
   const energy = ENERGY_LEVELS[energyKind];
   const totalEnergy = energy.beam * 2;
   const energyIndex = energyKind === "low" ? 0 : energyKind === "medium" ? 1 : 2;
@@ -976,15 +987,19 @@ function CernAtlasZoom({
       <div className="cern-atlas-layout">
         <aside className="cern-detector-guide">
           <span>ATLAS NE YAPIYOR?</span>
-          <h2>Üç basit bölge</h2>
+          <h2>Gerçek dedektör katmanları</h2>
+          <p className="cern-layer-instruction">Bir katmana dokun; gerçek kesit üzerindeki yerini gör.</p>
           {layerInfo.map((layer) => (
-            <article
+            <button
+              type="button"
               key={layer.key}
-              className={`${layer.key} ${phase === "result" && activeLayers.includes(layer.key) ? "active" : ""}`}
+              className={`${layer.key} ${phase === "result" && activeLayers.includes(layer.key) ? "active" : ""} ${highlightedLayer === layer.key ? "selected" : ""}`}
+              onClick={() => setHighlightedLayer((current) => current === layer.key ? null : layer.key)}
+              aria-pressed={highlightedLayer === layer.key}
             >
               <i>{layer.number}</i>
               <div><b>{layer.title}</b><small>{layer.text}</small></div>
-            </article>
+            </button>
           ))}
           <p><i /> Ortadaki beyaz nokta, iki protonun çarpıştığı yerdir.</p>
         </aside>
@@ -992,6 +1007,7 @@ function CernAtlasZoom({
           phase={phase}
           energyKind={energyKind}
           selectedParticleId={selectedParticleId}
+          highlightedLayer={highlightedLayer}
           onSelectParticle={onSelectParticle}
         />
       </div>
@@ -1244,11 +1260,31 @@ export default function CernAcceleratorLab() {
               onBack={returnToRing}
             />
           ) : (
-            <CernAcceleratorCanvas
-              installedCount={installed.length}
-              runState={runState}
-              energyKind={energyKind}
-            />
+            <>
+              <CernAcceleratorCanvas
+                installedCount={installed.length}
+                runState={runState}
+                energyKind={energyKind}
+              />
+              <div className="cern-machine-readouts" aria-label="Hızlandırıcı çalışma durumu">
+                <article className={installed.length >= 4 ? "ready" : ""}>
+                  <i aria-hidden="true" />
+                  <span><small>DEMİR BORU İÇİ</small><b>{installed.length >= 4 ? "Yüksek vakum" : "Hazırlanıyor"}</b></span>
+                </article>
+                <article className={installed.length >= 4 ? "ready" : ""}>
+                  <i aria-hidden="true" />
+                  <span><small>SÜPERİLETKEN MIKNATIS</small><b>{installed.length >= 4 ? "1,9 K" : "Soğutuluyor"}</b></span>
+                </article>
+                <article className={runState === "accelerating" || runState === "ready" ? "beam" : ""}>
+                  <i aria-hidden="true" />
+                  <span><small>HALKADAKİ DEMET</small><b>{runState === "accelerating" || runState === "ready" ? "2 zıt proton demeti" : "Demet bekleniyor"}</b></span>
+                </article>
+                <article className={setupComplete ? "ready" : ""}>
+                  <i aria-hidden="true" />
+                  <span><small>ÇARPIŞMA NOKTASI</small><b>{setupComplete ? "ATLAS bağlı" : "Dedektör bekleniyor"}</b></span>
+                </article>
+              </div>
+            </>
           )}
 
           <div className="cern-message" role="status"><i />{message}</div>
