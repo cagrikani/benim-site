@@ -24686,6 +24686,411 @@ footer > a {
   .pe-apparatus { min-width: 960px; }
 }
 
+/* Fotoelektrik tezgâhı · fotoğraf gerçekliğinde, iki katmanlı yerleşim */
+
+.pe-apparatus {
+  min-width: 1040px;
+  min-height: 720px;
+}
+
+.pe-zone-label {
+  position: absolute;
+  z-index: 21;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #4d6469;
+  font-size: 7px;
+  font-weight: 950;
+  letter-spacing: .15em;
+}
+
+.pe-zone-label::after {
+  width: 72px;
+  height: 1px;
+  background: rgba(64, 88, 93, .34);
+  content: "";
+}
+
+.pe-zone-optics {
+  top: 82px;
+  left: 28px;
+}
+
+.pe-zone-measurement {
+  top: 480px;
+  left: 326px;
+}
+
+.pe-optical-rail {
+  top: 441px;
+  right: 2.4%;
+  bottom: auto;
+  left: 2.4%;
+}
+
+.pe-mercury-lamp {
+  top: 98px;
+  bottom: auto;
+  left: 0;
+  z-index: 12;
+  width: 330px;
+  height: 345px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.pe-mercury-lamp > img,
+.pe-detector-head > img,
+.pe-he-apparatus > img,
+.pe-multimeter > img {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 10px rgba(23, 36, 39, .24));
+  user-select: none;
+}
+
+.pe-apparatus:not(.ready):not(.warming) .pe-mercury-lamp > img {
+  filter: grayscale(.72) brightness(.82) drop-shadow(0 12px 10px rgba(23, 36, 39, .22));
+}
+
+.pe-mercury-lamp .pe-lamp-vent,
+.pe-mercury-lamp .pe-lamp-knob,
+.pe-mercury-lamp .pe-lamp-handle,
+.pe-mercury-lamp .pe-lamp-foot {
+  display: none;
+}
+
+.pe-mercury-lamp .pe-lamp-window {
+  top: 83px;
+  right: 11px;
+  z-index: 3;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #28383e;
+  border-radius: 50%;
+  background: rgba(20, 29, 34, .72);
+}
+
+.pe-mercury-lamp > b {
+  right: 54px;
+  bottom: 2px;
+  left: 54px;
+  z-index: 3;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(250, 252, 251, .9);
+  color: #334f56;
+  font-size: 7px;
+  text-align: center;
+}
+
+.pe-lamp-indicator {
+  right: 61px;
+  bottom: 16px;
+  left: auto;
+  z-index: 4;
+}
+
+.pe-source-beam {
+  top: 193px;
+  left: 28.7%;
+  z-index: 7;
+  width: 4.4%;
+}
+
+.pe-grating {
+  top: 139px;
+  bottom: auto;
+  left: 32.4%;
+  z-index: 11;
+  width: 72px;
+  height: 304px;
+}
+
+.pe-grating-glass {
+  top: 8px;
+  height: 103px;
+}
+
+.pe-grating-post {
+  top: 108px;
+  bottom: 15px;
+  height: auto;
+}
+
+.pe-grating > b {
+  top: 125px;
+}
+
+.pe-spectrum,
+.pe-selected-ray {
+  top: 193px;
+  left: 37.5%;
+  z-index: 7;
+  width: 23.5%;
+}
+
+.pe-transmission-filter {
+  top: calc(169px + var(--pe-apparatus-shift));
+  left: 41.7%;
+  z-index: 11;
+  width: 88px;
+  height: 44px;
+}
+
+.pe-transmission-post {
+  height: 227px;
+}
+
+.pe-transmission-foot {
+  top: 259px;
+}
+
+.pe-transmission-filter b {
+  top: 59px;
+  right: -5px;
+  bottom: auto;
+  left: -5px;
+}
+
+.pe-color-filter {
+  top: calc(170px + var(--pe-apparatus-shift));
+  left: 52.2%;
+  z-index: 12;
+  width: 48px;
+  height: 273px;
+}
+
+.pe-color-filter .pe-filter-post {
+  bottom: 15px;
+}
+
+.pe-color-filter b {
+  top: 59px;
+  right: -21px;
+  bottom: auto;
+  left: -21px;
+}
+
+.pe-detector-head {
+  top: 112px;
+  left: 58.5%;
+  z-index: 12;
+  width: 200px;
+  height: 346px;
+}
+
+.pe-detector-body,
+.pe-detector-head .pe-photodiode-window,
+.pe-detector-post,
+.pe-detector-foot,
+.pe-detector-socket {
+  display: none;
+}
+
+.pe-detector-head .pe-mask-slit {
+  top: calc(69px + var(--pe-apparatus-shift));
+  left: 31px;
+  z-index: 4;
+  width: 5px;
+  height: 56px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(17, 25, 28, .88);
+}
+
+.pe-detector-head.aligned .pe-mask-slit {
+  box-shadow: 0 0 7px 2px var(--pe-line-color), 0 0 17px var(--pe-line-glow);
+}
+
+.pe-detector-head > b {
+  top: auto;
+  right: 25px;
+  bottom: -5px;
+  left: 25px;
+  z-index: 4;
+  width: auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  font-size: 7px;
+}
+
+.pe-detector-head > small {
+  top: calc(130px + var(--pe-apparatus-shift));
+  left: 7px;
+  z-index: 4;
+  width: 54px;
+  padding: 3px 5px;
+  border-radius: 999px;
+  background: rgba(250, 252, 251, .9);
+}
+
+.pe-detector-head .pe-electron-stream {
+  top: calc(74px + var(--pe-apparatus-shift));
+  left: 76px;
+  z-index: 4;
+  width: 59px;
+  height: 47px;
+}
+
+.pe-he-apparatus {
+  top: 504px;
+  right: auto;
+  bottom: auto;
+  left: 57%;
+  z-index: 12;
+  width: 285px;
+  height: 181px;
+}
+
+.pe-he-body,
+.pe-he-top,
+.pe-discharge-button,
+.pe-battery-test,
+.pe-he-switch,
+.pe-he-terminals,
+.pe-he-signal-port {
+  display: none;
+}
+
+.pe-he-apparatus > b {
+  top: auto;
+  right: 36px;
+  bottom: -3px;
+  left: 36px;
+  z-index: 4;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(250, 252, 251, .92);
+  font-size: 7px;
+  text-align: center;
+}
+
+.pe-he-apparatus > .pe-he-caption {
+  display: none;
+}
+
+.pe-he-apparatus > .pe-discharge-label {
+  top: 76px;
+  right: 16px;
+  z-index: 4;
+  padding: 3px 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .8);
+  font-size: 5px;
+}
+
+.pe-he-apparatus > .pe-terminal-labels {
+  top: auto;
+  bottom: 31px;
+  left: 105px;
+  z-index: 4;
+}
+
+.pe-he-apparatus > .pe-signal-label {
+  top: 75px;
+  left: 13px;
+  z-index: 4;
+  width: 70px;
+}
+
+.pe-multimeter {
+  top: 487px;
+  bottom: auto;
+  left: 37.8%;
+  z-index: 12;
+  width: 126px;
+  height: 228px;
+}
+
+.pe-meter-case,
+.pe-meter-knob {
+  display: none;
+}
+
+.pe-meter-screen {
+  top: 24px;
+  right: 21px;
+  left: 21px;
+  z-index: 2;
+  height: 47px;
+  border: 0;
+  background: rgba(183, 207, 193, .78);
+  box-shadow: inset 0 1px 4px rgba(32, 58, 49, .16);
+}
+
+.pe-multimeter strong {
+  top: 37px;
+  right: 28px;
+  z-index: 4;
+  font-size: 16px;
+}
+
+.pe-multimeter small {
+  top: 57px;
+  left: 28px;
+  z-index: 4;
+}
+
+.pe-meter-red-port,
+.pe-meter-black-port {
+  bottom: 23px;
+  z-index: 4;
+  width: 11px;
+  height: 11px;
+  border-width: 2px;
+}
+
+.pe-meter-black-port { left: 22px; }
+.pe-meter-red-port { right: 22px; }
+
+.pe-multimeter > b {
+  right: -12px;
+  bottom: -1px;
+  left: -12px;
+  z-index: 4;
+  font-size: 6px;
+}
+
+.pe-meter-port-labels {
+  right: 13px;
+  bottom: 42px;
+  left: 13px;
+  z-index: 4;
+}
+
+.pe-meter-purpose {
+  top: 77px;
+  right: 3px;
+  left: 3px;
+  z-index: 4;
+}
+
+.pe-wiring {
+  z-index: 10;
+}
+
+.pe-wiring path {
+  stroke-width: 3;
+  filter: drop-shadow(0 1px 1px rgba(22, 34, 36, .2));
+}
+
+.pe-wire-signal {
+  stroke-width: 3.5px !important;
+}
+
+@media (max-width: 1080px) {
+  .pe-apparatus { min-width: 1040px; }
+}
+
 /* Elektrik deney seti · Ohm yasası */
 .electricity-hub-shell {
   --electric-navy: #102f42;

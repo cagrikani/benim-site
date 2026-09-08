@@ -673,6 +673,8 @@ export default function PhotoelectricLab() {
             <div className="pe-lab-wall" />
             <div className="pe-workbench"><i /><i /></div>
             <div className="pe-optical-rail" />
+            <span className="pe-zone-label pe-zone-optics">OPTİK DÜZENEK</span>
+            <span className="pe-zone-label pe-zone-measurement">ÖLÇÜM DEVRESİ</span>
 
             {setupComplete && (
               <div className="pe-path-guide">
@@ -682,6 +684,7 @@ export default function PhotoelectricLab() {
 
             {installed.includes("mercury-lamp") && (
               <div className="pe-mercury-lamp">
+                <img src="./photoelectric-mercury-lamp-v2.webp" alt="" />
                 <i className="pe-lamp-vent" />
                 <i className="pe-lamp-window" />
                 <i className="pe-lamp-knob" />
@@ -731,6 +734,7 @@ export default function PhotoelectricLab() {
                     alignedLight === selectedLight ? "aligned" : ""
                   }`}
                 >
+                  <img src="./photoelectric-detector-v2.webp" alt="" />
                   <i className="pe-detector-body" />
                   <i className="pe-photodiode-window" />
                   <i className="pe-mask-slit" />
@@ -747,6 +751,7 @@ export default function PhotoelectricLab() {
                 </div>
 
                 <div className="pe-he-apparatus">
+                  <img src="./photoelectric-he-unit-v2.webp" alt="" />
                   <i className="pe-he-body" />
                   <i className="pe-he-top" />
                   <i className="pe-discharge-button" />
@@ -785,6 +790,7 @@ export default function PhotoelectricLab() {
 
             {installed.includes("multimeter") && (
               <div className="pe-multimeter">
+                <img src="./photoelectric-multimeter-v2.webp" alt="" />
                 <i className="pe-meter-case" />
                 <i className="pe-meter-screen" />
                 <strong>{format(displayVoltage, 3)}</strong>
@@ -799,16 +805,16 @@ export default function PhotoelectricLab() {
             )}
 
             {installed.includes("multimeter") && installed.includes("he-apparatus") && (
-              <svg className="pe-wiring" viewBox="0 0 900 620" preserveAspectRatio="none">
-                <path className="pe-wire-signal" data-cable="pe-cable-signal" d="M 656 288 C 680 316, 613 332, 640 386" />
-                <path className="pe-wire-black" d="M 407 486 C 470 541, 602 531, 663 478" />
-                <path className="pe-wire-red" d="M 481 486 C 545 517, 651 514, 714 478" />
-                <circle className="pe-plug-black" cx="407" cy="486" r="5" />
-                <circle className="pe-plug-black" cx="663" cy="478" r="5" />
-                <circle className="pe-plug-red" cx="481" cy="486" r="5" />
-                <circle className="pe-plug-red" cx="714" cy="478" r="5" />
-                <circle className="pe-plug-signal" cx="656" cy="308" r="5" />
-                <circle className="pe-plug-signal" cx="640" cy="386" r="5" />
+              <svg className="pe-wiring" viewBox="0 0 1040 720" preserveAspectRatio="none">
+                <path className="pe-wire-signal" data-cable="pe-cable-signal" d="M 788 218 C 886 330, 846 514, 681 568" />
+                <path className="pe-wire-black" d="M 426 676 C 493 707, 630 695, 706 635" />
+                <path className="pe-wire-red" d="M 490 676 C 555 701, 682 690, 754 635" />
+                <circle className="pe-plug-black" cx="426" cy="676" r="5" />
+                <circle className="pe-plug-black" cx="706" cy="635" r="5" />
+                <circle className="pe-plug-red" cx="490" cy="676" r="5" />
+                <circle className="pe-plug-red" cx="754" cy="635" r="5" />
+                <circle className="pe-plug-signal" cx="788" cy="218" r="5" />
+                <circle className="pe-plug-signal" cx="681" cy="568" r="5" />
               </svg>
             )}
 
